@@ -9,7 +9,7 @@ export const useSSEStream = () => {
     const eventSourceRef = useRef<EventSource | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<Error | null>(null);
-    const { editorView } = useEditor();
+    const { editorView, customDispatchTransaction } = useEditor();
     
     const parserRef = useRef<ProseMirrorNodeParser | null>(null);
 
@@ -38,7 +38,7 @@ export const useSSEStream = () => {
                             const pos = editorView.current.state.doc.content.size;
                             const transaction = editorView.current.state.tr.insert(pos, node);
                             
-                            editorView.current.dispatch(transaction);
+                            customDispatchTransaction(transaction)
                         } catch (error) {
                             console.error("Error creating node:", error);
                         }

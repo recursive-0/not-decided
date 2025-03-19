@@ -18,6 +18,7 @@ interface EditorContextType {
   insertTextAtCursor: (text: string) => void;
   replaceText: (from: number, to: number, text: string) => void;
   getCurrentContent: () => string | null;
+  customDispatchTransaction: (tr: any) => void
 }
 
 const EditorContext = createContext<EditorContextType | undefined>(undefined);
@@ -59,6 +60,12 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return content;
   };
 
+  const customDispatchTransaction = (tr: any) => {
+    if(!editorView.current) return
+
+    editorView.current.dispatch(tr)
+  }
+
   return (
     <EditorContext.Provider
       value={{
@@ -67,7 +74,8 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setEditorReady,
         insertTextAtCursor,
         replaceText,
-        getCurrentContent
+        getCurrentContent,
+        customDispatchTransaction
       }}
     >
       {children}
