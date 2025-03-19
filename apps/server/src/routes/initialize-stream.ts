@@ -1,4 +1,5 @@
 import type { BunRequest } from "bun"
+import { userPrompts } from "../.."
 
 
 interface InitializeStreamRequestType {
@@ -9,9 +10,9 @@ export async function initializeStream(req: Request): Promise<Response> {
 
     const body = await req.json()
     const { prompt } = body
-    console.log("prommpt is", prompt)
     const streamId = crypto.randomUUID()
-    console.log("stream id is", streamId)
+
+    userPrompts.set(streamId, prompt)
 
     return Response.json({streamId})
 }

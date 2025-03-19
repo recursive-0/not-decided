@@ -9,7 +9,9 @@
     "dev:web": "bun run --cwd apps/web dev",
     "build": "bun run build:server & bun run build:web",
     "build:server": "bun run --cwd apps/server build",
-    "build:web": "bun run --cwd apps/web build"
+    "build:web": "bun run --cwd apps/web build",
+    "i:server": "bun --cwd apps/server",
+    "i:web": "bun --cwd apps/web add"
   },
   "workspaces": ["apps/*", "packages/*"],
   "devDependencies": {

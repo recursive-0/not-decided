@@ -1,5 +1,9 @@
 import { generateStream } from "./src/routes/generate-stream";
 import { initializeStream } from "./src/routes/initialize-stream";
+import { testSimpleStream } from "./src/routes/test-simple-stream";
+
+
+export const userPrompts = new Map<string, string>()
 
 function cors(handler: (req: Request) => Response | Promise<Response>){
 
@@ -32,6 +36,7 @@ Bun.serve({
     port: 4000,
     routes: {
         "/api/generate/init": cors(initializeStream),
-        "/api/generate/stream/:streamId": cors(generateStream)
-    }
+        "/api/generate/stream/:streamId": cors(generateStream),
+    },
+    idleTimeout: 200
 })
