@@ -1,4 +1,12 @@
 /* Reset all margins and padding */
+.prosemirror-editor {
+  outline: none !important;
+}
+
+.ProseMirror {
+  outline: none !important;
+}
+
 .prosemirror-editor h1,
 .prosemirror-editor h2,
 .prosemirror-editor h3,
