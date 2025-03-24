@@ -1,17 +1,15 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { EditorView, Decoration, DecorationSet } from "prosemirror-view";
-import { EditorState, Plugin, PluginKey } from "prosemirror-state";
-import { Schema } from "prosemirror-model";
-import { schema as basicSchema, schema } from "prosemirror-schema-basic";
-import { addListNodes } from "prosemirror-schema-list";
+import { EditorView } from "prosemirror-view";
+import { EditorState,} from "prosemirror-state";
 import {
   extendedProseMirrorSchema,
   useEditor,
 } from "@/providers/editor-context-provider";
 import "./prosemirror-styles.css";
-import StreamingMarkdownDemo from "./streaming-markdown-demo";
+import { baseKeymap } from "prosemirror-commands"
+import { keymap } from "prosemirror-keymap"
 
 // // // Create an extended schema that includes heading nodes
 // // const schema = new Schema({
@@ -205,7 +203,7 @@ export const ProseMirrorEditor = () => {
 
     const state = EditorState.create({
       schema: extendedProseMirrorSchema,
-      // plugins: [characterPlugin],
+      plugins: [keymap(baseKeymap)],
     });
 
     if (!editorView.current && editorRef.current) {
@@ -245,7 +243,7 @@ export const ProseMirrorEditor = () => {
   return (
     <div className="flex flex-col w-full h-full">
       <div
-        className="prosemirror-editor w-full max-h-[calc(100vh - 60px)] h-full overflow-scroll p-4 px-4 rounded border"
+        className="prosemirror-editor w-full max-h-[calc(100vh - 60px)] h-full overflow-scroll p-4 px-4 rounded border border-neutral-400 outline-none"
         ref={editorRef}
       />
       {/* <StreamingMarkdownDemo /> */}
