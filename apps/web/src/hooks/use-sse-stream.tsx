@@ -1,57 +1,52 @@
 import { useCallback, useRef, useState } from "react";
-import { ProseMirrorNodeParser } from "@/lib/prosemirror-node-parser";
-import { schema } from "prosemirror-schema-basic";
-import { Node } from "prosemirror-model";
 import { extendedProseMirrorSchema, useEditor } from "@/providers/editor-context-provider";
+import { IncrementalProsemirrorRenderer } from "@/lib/incremental-prosemirror-renderer";
+import { IncrementalParser } from "@/lib/incremental-node-parser";
 
 export const useSSEStream = () => {
     const [content, setContent] = useState<string>("");
-    const eventSourceRef = useRef<EventSource | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<Error | null>(null);
-    const { editorView, customDispatchTransaction } = useEditor();
+    const { editorView } = useEditor();
     
-    const parserRef = useRef<ProseMirrorNodeParser | null>(null);
+    const parserRef = useRef<IncrementalParser | null>(null);
+    const rendererRef = useRef<IncrementalProsemirrorRenderer | null>(null);
+    const eventSourceRef = useRef<EventSource | null>(null);
 
-    const startStreaming = useCallback(async (
-        prompt: string, 
-        onToken?: (token: string) => void
-    ) => {
+    const startStreaming = useCallback(async (prompt: string) => {
         try {
+
             setIsLoading(true);
             setError(null);
             setContent("");
+
 
             if (eventSourceRef.current) {
                 eventSourceRef.current.close();
             }
             
-            if (!parserRef.current) {
-                parserRef.current = new ProseMirrorNodeParser(extendedProseMirrorSchema, ({ nodeJSON, nodeIndex }) => {
-                    console.log("ProseMirror node formed:", nodeJSON);
-                    
-                    if (editorView.current) {
-                        try {
-                            const node = Node.fromJSON(extendedProseMirrorSchema, nodeJSON);
-                            console.log("PERFECT NODE", node);
-                            
-                            const pos = editorView.current.state.doc.content.size;
-                            const transaction = editorView.current.state.tr.insert(pos, node);
-                            
-                            customDispatchTransaction(transaction)
-                        } catch (error) {
-                            console.error("Error creating node:", error);
-                        }
-                    }
+
+            if (!rendererRef.current && editorView.current) {
+                rendererRef.current = new IncrementalProsemirrorRenderer(
+                    editorView.current,
+                    extendedProseMirrorSchema
+                );
+            }
+        
+
+            if (!parserRef.current && rendererRef.current) {
+                parserRef.current = new IncrementalParser({
+                    onOpenTag: (tag) => rendererRef.current?.onOpenTag(tag),
+                    onCloseTag: (tag) => rendererRef.current?.onCloseTag(tag),
+                    onTextContent: (text) => rendererRef.current?.onTextContent(text)
                 });
             }
 
+            // Initialize stream
             const response = await fetch("http://localhost:4000/api/generate/init", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ prompt: prompt })
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ prompt })
             });
 
             if (!response.ok) {
@@ -60,67 +55,44 @@ export const useSSEStream = () => {
 
             const { streamId } = await response.json();
             
+            // Setup SSE
             eventSourceRef.current = new EventSource(
                 `http://localhost:4000/api/generate/stream/${streamId}`
             );
 
+            // Handle messages
             eventSourceRef.current.onmessage = (event) => {
                 const token = event.data;
-                console.log("token received:", token);
 
-                if (token.trim() === "[DONE]") {
-                    if (parserRef.current) {
-                        parserRef.current.stopStreaming();
-                    }
-                    
-                    setIsLoading(false);
-                    eventSourceRef.current?.close();
-                    return;
+                console.log("TOKEN IS", token)
+
+                switch (token.trim()) {
+                    case "[DONE]":
+                    case "END_STREAM":
+                        parserRef.current?.stopStreaming();
+                        setIsLoading(false);
+                        eventSourceRef.current?.close();
+                        return;
+                        
+                    case "START_STREAM":
+                        parserRef.current?.startStreaming();
+                        return;
+                        
+                    default:
+                        const decodedToken = token.replace(/\\n/g, "\n").replace(/\\r/g, "\r").replace(/\\t/g, "\t");
+                        setContent(prev => prev + decodedToken);
+                        parserRef.current?.process(decodedToken);
                 }
-                
-                if (token.trim() === "START_STREAM") {
-                    if (parserRef.current) {
-                        console.log("Starting the stream now");
-                        parserRef.current.startStreaming();
-                    }
-                    return;
-                }
-                
-                if (token.trim() === "END_STREAM") {
-                    if (parserRef.current) {
-                        parserRef.current.stopStreaming();
-                    }
-                    return;
-                }
-                
-                setContent(prev => prev + token);
-                
-                if (parserRef.current) {
-                    parserRef.current.processTokens(token);
-                }
-                
             };
-            
+
+            // Handle errors
             eventSourceRef.current.onerror = (err) => {
                 console.error("SSE Error:", err);
                 setError(new Error("Stream error occurred"));
-                setIsLoading(false);
-                
-                if (parserRef.current) {
-                    parserRef.current.stopStreaming();
-                }
-                
+                parserRef.current?.stopStreaming();
                 eventSourceRef.current?.close();
+                setIsLoading(false);
             };
-            
-            eventSourceRef.current.addEventListener('complete', () => {
-                if (parserRef.current) {
-                    parserRef.current.stopStreaming();
-                }
-                
-                setIsLoading(false);
-                eventSourceRef.current?.close();
-            });
 
         } catch (error: any) {
             setError(error);
@@ -129,15 +101,15 @@ export const useSSEStream = () => {
     }, [editorView]);
 
     const stopStreaming = useCallback(() => {
-        if (parserRef.current) {
-            parserRef.current.stopStreaming();
-        }
+        parserRef.current?.stopStreaming();
         
         if (eventSourceRef.current) {
             eventSourceRef.current.close();
             eventSourceRef.current = null;
         }
+        
         setIsLoading(false);
+        setContent("");
     }, []);
 
     return { 

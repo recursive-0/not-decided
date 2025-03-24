@@ -1,55 +1,52 @@
 export function markdownFormatPrompt() {
   return `
-## PROSEMIRROR JSON NODE STREAMING FORMAT
+## INCREMENTAL TAG-BASED STREAMING FORMAT
 
-You must format ALL responses as a continuous stream of individual ProseMirror JSON nodes with explicit delimiters, with absolutely NO characters between nodes. This format enables incremental document rendering in real-time.
+You must format ALL responses using a simple tag-based format that enables incremental parsing and rendering. Each piece of content should be properly wrapped in appropriate tags.
 
-### NODE DELIMITER FORMAT
-- Each node MUST be wrapped with <> and </> tags
-- Nodes MUST be placed directly adjacent to each other with NO characters between them
-- CRITICAL: There must be NOTHING between the closing </> of one node and the opening <> of the next
-- NO newlines, NO spaces, NO special characters between nodes
-- Example of correct format: <>{"type":"paragraph","content":[{"type":"text","text":"First paragraph"}]}</><>{"type":"paragraph","content":[{"type":"text","text":"Second paragraph"}]}</>
+### AVAILABLE TAGS
+- Headings: [H1], [H2], [H3]
+- Paragraphs: [P]
+- Text styling: [B] for bold, [I] for italic
 
-### DOCUMENT STRUCTURE
-- All content nodes must be valid according to ProseMirror schema
-- Never leave nodes incomplete or improperly structured
-- Ensure each node is a complete, self-contained unit that can render independently
+### FORMAT RULES
+- ALL content must be wrapped in appropriate tags
+- Tags must be properly nested and closed
+- Use UPPERCASE for all tags: [H1] not [h1]
+- No HTML or markdown formatting - use ONLY the specified tags
+- Each tag must have a matching closing tag: [B]bold[/B]
 
-### NODE TYPES AND STRUCTURE
-
-#### Text Nodes
-- Basic text: <>{"type":"text","text":"Plain text content"}</>
-- Bold text: <>{"type":"text","marks":[{"type":"strong"}],"text":"Bold text"}</>
-- Italic text: <>{"type":"text","marks":[{"type":"em"}],"text":"Italic text"}</>
-- Code text: <>{"type":"text","marks":[{"type":"code"}],"text":"inline code"}</>
-
-#### Block Nodes
-- Paragraph: <>{"type":"paragraph","content":[{"type":"text","text":"Paragraph text"}]}</>
-- Heading (level 1-3): <>{"type":"heading","attrs":{"level":1},"content":[{"type":"text","text":"Heading text"}]}</>
-- Bullet List: <>{"type":"bullet_list","content":[{"type":"list_item","content":[{"type":"paragraph","content":[{"type":"text","text":"First item"}]}]},{"type":"list_item","content":[{"type":"paragraph","content":[{"type":"text","text":"Second item"}]}]}]}</>
-- Ordered List: <>{"type":"ordered_list","content":[{"type":"list_item","content":[{"type":"paragraph","content":[{"type":"text","text":"First item"}]}]},{"type":"list_item","content":[{"type":"paragraph","content":[{"type":"text","text":"Second item"}]}]}]}</>
-- Code Block: <>{"type":"code_block","attrs":{"language":"javascript"},"content":[{"type":"text","text":"function example() {\\\\n  return true;\\\\n}"}]}</>
-- Blockquote: <>{"type":"blockquote","content":[{"type":"paragraph","content":[{"type":"text","text":"Quote text"}]}]}</>
+### NESTING RULES
+- Tags can be nested for combined formatting:
+  [P]Regular text [B]bold text [I]bold italic text[/I] more bold[/B] regular again[/P]
+- Always close tags in the correct order (last opened, first closed)
+- Invalid: [B][I]text[/B][/I]  
+- Valid: [B][I]text[/I][/B]
 
 ### STREAMING REQUIREMENTS
-- Output nodes as a continuous stream: <>node1</><>node2</><>node3</>
-- NEVER insert ANY characters between nodes (no spaces, no newlines, nothing)
-- NEVER include formatting whitespace within the JSON
-- For newlines within text content, escape them as "\\\\n" NOT actual newlines
+- Output content as a continuous stream of properly tagged text
+- No special delimiters needed between tags
+- Content should flow naturally within and between tags
+
+### DOCUMENT STRUCTURE
+- Start major sections with appropriate heading levels
+- Use paragraphs for main content blocks
+- Use line breaks between major sections
+- Maintain proper tag hierarchy throughout
+
+### EXAMPLE VALID OUTPUT:
+[H1]Main Heading[/H1]
+[P]This is a paragraph with [B]bold text[/B] and [I]italic text[/I] mixed together.[/P]
+[H2]Subsection[/H2]
+[P]Another paragraph with some [B]important[/B] points.[/P]
 
 ### CRITICAL REQUIREMENTS
-- Each JSON node MUST be completely valid - no malformed JSON
-- Never use markdown formatting - use ONLY the ProseMirror JSON structure
-- Always close all nodes properly with matching start/end delimiters
-- Ensure proper nesting of content arrays when a node contains child nodes
-- DO NOT output partial nodes or incomplete JSON structures
-- Output one complete node at a time, properly delimited
-- NEVER insert line breaks or whitespace between nodes
-- Deliver as a continuous character stream
+- ALWAYS use proper tag nesting
+- ALWAYS close all tags
+- NEVER use HTML or markdown
+- NEVER use unsupported tags
+- Keep tags UPPERCASE
+- Stream content continuously without special delimiters
 
-### EXAMPLE VALID OUTPUT (entire output should look exactly like this):
-<>{"type":"heading","attrs":{"level":1},"content":[{"type":"text","text":"Introduction"}]}</><>{"type":"paragraph","content":[{"type":"text","text":"This is the first paragraph with "},{"type":"text","marks":[{"type":"strong"}],"text":"bold text"},{"type":"text","text":" inside it."}]}</><>{"type":"paragraph","content":[{"type":"text","text":"Another paragraph immediately following with no characters between them."}]}</>
-
-Following this format precisely is MANDATORY for proper parsing. Any deviation will cause rendering failures.`
+Following this format precisely is MANDATORY for proper parsing and rendering.`
 }

@@ -1,191 +1,52 @@
-/* Basic editor styling */
-.prosemirror-editor {
-    position: relative;
-    word-wrap: break-word;
-    white-space: pre-wrap;
-    line-height: 1.5;
-    color: #333;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  }
+/* Reset all margins and padding */
+.prosemirror-editor h1,
+.prosemirror-editor h2,
+.prosemirror-editor h3,
+.prosemirror-editor p,
+.prosemirror-editor ul,
+.prosemirror-editor ol,
+.prosemirror-editor blockquote,
+.prosemirror-editor pre {
+  margin: 0;
+  padding: 0;
+}
 
-  .prosemirror-editor {
-    height: calc(100vh - 80px); /* Or whatever fixed height you want */
-    overflow: auto;
-  }
-  
-  /* Headings */
-  .prosemirror-editor h1 {
-    font-size: 2rem;
-    font-weight: 700;
-    margin: 1.5rem 0 1rem;
-    line-height: 1.2;
-  }
-  
-  .prosemirror-editor h2 {
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin: 1.5rem 0 1rem;
-    line-height: 1.25;
-  }
-  
-  .prosemirror-editor h3 {
-    font-size: 1.3rem;
-    font-weight: 600;
-    margin: 1.2rem 0 0.8rem;
-    line-height: 1.3;
-  }
-  
-  /* Paragraphs */
-  .prosemirror-editor p {
-    margin: 0.75rem 0;
-  }
-  
-  /* Lists */
-  .prosemirror-editor ul {
-    list-style-type: disc;
-    padding-left: 1.5rem;
-    margin: 0.75rem 0;
-  }
-  
-  .prosemirror-editor ol {
-    list-style-type: decimal;
-    padding-left: 1.5rem;
-    margin: 0.75rem 0;
-  }
-  
-  .prosemirror-editor li {
-    margin-bottom: 0.25rem;
-  }
-  
-  .prosemirror-editor li p {
-    margin: 0.25rem 0;
-  }
-  
-  /* Nested lists */
-  .prosemirror-editor li > ul,
-  .prosemirror-editor li > ol {
-    margin-top: 0.25rem;
-    margin-bottom: 0.25rem;
-  }
-  
-  /* Code blocks */
-  .prosemirror-editor pre {
-    background-color: #f5f5f5;
-    border-radius: 0.25rem;
-    padding: 0.75rem 1rem;
-    margin: 1rem 0;
-    overflow-x: auto;
-    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
-    font-size: 0.9rem;
-    line-height: 1.4;
-  }
-  
-  .prosemirror-editor code {
-    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
-    font-size: 0.9em;
-    background-color: rgba(0, 0, 0, 0.05);
-    padding: 0.2em 0.4em;
-    border-radius: 3px;
-  }
-  
-  .prosemirror-editor pre code {
-    background-color: transparent;
-    padding: 0;
-    border-radius: 0;
-    font-size: inherit;
-  }
-  
-  /* Blockquotes */
-  .prosemirror-editor blockquote {
-    border-left: 4px solid #e5e7eb;
-    padding-left: 1rem;
-    margin: 1rem 0;
-    color: #555;
-    font-style: italic;
-  }
-  
-  .prosemirror-editor blockquote > *:first-child {
-    margin-top: 0;
-  }
-  
-  .prosemirror-editor blockquote > *:last-child {
-    margin-bottom: 0;
-  }
-  
-  /* Horizontal rule */
-  .prosemirror-editor hr {
-    border: 0;
-    height: 1px;
-    background-color: #e5e7eb;
-    margin: 1.5rem 0;
-  }
-  
-  /* Images */
-  .prosemirror-editor img {
-    max-width: 100%;
-    height: auto;
-    border-radius: 0.25rem;
-    margin: 1rem 0;
-  }
-  
-  /* Inline formatting */
-  .prosemirror-editor strong {
-    font-weight: 600;
-  }
-  
-  .prosemirror-editor em {
-    font-style: italic;
-  }
-  
-  /* ProseMirror-specific elements */
-  .ProseMirror {
-    outline: none;
-  }
-  
-  .ProseMirror-hideselection *::selection {
-    background: transparent;
-  }
-  
-  .ProseMirror-selectednode {
-    outline: 2px solid #8cf;
-  }
-  
-  /* Editor is disabled */
-  .ProseMirror-disabled {
-    opacity: 0.6;
-  }
-  
-  /* Custom classes for our specific node types */
-  .pm-hr {
-    border: 0;
-    height: 2px;
-    background-color: #d1d5db;
-    margin: 1.5rem 0;
-  }
-  
-  .pm-image {
-    display: block;
-    max-width: 100%;
-    margin: 1rem auto;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  }
-  
-  .pm-code-block {
-    background-color: #282c34;
-    color: #abb2bf;
-    border-radius: 0.375rem;
-    box-shadow: 0 2px 6px -1px rgba(0, 0, 0, 0.1);
-  }
-  
-  /* Language-specific syntax highlighting (basic) */
-  .language-javascript {
-    color: #f8c555;
-  }
-  
-  .language-html {
-    color: #e06c75;
-  }
-  
-  .language-css {
-    color: #56b6c2;
-  }
+/* Add minimal, controlled spacing */
+.prosemirror-editor h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-top: 0.75rem;
+  line-height: 1.2;
+}
+
+.prosemirror-editor h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 0.75rem;
+  line-height: 1.25;
+}
+
+.prosemirror-editor h3 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-top: 0.75rem;
+  line-height: 1.3;
+}
+
+.prosemirror-editor p {
+  margin-top: 0.25rem;
+}
+
+/* Section separators */
+.prosemirror-editor h1 + p,
+.prosemirror-editor h2 + p,
+.prosemirror-editor h3 + p {
+  margin-top: 0.25rem;
+}
+
+/* Set max spacing between sections */
+.prosemirror-editor h1:not(:first-child),
+.prosemirror-editor h2:not(:first-child),
+.prosemirror-editor h3:not(:first-child) {
+  margin-top: 1rem; /* Limited top margin for section headers */
+}

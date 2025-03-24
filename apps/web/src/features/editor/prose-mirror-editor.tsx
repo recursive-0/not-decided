@@ -11,127 +11,128 @@ import {
   useEditor,
 } from "@/providers/editor-context-provider";
 import "./prosemirror-styles.css";
+import StreamingMarkdownDemo from "./streaming-markdown-demo";
 
-// // Create an extended schema that includes heading nodes
-// const schema = new Schema({
-//   nodes: addListNodes(basicSchema.spec.nodes, "paragraph block*", "block"),
-//   marks: basicSchema.spec.marks
-// })
+// // // Create an extended schema that includes heading nodes
+// // const schema = new Schema({
+// //   nodes: addListNodes(basicSchema.spec.nodes, "paragraph block*", "block"),
+// //   marks: basicSchema.spec.marks
+// // })
 
-const characterPluginKey = new PluginKey("character-animation");
+// const characterPluginKey = new PluginKey("character-animation");
 
-// Create our animation plugin
-const characterPlugin = new Plugin({
-  key: characterPluginKey,
+// // Create our animation plugin
+// const characterPlugin = new Plugin({
+//   key: characterPluginKey,
 
-  state: {
-    init() {
-      return {
-        newlyInsertedRanges: [], // Track ranges of inserted content
-      };
-    },
+//   state: {
+//     init() {
+//       return {
+//         newlyInsertedRanges: [], // Track ranges of inserted content
+//       };
+//     },
 
-    apply(tr, value, oldState, newState) {
-      // Reset the tracking if we're not in a transaction chain
-      if (!tr.docChanged) {
-        // Clear animations after they've had time to play
-        if (value.newlyInsertedRanges.length && !tr.getMeta("animating")) {
-          return { newlyInsertedRanges: [] };
-        }
-        return value;
-      }
+//     apply(tr, value, oldState, newState) {
+//       // Reset the tracking if we're not in a transaction chain
+//       if (!tr.docChanged) {
+//         // Clear animations after they've had time to play
+//         if (value.newlyInsertedRanges.length && !tr.getMeta("animating")) {
+//           return { newlyInsertedRanges: [] };
+//         }
+//         return value;
+//       }
 
-      // Track newly inserted content
-      const newRanges = [];
-      tr.mapping.maps.forEach((map) => {
-        map.forEach((oldStart, oldEnd, newStart, newEnd) => {
-          if (newEnd > newStart && oldEnd - oldStart < newEnd - newStart) {
-            // This is an insertion
-            newRanges.push({ from: newStart, to: newEnd });
-          }
-        });
-      });
+//       // Track newly inserted content
+//       const newRanges = [];
+//       tr.mapping.maps.forEach((map) => {
+//         map.forEach((oldStart, oldEnd, newStart, newEnd) => {
+//           if (newEnd > newStart && oldEnd - oldStart < newEnd - newStart) {
+//             // This is an insertion
+//             newRanges.push({ from: newStart, to: newEnd });
+//           }
+//         });
+//       });
 
-      // Map old ranges through the transaction
-      const mappedOldRanges = value.newlyInsertedRanges.map((range) => {
-        return {
-          from: tr.mapping.map(range.from),
-          to: tr.mapping.map(range.to),
-        };
-      });
+//       // Map old ranges through the transaction
+//       const mappedOldRanges = value.newlyInsertedRanges.map((range) => {
+//         return {
+//           from: tr.mapping.map(range.from),
+//           to: tr.mapping.map(range.to),
+//         };
+//       });
 
-      return {
-        newlyInsertedRanges: [...mappedOldRanges, ...newRanges],
-      };
-    },
-  },
+//       return {
+//         newlyInsertedRanges: [...mappedOldRanges, ...newRanges],
+//       };
+//     },
+//   },
 
-  props: {
-    decorations(state) {
-      const { newlyInsertedRanges } = this.getState(state);
-      if (!newlyInsertedRanges.length) return null;
+//   props: {
+//     decorations(state) {
+//       const { newlyInsertedRanges } = this.getState(state);
+//       if (!newlyInsertedRanges.length) return null;
 
-      const decorations = [];
+//       const decorations = [];
 
-      // For each inserted range, create character-by-character decorations
-      newlyInsertedRanges.forEach((range) => {
-        let charIndex = 0;
+//       // For each inserted range, create character-by-character decorations
+//       newlyInsertedRanges.forEach((range) => {
+//         let charIndex = 0;
 
-        state.doc.nodesBetween(range.from, range.to, (node, pos) => {
-          if (!node.isText) return true;
+//         state.doc.nodesBetween(range.from, range.to, (node, pos) => {
+//           if (!node.isText) return true;
 
-          const startPos = Math.max(range.from, pos);
-          const endPos = Math.min(range.to, pos + node.nodeSize);
+//           const startPos = Math.max(range.from, pos);
+//           const endPos = Math.min(range.to, pos + node.nodeSize);
 
-          for (let i = startPos; i < endPos; i++) {
-            if (i >= pos && i < pos + node.text.length) {
-              // Get the actual character
-              const charPos = i - pos;
-              const char = node.text[charPos];
+//           for (let i = startPos; i < endPos; i++) {
+//             if (i >= pos && i < pos + node.text.length) {
+//               // Get the actual character
+//               const charPos = i - pos;
+//               const char = node.text[charPos];
 
-              // Handle spaces specially
-              const isSpace = char === " ";
+//               // Handle spaces specially
+//               const isSpace = char === " ";
 
-              decorations.push(
-                Decoration.inline(i, i + 1, {
-                  class: isSpace ? "animated-space" : "animated-char",
-                  style: `
-                                        display: inline-block;
-                                        opacity: 0;
-                                        animation: typeIn 0.1s forwards;
-                                        animation-delay: ${charIndex * 2}ms;
-                                    `,
-                })
-              );
-              charIndex++;
-            }
-          }
+//               decorations.push(
+//                 Decoration.inline(i, i + 1, {
+//                   class: isSpace ? "animated-space" : "animated-char",
+//                   style: `
+//                                         display: inline-block;
+//                                         opacity: 0;
+//                                         animation: typeIn 0.1s forwards;
+//                                         animation-delay: ${charIndex * 2}ms;
+//                                     `,
+//                 })
+//               );
+//               charIndex++;
+//             }
+//           }
 
-          return true;
-        });
-      });
+//           return true;
+//         });
+//       });
 
-      return DecorationSet.create(state.doc, decorations);
-    },
-  },
-});
+//       return DecorationSet.create(state.doc, decorations);
+//     },
+//   },
+// });
 
-// Our dummy content to insert
-const dummyContent = {
-  type: "doc",
-  content: [
-    {
-      type: "heading",
-      attrs: { level: 1 },
-      content: [
-        {
-          type: "text",
-          text: "The best cursor for docs yeah am sure this is the best cursor for docs with my own touch",
-        },
-      ],
-    },
-  ],
-};
+// // Our dummy content to insert
+// const dummyContent = {
+//   type: "doc",
+//   content: [
+//     {
+//       type: "heading",
+//       attrs: { level: 1 },
+//       content: [
+//         {
+//           type: "text",
+//           text: "The best cursor for docs yeah am sure this is the best cursor for docs with my own touch",
+//         },
+//       ],
+//     },
+//   ],
+// };
 
 export const ProseMirrorEditor = () => {
   const editorRef = useRef<HTMLDivElement | null>(null);
@@ -204,7 +205,7 @@ export const ProseMirrorEditor = () => {
 
     const state = EditorState.create({
       schema: extendedProseMirrorSchema,
-      plugins: [characterPlugin],
+      // plugins: [characterPlugin],
     });
 
     if (!editorView.current && editorRef.current) {
@@ -244,9 +245,10 @@ export const ProseMirrorEditor = () => {
   return (
     <div className="flex flex-col w-full h-full">
       <div
-        className="prosemirror-editor w-full max-h-[calc(100vh - 60px)] h-full overflow-scroll p-4 px-30 rounded border"
+        className="prosemirror-editor w-full max-h-[calc(100vh - 60px)] h-full overflow-scroll p-4 px-4 rounded border"
         ref={editorRef}
       />
+      {/* <StreamingMarkdownDemo /> */}
     </div>
   );
 };
