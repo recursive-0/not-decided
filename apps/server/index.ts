@@ -33,7 +33,7 @@ function cors(handler: (req: Request) => Response | Promise<Response>){
 }
 
 Bun.serve({
-    port: 4000,
+    port: 3007,
     routes: {
         "/api/generate/init": cors(initializeStream),
         "/api/generate/stream/:streamId": cors(generateStream),

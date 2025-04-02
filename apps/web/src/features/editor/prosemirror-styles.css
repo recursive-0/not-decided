@@ -1,18 +1,70 @@
-/* Reset all margins and padding */
+/* === LIST STYLING START === */
+
+/* Styles for the overall list (ul or ol) */
+.prosemirror-editor ul,
+.prosemirror-editor ol {
+  padding-left: 1.5em; /* Indentation for the entire list */
+  margin-block-start: 0.5em; /* Space above the list */
+  margin-block-end: 0.5em;   /* Space below the list */
+  margin-left: 0;
+  margin-right: 0;
+  list-style: none; /* Disable default browser bullets, we'll add our own */
+}
+
+/* Styles for each list item (li) */
+.prosemirror-editor li {
+  display: flex;           /* Use Flexbox for layout within the list item */
+  align-items: baseline; /* Align bullet and text content along their baseline */
+  margin: 0;               /* Remove default li margins */
+  padding: 0;              /* Remove default li padding */
+  margin-bottom: 0.2em; /* Optional: Add a small gap between list items */
+  position: relative;      /* Needed for positioning the ::before pseudo-element */
+}
+
+/* Create the bullet point */
+.prosemirror-editor ul > li::before {
+  content: "•";          /* The bullet character */
+  display: inline-block; /* Needed for margin */
+  margin-right: 0.6em;   /* Space between the bullet and the text */
+  /* Flexbox handles alignment, no need for negative margins or width */
+  /* Adjust font-size/color if needed */
+  /* color: #333; */
+}
+/* Add similar rule for ol > li::before if using numbered lists */
+/*
+.prosemirror-editor ol > li::before {
+  content: counter(list-item) ".";
+  counter-increment: list-item;
+  margin-right: 0.6em;
+  min-width: 1em; // Ensures space for multi-digit numbers
+  text-align: right; // Aligns numbers nicely if min-width is used
+}
+*/
+
+
+/* Styles for the paragraph INSIDE the list item */
+.prosemirror-editor li > p {
+  margin: 0;             /* CRITICAL: Remove paragraph margins */
+  padding: 0;            /* Remove paragraph padding */
+  flex: 1;               /* Allow the paragraph to take up remaining space */
+  /* The default display: block is fine here with flexbox parent */
+}
+
+/* === LIST STYLING END === */
+
+/* --- Keep your other H1, H2, H3, general P, etc. styles --- */
+/* Reset some potentially interfering defaults */
 .prosemirror-editor {
   outline: none !important;
 }
-
 .ProseMirror {
   outline: none !important;
+  line-height: 1.6; /* Base line height */
 }
 
 .prosemirror-editor h1,
 .prosemirror-editor h2,
 .prosemirror-editor h3,
-.prosemirror-editor p,
-.prosemirror-editor ul,
-.prosemirror-editor ol,
 .prosemirror-editor blockquote,
 .prosemirror-editor pre {
   margin: 0;
@@ -23,26 +75,36 @@
 .prosemirror-editor h1 {
   font-size: 2rem;
   font-weight: 700;
-  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
   line-height: 1.2;
+  color: var(--color-neutral-800)
 }
 
 .prosemirror-editor h2 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin-top: 0.75rem;
-  line-height: 1.25;
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  line-height: 1.2;
+  color: var(--color-neutral-800)
 }
 
 .prosemirror-editor h3 {
-  font-size: 1.3rem;
-  font-weight: 600;
-  margin-top: 0.75rem;
-  line-height: 1.3;
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+  line-height: 1.2;
+  color: var(--color-neutral-800)
 }
 
-.prosemirror-editor p {
-  margin-top: 0.25rem;
+/* ... (keep your other heading/paragraph styles) ... */
+
+.prosemirror-editor p { /* Style for paragraphs NOT inside lists */
+  /* margin-bottom: 0.25rem; Add bottom margin too for spacing */
+  color: var(--color-neutral-700)
+}
+
+.prosemirror-editor strong{
+  font-weight: 600;
 }
 
 /* Section separators */
@@ -58,3 +120,4 @@
 .prosemirror-editor h3:not(:first-child) {
   margin-top: 1rem; /* Limited top margin for section headers */
 }
+/* --- End of other styles --- */

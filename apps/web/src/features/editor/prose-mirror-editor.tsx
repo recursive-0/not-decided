@@ -2,14 +2,21 @@
 
 import { useEffect, useRef } from "react";
 import { EditorView } from "prosemirror-view";
-import { EditorState,} from "prosemirror-state";
+import { EditorState, TextSelection,} from "prosemirror-state";
 import {
   extendedProseMirrorSchema,
   useEditor,
 } from "@/providers/editor-context-provider";
 import "./prosemirror-styles.css";
-import { baseKeymap } from "prosemirror-commands"
+import { baseKeymap, chainCommands, deleteSelection, joinBackward, joinTextblockBackward } from "prosemirror-commands"
 import { keymap } from "prosemirror-keymap"
+import {
+  splitListItem, // <--- This command handles Enter
+  liftListItem,
+  sinkListItem,
+} from "prosemirror-schema-list";
+import { undo, redo, history } from "prosemirror-history";
+import { trailingNode } from 'prosemirror-trailing-node'
 
 // // // Create an extended schema that includes heading nodes
 // // const schema = new Schema({
@@ -132,6 +139,43 @@ import { keymap } from "prosemirror-keymap"
 //   ],
 // };
 
+function liftListItemOnlyAtStart(listItemType) {
+  return function(state, dispatch, view) {
+    const {$head, empty} = state.selection;
+    // Condition: Selection must be empty AND cursor must be at offset 0 of its parent block
+    if (!empty || $head.parentOffset !== 0) {
+      return false; // Fail if cursor is not at start or if text is selected
+    }
+    // If condition met, try to execute the actual liftListItem command
+    // We might need additional checks here if liftListItem itself does more complex things
+    // but the core idea is to gate it behind the cursor position check.
+    return liftListItem(listItemType)(state, dispatch, view);
+  }
+}
+
+const listRelatedKeymap = keymap({
+  // V V V THIS IS THE IMPORTANT BINDING V V V
+  Enter: splitListItem(extendedProseMirrorSchema.nodes.list_item),
+
+  Backspace: chainCommands( deleteSelection, liftListItemOnlyAtStart(extendedProseMirrorSchema.nodes.list_item), joinTextblockBackward)
+  // Tab: sinkListItem(/* ... */),
+  // ... other list bindings ...
+});
+
+// --- Combine all plugins ---
+const plugins = [
+  history(),
+  listRelatedKeymap, // <--- Add the list keymap HERE
+  keymap(baseKeymap), // Base keymap handles things list keymap doesn't
+  keymap({ // Undo/Redo
+      "Mod-z": undo,
+      "Mod-y": redo,
+      "Shift-Mod-z": redo,
+  }),
+  // trailingNode({ignoredNodes: ["bullet_list", "list_item", "ordered_list"], nodeName: "paragraph"})
+  // ... other plugins ...
+];
+
 export const ProseMirrorEditor = () => {
   const editorRef = useRef<HTMLDivElement | null>(null);
   const { editorView, setEditorReady, isEditorReady } = useEditor();
@@ -203,21 +247,74 @@ export const ProseMirrorEditor = () => {
 
     const state = EditorState.create({
       schema: extendedProseMirrorSchema,
-      plugins: [keymap(baseKeymap)],
+      plugins: plugins,
     });
 
     if (!editorView.current && editorRef.current) {
       editorView.current = new EditorView(editorRef.current, {
         state,
         dispatchTransaction: (transaction) => {
-          console.log("TRANSATION APPLIED")
-          const newState = editorView.current.state.apply(transaction);
-          editorView.current.updateState(newState);
-
-          if (transaction.docChanged) {
-            scrollToBottom();
+          // Get the state *before* this transaction is applied.
+          // We need this to apply our *final* transaction correctly.
+          const originalState = editorView.current.state;
+      
+          // Check the incoming transaction to see if it matches our trigger pattern
+          const endPos = transaction.selection.$head.pos;
+          const pos = transaction.doc.resolve(endPos);
+          const textBefore = transaction.doc.textBetween(Math.max(0, endPos - 2), endPos);
+      
+          // Condition: Is it a paragraph? Does it end with "-h"? Is the cursor right after "-h"?
+          // NOTE: We are checking the state *after* the original transaction (containing '-h') would be applied.
+          if (textBefore === "-h" && pos.parent.type.name === "paragraph" && pos.parentOffset === 2) {
+              console.log("Creating bullet list");
+      
+              // --- Create a NEW transaction starting from the ORIGINAL state ---
+              // This is generally cleaner than modifying the incoming one for complex replacements.
+              let newTr = originalState.tr;
+      
+              // Calculate the range in the *original state* to replace.
+              // This is the range containing just the "-" before 'h' was typed.
+              const replaceStart = originalState.selection.$head.pos - 1; // Position of '-'
+              const replaceEnd = originalState.selection.$head.pos;       // Position after '-'
+      
+              // Create the list structure WITH content in the paragraph
+              const schema = originalState.schema;
+              const zeroWidthSpace = schema.text("\u200B"); // Zero-width space is ideal!
+              const paragraphNode = schema.nodes.paragraph.create(null, [zeroWidthSpace]);
+              const listItemNode = schema.nodes.list_item.create(null, [paragraphNode]);
+              const bulletListNode = schema.nodes.bullet_list.create(null, [listItemNode]);
+      
+              // Replace the "-" character with the entire bullet list structure
+              newTr = newTr.replaceWith(replaceStart, replaceEnd, bulletListNode);
+      
+              // Calculate the new cursor position:
+              // replaceStart is where the bulletList node begins.
+              // +1 to enter bullet_list `<ul>`
+              // +1 to enter list_item `<li>`
+              // +1 to enter paragraph `<p>`
+              // +1 to be *after* the zero-width space `\u200B`
+              const newCursorPos = replaceStart + 4;
+      
+              // Set the selection explicitly in our new transaction
+              newTr = newTr.setSelection(TextSelection.create(newTr.doc, newCursorPos));
+      
+              // --- Dispatch OUR transaction INSTEAD of the original one ---
+              editorView.current.dispatch(newTr);
+      
+              if (newTr.docChanged) {
+                  requestAnimationFrame(scrollToBottom); // Use requestAnimationFrame
+              }
+      
+          } else {
+              // --- Condition not met: Apply the original transaction as usual ---
+              const newState = originalState.apply(transaction);
+              editorView.current.updateState(newState);
+      
+              if (transaction.docChanged) {
+                  requestAnimationFrame(scrollToBottom); // Use requestAnimationFrame
+              }
           }
-        },
+      },
       });
 
       setEditorReady(true);
@@ -236,7 +333,7 @@ export const ProseMirrorEditor = () => {
     if (editorView.current && isEditorReady) {
       setTimeout(() => {
         editorView.current.focus();
-      }, 0);
+      }, 1000);
     }
   }, [isEditorReady]);
 

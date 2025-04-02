@@ -1,4 +1,4 @@
-import type { Node, Schema } from "prosemirror-model";
+import type { Mark, Node, Schema } from "prosemirror-model";
 import type { EditorView } from "prosemirror-view";
 
 export enum Tags {
@@ -52,14 +52,14 @@ export class IncrementalProsemirrorRenderer {
 
   onCloseTag(tag: Tags) {
     if (this.isMarkTag(tag)) {
-      const markContext = this.activeMarks.pop();
-      const tr = this.editorView.state.tr;
-      tr.addMark(
-        markContext.startPosition,
-        this.getInsertPosition(),
-        this.schema.marks.strong.create()
-      );
-      this.editorView.dispatch(tr);
+      if(this.activeMarks.length === 0) return
+      const topTag = this.activeMarks[this.activeMarks.length - 1]
+      if(topTag.type === tag){
+        this.activeMarks.pop()
+      } else {
+        throw new Error("Error: finding matching close mark tag")
+        
+      }
     } else {
       const lastNode = this.nodeStack[this.nodeStack.length - 1];
       if (!lastNode || lastNode.type !== tag) {
@@ -71,33 +71,51 @@ export class IncrementalProsemirrorRenderer {
   }
 
   onTextContent(txt: string) {
-    // Handle newlines intelligently
     let textToInsert = txt;
-    
-    // Replace sequences of multiple newlines with a single one
-    // This will prevent excessive spacing while preserving paragraph structure
     textToInsert = textToInsert.replace(/\n\n+/g, '\n');
     
-    // If we're at the beginning of a node's content and the text starts with a newline
     if (this.nodeStack.length > 0) {
         const currentNode = this.nodeStack[this.nodeStack.length - 1];
         if (currentNode.contentPosition === currentNode.startPosition + 1) {
-            // Trim all leading newlines at the start of a node
             textToInsert = textToInsert.replace(/^\n+/, '');
         }
     }
     
-    // Don't insert anything if we've trimmed everything away
+
     if (textToInsert.length === 0) return;
-    
-    const pos = this.getInsertPosition();
-    
-    const tr = this.editorView.state.tr.insertText(textToInsert, pos);
+
+    const insertPos = this.getInsertPosition();
+    const endPos = insertPos + textToInsert.length;
+
+    const tr = this.editorView.state.tr;
+
+    tr.insertText(textToInsert, insertPos);
+
+    const currentRendererMarks = this.activeMarks.map(markContext => {
+        if (markContext.type === Tags.B) {
+            return this.schema.marks.strong?.create();
+        } else if (markContext.type === Tags.I) {
+            return this.schema.marks.em?.create();
+        }
+        return null;
+    }).filter((mark): mark is Mark => mark !== null);
+
+    const possibleMarkTypes = [this.schema.marks.strong, this.schema.marks.em].filter(Boolean); 
+
+    if (currentRendererMarks.length > 0) {
+         tr.addMark(insertPos, endPos, currentRendererMarks[0]);
+
+    } else {
+        possibleMarkTypes.forEach(markType => {
+            tr.removeMark(insertPos, endPos, markType);
+        });
+    }
+
     this.editorView.dispatch(tr);
-    
+
     if (this.nodeStack.length > 0) {
         const currentNode = this.nodeStack[this.nodeStack.length - 1];
-        currentNode.contentPosition += textToInsert.length;
+        currentNode.contentPosition = endPos;
     }
 }
 

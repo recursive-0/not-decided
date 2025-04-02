@@ -43,7 +43,7 @@ export const useSSEStream = () => {
             }
 
             // Initialize stream
-            const response = await fetch("http://localhost:4000/api/generate/init", {
+            const response = await fetch("http://localhost:3007/api/generate/init", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ prompt })
@@ -57,7 +57,7 @@ export const useSSEStream = () => {
             
             // Setup SSE
             eventSourceRef.current = new EventSource(
-                `http://localhost:4000/api/generate/stream/${streamId}`
+                `http://localhost:3007/api/generate/stream/${streamId}`
             );
 
             // Handle messages

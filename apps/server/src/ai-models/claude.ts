@@ -2,7 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { markdownFormatPrompt } from "../prompts/markdown-instructions-prompt";
 
 const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
+  apiKey: process.env.ANTHROPIC_API_KEY!,
 });
 
 const systemPrompt = markdownFormatPrompt();
