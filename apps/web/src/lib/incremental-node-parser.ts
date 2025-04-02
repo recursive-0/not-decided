@@ -16,6 +16,14 @@ interface ParserCallbacks {
   onTextContent: (txt: string) => void;
 }
 
+const ALLOWED_TAGS = ["H1", "H2", "H3", "B", "I", "P", "CODE", "UL", "LI", "QUOTE"]
+
+const StartsWithAllowedTags = (ch: string) => {
+
+  return !ALLOWED_TAGS.find((tag) => tag.startsWith(ch)) ? false : true
+
+}
+
 export class IncrementalParser {
   private state: ParserState = ParserState.NORMAL;
   private textBuffer: string = "";
@@ -74,7 +82,7 @@ export class IncrementalParser {
       switch (this.state) {
         case ParserState.NORMAL:
           if (char === "[") {
-            console.log("Found [, switching to TAG_START");
+            console.log("Found [, switching to TAG_START", this.textBuffer);
             this.flushTextBuffer();
             this.textBuffer += char;
             this.state = ParserState.TAG_START;
@@ -88,7 +96,7 @@ export class IncrementalParser {
             console.log("Found /, switching to CLOSING_TAG_START");
             this.textBuffer += char;
             this.state = ParserState.CLOSING_TAG_START;
-          } else if (char === " " || !this.isAlpha(char)) {
+          } else if (char === " " || !StartsWithAllowedTags(char)) {
             // If it's a space or not an alphabetical character, it's not a valid tag
             this.textBuffer += char;
             this.state = ParserState.NORMAL;
@@ -153,9 +161,12 @@ export class IncrementalParser {
   private openTag() {
     const tagName = this.currentTagName;
 
-    if (["H1", "H2", "H3", "B", "I", "P", "CODE"].includes(tagName)) {
+    console.log("TAG IS: ", tagName)
+
+    if (ALLOWED_TAGS.includes(tagName)) {
       console.log(`Opening tag: ${tagName}`);
       this.tagStack.push(tagName);
+      this.callbacks.onOpenTag(tagName as Tags);
     } else {
       this.flushTextBuffer();
     }
@@ -163,7 +174,6 @@ export class IncrementalParser {
     this.clearCurrentTagName();
     this.clearTextBuffer();
     this.state = ParserState.NORMAL;
-    this.callbacks.onOpenTag(tagName as Tags);
   }
 
   private closeTag() {

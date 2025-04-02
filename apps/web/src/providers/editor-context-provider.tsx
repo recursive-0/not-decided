@@ -11,6 +11,8 @@ export const extendedProseMirrorSchema = new Schema({
   marks: schema.spec.marks
 })
 
+console.log('Extended prosemirror schema is: ', extendedProseMirrorSchema)
+
 interface EditorContextType {
   editorView: React.MutableRefObject<EditorView | null>;
   isEditorReady: boolean;

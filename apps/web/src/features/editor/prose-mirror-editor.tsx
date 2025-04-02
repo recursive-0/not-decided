@@ -185,18 +185,7 @@ export const ProseMirrorEditor = () => {
 
     const container = editorRef.current; // This is your div with overflow-scroll
 
-    console.log("Container scroll height:", container.scrollHeight);
-    console.log("Container client height:", container.clientHeight);
-
-    const isNearBottom =
-      container.scrollHeight - container.scrollTop - container.clientHeight <
-      10;
-
-      console.log("isNearBottom", isNearBottom)
-
-    // if (isNearBottom) {
       container.scrollTop = container.scrollHeight - container.clientHeight;
-    // }
   };
 
   useEffect(() => {
@@ -300,6 +289,8 @@ export const ProseMirrorEditor = () => {
       
               // --- Dispatch OUR transaction INSTEAD of the original one ---
               editorView.current.dispatch(newTr);
+
+              console.log("NEW TR IS: ", newTr)
       
               if (newTr.docChanged) {
                   requestAnimationFrame(scrollToBottom); // Use requestAnimationFrame

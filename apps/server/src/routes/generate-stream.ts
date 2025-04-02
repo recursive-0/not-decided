@@ -1,6 +1,7 @@
 import { userPrompts } from "../..";
 import { handleClaudeStream } from "../ai-models/claude";
 import { handleDeepseekStream, streamWithDeepseek } from "../ai-models/deepseek";
+import { simpleStaticStream } from "./simple-static-stream";
 
 export async function generateStream(req: Request): Promise<Response> {
     const url = new URL(req.url);

@@ -1,123 +1,229 @@
-/* === LIST STYLING START === */
 
-/* Styles for the overall list (ul or ol) */
-.prosemirror-editor ul,
-.prosemirror-editor ol {
-  padding-left: 1.5em; /* Indentation for the entire list */
-  margin-block-start: 0.5em; /* Space above the list */
-  margin-block-end: 0.5em;   /* Space below the list */
-  margin-left: 0;
-  margin-right: 0;
-  list-style: none; /* Disable default browser bullets, we'll add our own */
-}
-
-/* Styles for each list item (li) */
-.prosemirror-editor li {
-  display: flex;           /* Use Flexbox for layout within the list item */
-  align-items: baseline; /* Align bullet and text content along their baseline */
-  margin: 0;               /* Remove default li margins */
-  padding: 0;              /* Remove default li padding */
-  margin-bottom: 0.2em; /* Optional: Add a small gap between list items */
-  position: relative;      /* Needed for positioning the ::before pseudo-element */
-}
-
-/* Create the bullet point */
-.prosemirror-editor ul > li::before {
-  content: "•";          /* The bullet character */
-  display: inline-block; /* Needed for margin */
-  margin-right: 0.6em;   /* Space between the bullet and the text */
-  /* Flexbox handles alignment, no need for negative margins or width */
-  /* Adjust font-size/color if needed */
-  /* color: #333; */
-}
-/* Add similar rule for ol > li::before if using numbered lists */
-/*
-.prosemirror-editor ol > li::before {
-  content: counter(list-item) ".";
-  counter-increment: list-item;
-  margin-right: 0.6em;
-  min-width: 1em; // Ensures space for multi-digit numbers
-  text-align: right; // Aligns numbers nicely if min-width is used
-}
-*/
-
-
-/* Styles for the paragraph INSIDE the list item */
-.prosemirror-editor li > p {
-  margin: 0;             /* CRITICAL: Remove paragraph margins */
-  padding: 0;            /* Remove paragraph padding */
-  flex: 1;               /* Allow the paragraph to take up remaining space */
-  /* The default display: block is fine here with flexbox parent */
-}
-
-/* === LIST STYLING END === */
-
-/* --- Keep your other H1, H2, H3, general P, etc. styles --- */
-/* Reset some potentially interfering defaults */
 .prosemirror-editor {
-  outline: none !important;
+  position: relative;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  line-height: 1.5;
+  color: var(--color-neutral-700);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  padding: 1rem;
 }
+
+
+.prosemirror-editor,
 .ProseMirror {
   outline: none !important;
-  line-height: 1.6; /* Base line height */
 }
+
 
 .prosemirror-editor h1,
 .prosemirror-editor h2,
 .prosemirror-editor h3,
+.prosemirror-editor p,
 .prosemirror-editor blockquote,
-.prosemirror-editor pre {
+.prosemirror-editor pre,
+.prosemirror-editor ul,
+.prosemirror-editor ol {
   margin: 0;
   padding: 0;
 }
 
-/* Add minimal, controlled spacing */
+
 .prosemirror-editor h1 {
   font-size: 2rem;
   font-weight: 700;
-  margin-bottom: 0.75rem;
   line-height: 1.2;
-  color: var(--color-neutral-800)
+  color: var(--color-neutral-700);
+  margin-top: 1.5rem;
+  margin-bottom: 1.4rem;
+}
+
+.prosemirror-editor h1:first-child {
+  margin-top: 0;
 }
 
 .prosemirror-editor h2 {
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  margin-bottom: 0.5rem;
-  line-height: 1.2;
-  color: var(--color-neutral-800)
+  line-height: 1.25;
+  color: var(--color-neutral-700);
+  margin-top: 1.25rem;
+  margin-bottom: 0.9rem;
 }
 
 .prosemirror-editor h3 {
-  font-size: 1rem;
+  font-size: 1.25rem;
   font-weight: 700;
-  margin-bottom: 0.4rem;
-  line-height: 1.2;
-  color: var(--color-neutral-800)
+  line-height: 1.3;
+  color: var(--color-neutral-700);
+  margin-top: 1rem;
+  margin-bottom: 0.7rem;
 }
 
-/* ... (keep your other heading/paragraph styles) ... */
 
-.prosemirror-editor p { /* Style for paragraphs NOT inside lists */
-  /* margin-bottom: 0.25rem; Add bottom margin too for spacing */
-  color: var(--color-neutral-700)
+.prosemirror-editor p {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  line-height: 1.6;
+  color: var(--color-neutral-600)
 }
 
-.prosemirror-editor strong{
-  font-weight: 600;
+
+.prosemirror-editor p:last-child {
+  margin-bottom: 0;
 }
 
-/* Section separators */
+
 .prosemirror-editor h1 + p,
 .prosemirror-editor h2 + p,
 .prosemirror-editor h3 + p {
-  margin-top: 0.25rem;
+  margin-top: 0;
 }
 
-/* Set max spacing between sections */
-.prosemirror-editor h1:not(:first-child),
-.prosemirror-editor h2:not(:first-child),
-.prosemirror-editor h3:not(:first-child) {
-  margin-top: 1rem; /* Limited top margin for section headers */
+
+.prosemirror-editor p:empty {
+  display: none;
 }
-/* --- End of other styles --- */
+
+
+
+.prosemirror-editor ul,
+.prosemirror-editor ol {
+  padding-left: 0;
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+  list-style-position: inside;
+}
+
+
+.prosemirror-editor li {
+  position: relative;
+  padding-left: 1.5rem;
+  margin-bottom: 0.25rem;
+  line-height: 1.6;
+}
+
+
+.prosemirror-editor ul > li::before {
+  content: "•";
+  position: absolute;
+  left: 0.5rem;
+  color: var(--color-neutral-800, #333);
+}
+
+
+.prosemirror-editor ol {
+  counter-reset: item;
+}
+
+.prosemirror-editor ol > li::before {
+  content: counter(item) ".";
+  counter-increment: item;
+  position: absolute;
+  left: 0;
+  color: var(--color-neutral-800, #333);
+}
+
+
+.prosemirror-editor li p {
+  margin: 0;
+  display: inline;
+}
+
+
+.prosemirror-editor li > ul,
+.prosemirror-editor li > ol {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+
+
+.prosemirror-editor pre {
+  background-color: var(--color-neutral-100);
+  border-radius: 0.25rem;
+  padding: 0.75rem 1rem;
+  margin: 0.75rem 0;
+  overflow-x: auto;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.prosemirror-editor pre > code {
+  color: var(--color-neutral-700);
+}
+
+
+
+
+.prosemirror-editor strong {
+  font-weight: 600;
+  color: var(--color-neutral-800, #333);
+}
+
+.prosemirror-editor em {
+  font-style: italic;
+}
+
+
+.prosemirror-editor > *:last-child {
+  min-height: 1rem;
+}
+
+
+.ProseMirror-trailingBreak {
+  height: 1rem;
+  pointer-events: none;
+}
+
+
+.prosemirror-editor br {
+  display: block;
+  content: "";
+  margin-top: 0.5rem;
+}
+
+
+.prosemirror-editor:empty:before {
+  content: attr(placeholder);
+  color: #aaa;
+  pointer-events: none;
+  height: 0;
+}
+
+.prosemirror-editor blockquote {
+  position: relative;
+  margin: 1.5rem 0;
+  padding: 1rem 1.5rem;
+  background-color: var(--color-neutral-100);
+  border-left: 4px solid var(--color-neutral-600);
+  border-radius: 0.25rem;
+  font-style: italic;
+  color: var(--color-neutral-600);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.prosemirror-editor blockquote::before {
+  content: '"';
+  position: absolute;
+  top: -0.5rem;
+  left: 0.5rem;
+  font-size: 2.5rem;
+  color: var(--color-neutral-500);
+  font-family: Georgia, serif;
+  opacity: 0.4;
+}
+
+.prosemirror-editor blockquote p {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.prosemirror-editor blockquote strong {
+  color: var(--color-neutral-700);
+}
+
+.prosemirror-editor blockquote em {
+  color: var(--color-primary-600, #2563eb);
+}
