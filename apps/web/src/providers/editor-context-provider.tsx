@@ -2,25 +2,8 @@
 import React, { createContext, useContext, useState, useRef } from 'react';
 import { EditorView } from 'prosemirror-view';
 import { Schema } from 'prosemirror-model';
-import { addListNodes } from 'prosemirror-schema-list';
 import { schema } from 'prosemirror-schema-basic';
-
-const baseNodes = schema.spec.nodes
-const originalCodeBlockSpec = baseNodes.get("code_block")
-
-const customCodeBlockSpec = {
-  ...originalCodeBlockSpec,
-  attrs: {
-    language: {
-      default: "Text"
-    }
-  }
-}
-
-const modifiedBaseNodes = baseNodes.update("code_block", customCodeBlockSpec)
-
-
-const finalNodes = addListNodes(modifiedBaseNodes, "paragraph block*", "block");
+import { finalNodes } from '@/lib/config-schema';
 
 
 export const extendedProseMirrorSchema = new Schema({
@@ -28,6 +11,8 @@ export const extendedProseMirrorSchema = new Schema({
   marks: schema.spec.marks
 });
 
+
+console.log("PROSEMIRROR EXTENDED: ", extendedProseMirrorSchema)
 
 interface EditorContextType {
   editorView: React.MutableRefObject<EditorView | null>;

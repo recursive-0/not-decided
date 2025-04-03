@@ -5,7 +5,6 @@ import { simpleStaticStream } from "./simple-static-stream";
 
 export async function generateStream(req: Request): Promise<Response> {
     const url = new URL(req.url);
-    console.log("url is",)
     const streamId = url.pathname.split('/').pop();
     const prompt = userPrompts.get(streamId!)
 

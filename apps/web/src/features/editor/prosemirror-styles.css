@@ -306,11 +306,56 @@
     display: block; 
   }
 
-  
-  
-  
-  
-  
+
 
 } 
+
+/* Checkbox styling to match existing theme */
+.ProseMirror .checkbox-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  /* margin-bottom: 0.75rem; */
+  /* padding-left: 2rem; */
+  gap: 8px;
+  cursor: pointer;
+}
+
+.ProseMirror .checkbox-box {
+  /* position: absolute;
+  left: 0;
+  top: 0.3rem; */
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid var(--color-neutral-400, #a3a3a3);
+  border-radius: 0.25rem;
+  background-color: var(--color-neutral-100, #f5f5f5);
+  transition: all 0.2s ease;
+}
+
+.ProseMirror .checkbox-box[checked="true"] {
+  background-color: var(--color-primary-600, #2563eb);
+  border-color: var(--color-primary-600, #2563eb);
+}
+
+.ProseMirror .checkbox-box[checked="true"]::after {
+  content: "";
+  position: absolute;
+  left: 0.35rem;
+  top: 0.15rem;
+  width: 0.35rem;
+  height: 0.7rem;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.ProseMirror .checkbox-paragraph {
+  margin: 0;
+  line-height: 1.6;
+  color: var(--color-neutral-600);
+  font-family: inherit;
+}
+
+
 

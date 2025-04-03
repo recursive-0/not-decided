@@ -13,6 +13,7 @@ export enum Tags {
   "LI" = "LI",
   "CODE" = "CODE",
   "QUOTE" = "QUOTE",
+  "CHECKBOX" = "CHECKBOX"
 }
 
 interface NodeContextType {
@@ -211,8 +212,9 @@ export class IncrementalProsemirrorRenderer {
       case Tags.CODE:
         return this.schema.nodes.code_block.create({ language: "bash" });
       case Tags.QUOTE:
-        
         return this.schema.nodes.blockquote.create();
+      case Tags.CHECKBOX:
+        return this.schema.nodes.checkbox_item.create()
       default:
         break;
     }
@@ -241,6 +243,11 @@ export class IncrementalProsemirrorRenderer {
       return;
     }
 
+    if(tag === Tags.CHECKBOX){
+      this.handleCheckboxItemInsertion(node)
+      return
+    }
+
     const pos = this.getInsertPosition();
 
     const tr = this.editorView.state.tr.insert(pos, node);
@@ -255,11 +262,6 @@ export class IncrementalProsemirrorRenderer {
 
   handleUnorderedListInsertion(node: Node) {
     
-    
-    
-    
-    
-
     const insertPos = this.getInsertPosition();
     const newCursorPos = insertPos + 4;
 
@@ -370,13 +372,27 @@ export class IncrementalProsemirrorRenderer {
     });
   }
 
+  handleCheckboxItemInsertion(node: Node){
+
+    const insertPos = this.getInsertPosition()
+    const cursorPos = insertPos + 1
+
+    const tr = this.editorView.state.tr.insert(insertPos, node)
+    this.editorView.dispatch(tr)
+
+    this.nodeStack.push({
+      type: Tags.CHECKBOX,
+      startPosition: insertPos,
+      contentPosition: cursorPos,
+    })
+  }
+
   isNodeStackEmpty() {
     return this.nodeStack.length > 0 ? false : true;
   }
 
   private getInsertPosition(): number {
     if (this.nodeStack.length === 0) {
-      console.log("SENDING DOC SIZE");
       return this.editorView.state.doc.content.size;
     } else {
       return this.nodeStack[this.nodeStack.length - 1].contentPosition;

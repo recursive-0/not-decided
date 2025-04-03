@@ -93,7 +93,10 @@ export async function simpleStaticStream(prompt?: string) {
             "const pageLoadTime = perfData.loadEventEnd - perfData.navigationStart; \n",
             "console.log(`Page load time: ${pageLoadTime}ms`);",
             "[/",
-            "CODE]"
+            "CODE]",
+            "[CHECKBOX]HEY THERE",
+            "HOW ARE [/CHECKBOX]"
+
         ];
         // const chunks = [
         //     "[P]Hey there this i",

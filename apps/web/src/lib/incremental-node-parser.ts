@@ -16,7 +16,7 @@ interface ParserCallbacks {
   onTextContent: (txt: string) => void;
 }
 
-const ALLOWED_TAGS = ["H1", "H2", "H3", "B", "I", "P", "CODE", "UL", "LI", "QUOTE", "OL"]
+const ALLOWED_TAGS = ["H1", "H2", "H3", "B", "I", "P", "CODE", "UL", "LI", "QUOTE", "OL", "CHECKBOX",]
 
 const StartsWithAllowedTags = (ch: string) => {
 
