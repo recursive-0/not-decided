@@ -17,6 +17,7 @@ import {
 } from "prosemirror-schema-list";
 import { undo, redo, history } from "prosemirror-history";
 import { trailingNode } from 'prosemirror-trailing-node'
+import { CodeBlock } from "@/custom-nodes/code-block";
 
 // // // Create an extended schema that includes heading nodes
 // // const schema = new Schema({
@@ -242,6 +243,13 @@ export const ProseMirrorEditor = () => {
     if (!editorView.current && editorRef.current) {
       editorView.current = new EditorView(editorRef.current, {
         state,
+        nodeViews: {
+
+          code_block: (node, view, getPos) => {
+            return new CodeBlock(node, view, getPos)
+          }
+
+        },
         dispatchTransaction: (transaction) => {
           // Get the state *before* this transaction is applied.
           // We need this to apply our *final* transaction correctly.

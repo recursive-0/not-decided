@@ -227,3 +227,90 @@
 .prosemirror-editor blockquote em {
   color: var(--color-primary-600, #2563eb);
 }
+
+.ProseMirror { 
+
+  
+  .custom-code-block {
+    background-color: #f8f9fa; 
+    /* border: 1px solid #e0e0e0;  */
+    border: none;
+    border-radius: 4px;      
+    margin: 1em 0;           
+    position: relative;      
+    overflow: hidden;        
+  }
+
+  
+  .custom-code-block .code-block-header {
+    display: flex;              
+    align-items: center;        
+    justify-content: space-between; 
+    padding: 0.4em 0.8em;       
+    background-color: #e9ecef; 
+    border-bottom: 1px solid #e0e0e0; 
+    font-size: 0.85em;         
+  }
+
+  
+  .custom-code-block .code-block-language {
+    color: #495057;             
+    font-weight: 500;
+    text-transform: uppercase; 
+
+  }
+
+  
+  .custom-code-block .code-block-copy-button {
+    background-color: #dee2e6; 
+    color: #343a40;             
+    border: none;               
+    padding: 0.3em 0.6em;       
+    border-radius: 3px;         
+    cursor: pointer;            
+    font-size: 0.9em;           
+    transition: background-color 0.2s ease; 
+  }
+
+  .custom-code-block .code-block-copy-button:hover {
+    background-color: #ced4da; 
+  }
+
+  .custom-code-block .code-block-copy-button:active {
+    background-color: #adb5bd; 
+  }
+
+  
+  .custom-code-block .code-block-copy-button.copied {
+      background-color: #28a745; 
+      color: white;
+  }
+
+
+  
+  .custom-code-block pre {
+    margin: 0;                 
+    padding: 0.8em 1em;        
+    overflow-x: auto;    
+    border-top-left-radius: 0rem;      
+    border-top-right-radius: 0rem;
+    background-color: #212529;            
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace; 
+    font-size: 0.9em;
+    line-height: 1.5;          
+    white-space: pre;          
+  }
+
+  .custom-code-block code {
+    color: var(--color-neutral-400);
+    display: block; 
+  }
+
+  
+  
+  
+  
+  
+
+} 
+

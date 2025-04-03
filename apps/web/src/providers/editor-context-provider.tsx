@@ -1,17 +1,33 @@
-// src/contexts/EditorContext.tsx
+
 import React, { createContext, useContext, useState, useRef } from 'react';
 import { EditorView } from 'prosemirror-view';
 import { Schema } from 'prosemirror-model';
 import { addListNodes } from 'prosemirror-schema-list';
 import { schema } from 'prosemirror-schema-basic';
 
+const baseNodes = schema.spec.nodes
+const originalCodeBlockSpec = baseNodes.get("code_block")
+
+const customCodeBlockSpec = {
+  ...originalCodeBlockSpec,
+  attrs: {
+    language: {
+      default: "Text"
+    }
+  }
+}
+
+const modifiedBaseNodes = baseNodes.update("code_block", customCodeBlockSpec)
+
+
+const finalNodes = addListNodes(modifiedBaseNodes, "paragraph block*", "block");
+
 
 export const extendedProseMirrorSchema = new Schema({
-  nodes: addListNodes(schema.spec.nodes, "paragraph block*", "block"),
+  nodes: finalNodes,
   marks: schema.spec.marks
-})
+});
 
-console.log('Extended prosemirror schema is: ', extendedProseMirrorSchema)
 
 interface EditorContextType {
   editorView: React.MutableRefObject<EditorView | null>;
@@ -29,7 +45,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const editorView = useRef<EditorView | null>(null);
   const [isEditorReady, setEditorReady] = useState(false);
 
-  // Insert text at the current cursor position
+  
   const insertTextAtCursor = (text: string) => {
     if (!editorView.current) return;
 
@@ -39,7 +55,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     editorView.current.dispatch(transaction);
   };
 
-  // Replace text in a specific range
+  
   const replaceText = (from: number, to: number, text: string) => {
     if (!editorView.current) return;
 
@@ -49,7 +65,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     editorView.current.dispatch(transaction);
   };
 
-  // Get the current document content as a string
+  
   const getCurrentContent = (): string | null => {
     if (!editorView.current) return null;
     
@@ -85,7 +101,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   );
 };
 
-// Custom hook to use the editor context
+
 export const useEditor = () => {
   const context = useContext(EditorContext);
   if (context === undefined) {

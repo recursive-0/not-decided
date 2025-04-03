@@ -1,5 +1,5 @@
-import type { Mark, Node, Schema } from "prosemirror-model";
-import type { EditorView } from "prosemirror-view";
+import { Node, type Mark, type Schema } from "prosemirror-model";
+import type { EditorView, NodeView } from "prosemirror-view";
 
 export enum Tags {
   "H1" = "H1",
@@ -36,7 +36,6 @@ export class IncrementalProsemirrorRenderer {
   constructor(editorView: EditorView, extendedSchema: Schema) {
     this.editorView = editorView;
     this.schema = extendedSchema;
-    console.log("SCHEMA IS", this.schema.nodes.blockquote.create())
   }
 
   private isMarkTag(tag: Tags): boolean {
@@ -190,7 +189,7 @@ export class IncrementalProsemirrorRenderer {
         const lN = this.schema.nodes.list_item.create(null, [pN]);
         return lN;
       case Tags.CODE:
-        return this.schema.nodes.code_block.create()
+        return this.schema.nodes.code_block.create({language: "bash"})
       case Tags.QUOTE:
         // const paragraphNode = this.schema.nodes.paragraph.create()
         return this.schema.nodes.blockquote.create()
