@@ -9,9 +9,10 @@ export enum Tags {
   "B" = "B",
   "I" = "I",
   "UL" = "UL",
+  "OL" = "OL",
   "LI" = "LI",
   "CODE" = "CODE",
-  "QUOTE" = "QUOTE"
+  "QUOTE" = "QUOTE",
 }
 
 interface NodeContextType {
@@ -19,7 +20,7 @@ interface NodeContextType {
   firstList?: boolean;
   startPosition: number;
   contentPosition: number;
-  insertNextLiPos?: number; 
+  insertNextLiPos?: number;
 }
 
 interface MarkContext {
@@ -42,6 +43,29 @@ export class IncrementalProsemirrorRenderer {
     return tag === Tags.B || tag === Tags.I;
   }
 
+  createListNode(type: "ul" | "ol") {
+    const zeroWidthSpace = this.schema.text("\u200B");
+    const parargaphNode = this.schema.nodes.paragraph.create(null, [
+      zeroWidthSpace,
+    ]);
+    const listItemNode = this.schema.nodes.list_item.create(null, [
+      parargaphNode,
+    ]);
+    if(type === "ul"){
+    const bulletList = this.schema.nodes.bullet_list.create(null, [
+      listItemNode,
+    ]);
+    return bulletList;
+  }
+
+  if(type === "ol"){
+    const orderedList = this.schema.nodes.ordered_list.create(null, [
+      listItemNode,
+    ]);
+    return orderedList;
+  }
+  }
+
   onOpenTag(tag: Tags) {
     if (this.isMarkTag(tag)) {
       const pos = this.getInsertPosition();
@@ -51,7 +75,7 @@ export class IncrementalProsemirrorRenderer {
       });
     } else {
       const node = this.buildProsemirrorNode(tag);
-      console.log(`NODE for ${tag} is: ${node}`)
+      console.log(`NODE for ${tag} is: ${node}`);
       this.insertAndUpdateNodeContext(node, tag);
     }
   }
@@ -67,51 +91,55 @@ export class IncrementalProsemirrorRenderer {
       }
     } else {
       const lastNode = this.nodeStack[this.nodeStack.length - 1];
-      console.log(`LAst nnode  for ${tag} is: ", ${JSON.stringify(lastNode)}`)
+      console.log(`LAst nnode  for ${tag} is: ", ${JSON.stringify(lastNode)}`);
 
       if (tag === Tags.QUOTE) {
-        // Expect P inside QUOTE
+        
         if (lastNode.type !== Tags.P) {
-             throw new Error(`Invalid stack state on closing QUOTE: Expected P at top, found ${lastNode.type}`);
+          throw new Error(
+            `Invalid stack state on closing QUOTE: Expected P at top, found ${lastNode.type}`
+          );
         }
-        this.nodeStack.pop(); // Pop P
+        this.nodeStack.pop(); 
 
         const quoteNode = this.nodeStack[this.nodeStack.length - 1];
         if (!quoteNode || quoteNode.type !== Tags.QUOTE) {
-             throw new Error(`Invalid stack state on closing QUOTE: Expected QUOTE after P, found ${quoteNode?.type}`);
+          throw new Error(
+            `Invalid stack state on closing QUOTE: Expected QUOTE after P, found ${quoteNode?.type}`
+          );
         }
-         this.nodeStack.pop(); // Pop QUOTE
-         console.log("Popped P and QUOTE contexts");
-         return
+        this.nodeStack.pop(); 
+        console.log("Popped P and QUOTE contexts");
+        return;
       }
-      
+
       if (!lastNode || lastNode.type !== tag) {
         throw new Error(`Invalid closing tag: ${tag}`);
       }
-  
+
       if (tag === Tags.LI) {
-        const topULNode = this.nodeStack[this.nodeStack.length - 2]; 
-        if (!topULNode || topULNode.type !== Tags.UL) {
-          throw new Error("Error updating UL position: UL node not found in node stack");
+        const parentListNode = this.nodeStack[this.nodeStack.length - 2];
+        if (!parentListNode || (parentListNode.type !== Tags.UL && parentListNode.type !== Tags.OL)) {
+          throw new Error(
+            "Error updating UL position: UL node not found in node stack"
+          );
         }
-        
+
         const currentPos = lastNode.contentPosition;
-        
+
         const nextLiInsertPos = currentPos + 2;
-        
-        
-        topULNode.insertNextLiPos = nextLiInsertPos;
+
+        parentListNode.insertNextLiPos = nextLiInsertPos;
       }
 
-      
       this.nodeStack.pop();
     }
   }
 
   onTextContent(txt: string) {
     let textToInsert = txt;
-    console.log("TEXT IS: ", textToInsert)
-    console.log("TEXT LENGHT IS: ", textToInsert.length)
+    console.log("TEXT IS: ", textToInsert);
+    console.log("TEXT LENGHT IS: ", textToInsert.length);
     textToInsert = textToInsert.replace(/\n\n+/g, "\n");
 
     if (this.nodeStack.length > 0) {
@@ -158,7 +186,7 @@ export class IncrementalProsemirrorRenderer {
 
     if (this.nodeStack.length > 0) {
       const currentNode = this.nodeStack[this.nodeStack.length - 1];
-      currentNode.contentPosition = endPos
+      currentNode.contentPosition = endPos;
     }
   }
 
@@ -173,38 +201,34 @@ export class IncrementalProsemirrorRenderer {
       case Tags.P:
         return this.schema.nodes.paragraph.create();
       case Tags.UL:
-        const zeroWidthSpace = this.schema.text("\u200B");
-        const parargaphNode = this.schema.nodes.paragraph.create(null, [
-          zeroWidthSpace,
-        ]);
-        const listItemNode = this.schema.nodes.list_item.create(null, [
-          parargaphNode,
-        ]);
-        const bulletList = this.schema.nodes.bullet_list.create(null, [
-          listItemNode,
-        ]);
-        return bulletList;
+        return this.createListNode("ul")
+      case Tags.OL:
+        return this.createListNode("ol")
       case Tags.LI:
         const pN = this.schema.nodes.paragraph.create();
         const lN = this.schema.nodes.list_item.create(null, [pN]);
         return lN;
       case Tags.CODE:
-        return this.schema.nodes.code_block.create({language: "bash"})
+        return this.schema.nodes.code_block.create({ language: "bash" });
       case Tags.QUOTE:
-        // const paragraphNode = this.schema.nodes.paragraph.create()
-        return this.schema.nodes.blockquote.create()
+        
+        return this.schema.nodes.blockquote.create();
       default:
         break;
     }
   }
 
   insertAndUpdateNodeContext(node: Node, tag: Tags) {
-
-    console.log("INSERTING NODE ", tag)
+    console.log("INSERTING NODE ", tag);
 
     if (tag === Tags.UL) {
       this.handleUnorderedListInsertion(node);
       return;
+    }
+
+    if(tag === Tags.OL){
+      this.handleOrderedListInsertion(node)
+      return
     }
 
     if (tag === Tags.LI) {
@@ -212,12 +236,10 @@ export class IncrementalProsemirrorRenderer {
       return;
     }
 
-    if(tag === Tags.QUOTE){
-      this.handleQuoteInsertion(node)
-      return
+    if (tag === Tags.QUOTE) {
+      this.handleQuoteInsertion(node);
+      return;
     }
-
-
 
     const pos = this.getInsertPosition();
 
@@ -232,11 +254,11 @@ export class IncrementalProsemirrorRenderer {
   }
 
   handleUnorderedListInsertion(node: Node) {
-    // UL could have parents like code block or block quotes so remove this
-    // if (!this.isNodeStackEmpty()) {
-    //   console.log("Inserting UL failed: Stack contains nodes", this.nodeStack);
-    //   throw new Error("Error inserting unordered list");
-    // }
+    
+    
+    
+    
+    
 
     const insertPos = this.getInsertPosition();
     const newCursorPos = insertPos + 4;
@@ -252,13 +274,28 @@ export class IncrementalProsemirrorRenderer {
     });
   }
 
+  handleOrderedListInsertion(node: Node){
+    const insertPos = this.getInsertPosition();
+    const newCursorPos = insertPos + 4;
+
+    const tr = this.editorView.state.tr.insert(insertPos, node);
+    this.editorView.dispatch(tr);
+
+    this.nodeStack.push({
+      type: Tags.OL,
+      firstList: true,
+      startPosition: insertPos,
+      contentPosition: newCursorPos,
+    });
+  }
+
   handleListItemInsertion(node: Node) {
     if (this.isNodeStackEmpty()) {
       throw new Error("Error inserting LI because node stack is empty");
     }
-  
+
     const topNode = this.nodeStack[this.nodeStack.length - 1];
-    if (topNode.type === Tags.UL && topNode.firstList) {
+    if ((topNode.type === Tags.UL || topNode.type === Tags.OL) && topNode.firstList) {
       topNode.firstList = false;
       this.nodeStack.push({
         type: Tags.LI,
@@ -269,16 +306,16 @@ export class IncrementalProsemirrorRenderer {
       if (!topNode.insertNextLiPos) {
         throw new Error("Missing insertion position for next list item");
       }
-      
+
       const insertPos = topNode.insertNextLiPos;
-      
+
       const tr = this.editorView.state.tr.insert(insertPos, node);
       this.editorView.dispatch(tr);
-      
+
       const liStartPos = insertPos;
       const pStartPos = liStartPos + 1;
       const contentPos = pStartPos + 1;
-      
+
       this.nodeStack.push({
         type: Tags.LI,
         startPosition: liStartPos,
@@ -287,50 +324,51 @@ export class IncrementalProsemirrorRenderer {
     }
   }
 
-  handleQuoteInsertion(node: Node) { // node is initially just <blockquote>
+  handleQuoteInsertion(node: Node) {
+    
     const insertPos = this.getInsertPosition();
 
     const tr = this.editorView.state.tr;
 
-    // Insert the blockquote node
+    
     tr.insert(insertPos, node);
 
-    // Create and insert the mandatory paragraph node inside it
-    // NOTE: Use createAndFill or add ZWS if you want an initial cursor pos
-    const paragraphNode = this.schema.nodes.paragraph.createAndFill(); // Use createAndFill or add ZWS
+    
+    
+    const paragraphNode = this.schema.nodes.paragraph.createAndFill(); 
     if (!paragraphNode) {
-         console.error("Failed to create paragraph node for blockquote");
-         return; // Or handle error
+      console.error("Failed to create paragraph node for blockquote");
+      return; 
     }
-    // Insert paragraph inside the blockquote (at position insertPos + 1)
+    
     tr.insert(insertPos + 1, paragraphNode);
 
-    // Set selection inside the paragraph (optional but good practice)
-    // pos + 1 (enter quote) + 1 (enter para) + paragraphNode.content.size (go to end of initial content, e.g. after ZWS)
-    // const cursorPos = insertPos + 1 + 1 + (paragraphNode.content.size || 0);
-    // tr.setSelection(TextSelection.create(tr.doc, cursorPos));
+    
+    
+    
+    
 
     this.editorView.dispatch(tr);
 
-    // --- Update stack AFTER dispatch ---
-    // const mappedInsertPos = tr.mapping.map(insertPos); // Map position in case of concurrent changes
+    
+    
 
-    // Push QUOTE context
+    
     this.nodeStack.push({
-        type: Tags.QUOTE,
-        startPosition: insertPos,
-        // contentPosition for QUOTE now marks the start of its inner content
-        contentPosition: insertPos + 1
+      type: Tags.QUOTE,
+      startPosition: insertPos,
+      
+      contentPosition: insertPos + 1,
     });
 
-    // Push PARAGRAPH context (inside the quote)
+    
     this.nodeStack.push({
-        type: Tags.P, // Representing the paragraph INSIDE the quote
-        startPosition: insertPos + 1, // Starts right after blockquote opening tag
-        // contentPosition is where text should actually be inserted
-        contentPosition: insertPos + 1 + 1 // Start inside the paragraph node
+      type: Tags.P, 
+      startPosition: insertPos + 1, 
+      
+      contentPosition: insertPos + 1 + 1, 
     });
-}
+  }
 
   isNodeStackEmpty() {
     return this.nodeStack.length > 0 ? false : true;
@@ -338,7 +376,7 @@ export class IncrementalProsemirrorRenderer {
 
   private getInsertPosition(): number {
     if (this.nodeStack.length === 0) {
-      console.log("SENDING DOC SIZE")
+      console.log("SENDING DOC SIZE");
       return this.editorView.state.doc.content.size;
     } else {
       return this.nodeStack[this.nodeStack.length - 1].contentPosition;
