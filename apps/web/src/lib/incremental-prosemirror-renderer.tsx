@@ -83,6 +83,7 @@ export class IncrementalProsemirrorRenderer {
         }
          this.nodeStack.pop(); // Pop QUOTE
          console.log("Popped P and QUOTE contexts");
+         return
       }
       
       if (!lastNode || lastNode.type !== tag) {
