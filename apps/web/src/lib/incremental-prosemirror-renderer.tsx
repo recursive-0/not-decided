@@ -69,6 +69,22 @@ export class IncrementalProsemirrorRenderer {
     } else {
       const lastNode = this.nodeStack[this.nodeStack.length - 1];
       console.log(`LAst nnode  for ${tag} is: ", ${JSON.stringify(lastNode)}`)
+
+      if (tag === Tags.QUOTE) {
+        // Expect P inside QUOTE
+        if (lastNode.type !== Tags.P) {
+             throw new Error(`Invalid stack state on closing QUOTE: Expected P at top, found ${lastNode.type}`);
+        }
+        this.nodeStack.pop(); // Pop P
+
+        const quoteNode = this.nodeStack[this.nodeStack.length - 1];
+        if (!quoteNode || quoteNode.type !== Tags.QUOTE) {
+             throw new Error(`Invalid stack state on closing QUOTE: Expected QUOTE after P, found ${quoteNode?.type}`);
+        }
+         this.nodeStack.pop(); // Pop QUOTE
+         console.log("Popped P and QUOTE contexts");
+      }
+      
       if (!lastNode || lastNode.type !== tag) {
         throw new Error(`Invalid closing tag: ${tag}`);
       }
@@ -86,21 +102,7 @@ export class IncrementalProsemirrorRenderer {
         
         topULNode.insertNextLiPos = nextLiInsertPos;
       }
-  
-      if (tag === Tags.QUOTE) {
-        // Expect P inside QUOTE
-        if (lastNode.type !== Tags.P) {
-             throw new Error(`Invalid stack state on closing QUOTE: Expected P at top, found ${lastNode.type}`);
-        }
-        this.nodeStack.pop(); // Pop P
 
-        const quoteNode = this.nodeStack[this.nodeStack.length - 1];
-        if (!quoteNode || quoteNode.type !== Tags.QUOTE) {
-             throw new Error(`Invalid stack state on closing QUOTE: Expected QUOTE after P, found ${quoteNode?.type}`);
-        }
-         this.nodeStack.pop(); // Pop QUOTE
-         console.log("Popped P and QUOTE contexts");
-      }
       
       this.nodeStack.pop();
     }
@@ -311,22 +313,22 @@ export class IncrementalProsemirrorRenderer {
     this.editorView.dispatch(tr);
 
     // --- Update stack AFTER dispatch ---
-    const mappedInsertPos = tr.mapping.map(insertPos); // Map position in case of concurrent changes
+    // const mappedInsertPos = tr.mapping.map(insertPos); // Map position in case of concurrent changes
 
     // Push QUOTE context
     this.nodeStack.push({
         type: Tags.QUOTE,
-        startPosition: mappedInsertPos,
+        startPosition: insertPos,
         // contentPosition for QUOTE now marks the start of its inner content
-        contentPosition: mappedInsertPos + 1
+        contentPosition: insertPos + 1
     });
 
     // Push PARAGRAPH context (inside the quote)
     this.nodeStack.push({
         type: Tags.P, // Representing the paragraph INSIDE the quote
-        startPosition: mappedInsertPos + 1, // Starts right after blockquote opening tag
+        startPosition: insertPos + 1, // Starts right after blockquote opening tag
         // contentPosition is where text should actually be inserted
-        contentPosition: mappedInsertPos + 1 + 1 // Start inside the paragraph node
+        contentPosition: insertPos + 1 + 1 // Start inside the paragraph node
     });
 }
 
