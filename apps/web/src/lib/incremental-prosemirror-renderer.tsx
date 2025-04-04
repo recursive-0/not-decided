@@ -1,5 +1,5 @@
 import { Node, type Mark, type Schema } from "prosemirror-model";
-import type { EditorView, NodeView } from "prosemirror-view";
+import type { EditorView } from "prosemirror-view";
 
 export enum Tags {
   "H1" = "H1",
