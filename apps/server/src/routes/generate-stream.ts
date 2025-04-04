@@ -10,7 +10,7 @@ export async function generateStream(req: Request): Promise<Response> {
     const prompt = userPrompts.get(streamId!)
 
     try {
-        return await handleGeminiStream({prompt: prompt!});
+        return await handleClaudeStream({prompt: prompt!});
     } catch (error) {
         return new Response(
             JSON.stringify({ error: error }), 

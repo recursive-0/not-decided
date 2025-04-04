@@ -6,13 +6,13 @@ import { EditorProvider } from "@/providers/editor-context-provider"
 
 export function App() {
   return (
-    <div className="h-screen w-screen bg-neutral-50">
+    <div className="h-screen w-screen bg-background">
       <EditorProvider>
         <ResizablePanelGroup direction="horizontal" className="h-[calc(100vh-60px)]">
-          <ResizablePanel defaultSize={65} className="bg-white">
+          <ResizablePanel defaultSize={65}>
             <EditorContainer />
           </ResizablePanel>
-          <ResizableHandle withHandle />
+          <ResizableHandle withHandle className="before:w-[1px]" />
           <ResizablePanel defaultSize={35}>
             <AIChat />
           </ResizablePanel>

@@ -1,170 +1,219 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { PlusCircle, Clock, Send } from "lucide-react";
+// Using CornerDownLeft as it looks closer to the screenshot's arrow icon
+import { PlusCircle, Clock, Bot, BrainCircuit, CornerDownLeft } from "lucide-react";
 import { useSSEStream } from "@/hooks/use-sse-stream";
-import { useEditor } from "@/providers/editor-context-provider"
+import { useEditor } from "@/providers/editor-context-provider";
+import { cn } from "@/lib/utils"; // Import cn if not already
+
+// --- MOCK DATA FOR STYLING ---
+const mockMessages = [
+    { role: "user", content: "Can you explain what Rust is?" },
+    { role: "assistant", content: "Sure! Rust is a systems programming language focused on safety, speed, and concurrency. It achieves memory safety without garbage collection." },
+    { role: "user", content: "Tell me more about its memory safety." },
+];
+// ------------------------------
 
 const AIChat = () => {
   const [activeTab, setActiveTab] = useState("chat");
   const [input, setInput] = useState("");
   const { startStreaming, stopStreaming, isLoading } = useSSEStream();
+  const messages = mockMessages;
   const { insertTextAtCursor, isEditorReady, getCurrentContent } = useEditor();
-  
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollAreaRef.current) {
+      const scrollElement = scrollAreaRef.current.querySelector('div[data-radix-scroll-area-viewport]');
+      if (scrollElement) {
+        scrollElement.scrollTop = scrollElement.scrollHeight;
+      }
+    }
+  }, [messages]);
+
   const handleSendMessage = () => {
     if (input.trim() && !isLoading) {
-      // Process the message based on which tab is active
+      const promptToSend = input;
+      setInput("");
       if (activeTab === "chat") {
-        // For chat tab, we might just want to get a response
-        startStreaming(input, handleTokenReceived);
+        startStreaming(promptToSend, handleTokenReceived);
       } else if (activeTab === "composer") {
-        // For composer tab, we might want to do something specific with the document
-        const currentContent = getCurrentContent();
-        const contextualPrompt = `Document content: ${currentContent}\n\nUser request: ${input}`;
-        startStreaming(contextualPrompt, handleTokenReceived);
+        startStreaming(promptToSend, handleTokenReceived);
       }
-      
-      setInput(""); // Clear input after sending
     }
   };
-  
+
   const handleTokenReceived = (token: string) => {
-    if (isEditorReady) {
+    if (isEditorReady && activeTab === "composer") {
       insertTextAtCursor(token);
     }
   };
-  
-  return (
-    <div className="flex flex-col h-full border rounded-md overflow-hidden bg-white">
-      <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
-        {/* Header with tabs */}
-        <div className="border-b">
-          <div className="flex items-center px-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 rounded flex items-center justify-center bg-purple-100">
-                <svg viewBox="0 0 24 24" className="w-5 h-5 text-purple-600" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 8.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z" fill="currentColor" />
-                  <path d="M12 2a6.5 6.5 0 00-6.5 6.5c0 1.76.5 3.16 1.65 4.67a34.14 34.14 0 003.5 3.5c.82.68 1.23 1.03 1.35 1.14.12.11.25.16.38.19h.24c.13-.03.26-.08.38-.19.12-.11.53-.46 1.35-1.14a34.14 34.14 0 003.5-3.5c1.15-1.51 1.65-2.91 1.65-4.67A6.5 6.5 0 0012 2z" fill="currentColor" />
-                </svg>
-              </div>
-              <TabsList>
-                <TabsTrigger value="chat" className="text-sm font-medium">Chat</TabsTrigger>
-                <TabsTrigger value="composer" className="text-sm font-medium">Composer</TabsTrigger>
-              </TabsList>
-            </div>
-            <div className="ml-auto flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <PlusCircle className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <Clock className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
 
-        {/* Chat tab content */}
-        <TabsContent value="chat" className="flex-1 flex flex-col p-0 m-0">
-          <ScrollArea className="flex-1 p-4">
-            {/* Empty chat state or messages would go here */}
-          </ScrollArea>
-          <div className="p-4 border-t">
-            <div className="flex items-center gap-2">
-              <Input 
-                placeholder="Ask me to do anything..." 
-                className="flex-1"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSendMessage();
-                  }
-                }}
-              />
-              <Button 
-                size="icon" 
-                variant="ghost" 
-                className="rounded-full bg-black text-white hover:bg-gray-800"
-                onClick={handleSendMessage}
-                disabled={!input.trim() || isLoading}
-              >
-                <Send className="h-4 w-4" />
-              </Button>
-            </div>
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => { // Allow Textarea too if needed
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  // --- Render Functions ---
+
+  const renderHeader = () => (
+    // Consistent Header Styling
+    <div className="border-b border-border bg-secondary">
+      <div className="h-10 flex items-center px-3 py-1.5"> {/* Consistent height */}
+        <div className="flex items-center space-x-2">
+          <div className="w-6 h-6 rounded flex items-center justify-center text-primary"> {/* Keep primary icon color */}
+            <Bot className="w-4 h-4" />
           </div>
+          <TabsList className="bg-transparent p-0 h-auto">
+            <TabsTrigger
+              value="chat"
+              className="text-xs font-medium px-2.5 py-1 data-[state=active]:bg-background data-[state=active]:text-[#073642] text-muted-foreground rounded-sm data-[state=active]:shadow-sm"
+            >
+              Chat
+            </TabsTrigger>
+            <TabsTrigger
+              value="composer"
+              className="text-xs font-medium px-2.5 py-1 data-[state=active]:bg-background data-[state=active]:text-[#073642] text-muted-foreground rounded-sm data-[state=active]:shadow-sm"
+            >
+              Composer
+            </TabsTrigger>
+          </TabsList>
+        </div>
+        <div className="ml-auto flex items-center gap-1">
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-[#073642]"> {/* Darker hover */}
+            <PlusCircle className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-[#073642]"> {/* Darker hover */}
+            <Clock className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // --- !!! REVISED INPUT AREA !!! ---
+  const renderInputArea = () => (
+    // Container: secondary bg, top border, slightly less padding
+    <div className="p-2 border-t border-border bg-secondary">
+      {/* Relative container for input and embedded icon */}
+      <div className="relative flex items-center">
+        <Input
+          placeholder="Ask anything (⌘L), @ to mention code blocks" // Match placeholder
+           // Input: main bg, subtle border, dark text, muted placeholder, space for icon
+          className={cn(
+            "flex-1 bg-background h-9 text-sm rounded-md", // Use rounded-md
+            "border border-border", // Subtle border
+            "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring", // Standard focus
+            "text-[#073642] placeholder:text-muted-foreground", // Correct colors
+            "pr-8" // Padding-right to accommodate the icon
+           )}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          disabled={isLoading}
+        />
+        {/* Embedded Icon Button */}
+        <div
+          className={cn(
+            "absolute inset-y-0 right-0 flex items-center justify-center w-8", // Position inside on the right
+            isLoading || !input.trim()
+              ? "cursor-not-allowed opacity-50"
+              : "cursor-pointer hover:text-[#073642]" // Change text color on hover
+          )}
+          onClick={!isLoading && input.trim() ? handleSendMessage : undefined} // Click handler
+          aria-label="Send message"
+        >
+          <CornerDownLeft className="h-4 w-4 text-muted-foreground" /> {/* Muted icon color */}
+        </div>
+      </div>
+      {/* Stop button (optional, keep styling if needed) */}
+      {isLoading && (
+         <Button
+          variant="outline"
+          size="sm"
+          className="w-full mt-2 text-xs h-7 border-destructive/50 text-destructive hover:bg-destructive/10"
+          onClick={stopStreaming}
+        >
+          Stop Generating
+        </Button>
+      )}
+    </div>
+  );
+  // --- END REVISED INPUT AREA ---
+
+
+  // --- Main Component Return ---
+  return (
+    <div className="flex flex-col h-full bg-background text-[#073642] overflow-hidden">
+      <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1">
+        {renderHeader()}
+
+        <TabsContent value="chat" className="flex-1 flex flex-col p-0 m-0 overflow-hidden">
+          <ScrollArea className="flex-1" ref={scrollAreaRef}>
+             <div className="p-4 space-y-3 text-sm text-[#073642]">
+                {messages.length === 0 && !isLoading && (
+                  <div className="text-center text-muted-foreground pt-10">
+                    No messages yet. Start chatting!
+                  </div>
+                )}
+                {messages.map((msg, index) => (
+                  <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div
+                      className={`max-w-[85%] rounded-md px-3 py-1.5 shadow-sm ${
+                        msg.role === 'user'
+                          ? 'bg-primary/10 text-[#073642]' // User: Tinted bg, dark text
+                          : 'bg-secondary text-[#073642]'  // Assistant: Secondary bg, dark text
+                      }`}
+                    >
+                       {msg.content.split('\n').map((line, i) => <p key={i} className="leading-relaxed">{line}</p>)}
+                    </div>
+                  </div>
+                ))}
+                {isLoading && messages.length === 0 && (
+                    <div className="text-center text-muted-foreground pt-10">
+                      Waiting for response...
+                    </div>
+                )}
+             </div>
+          </ScrollArea>
+          {renderInputArea()}
         </TabsContent>
 
-        {/* Composer tab content */}
-        <TabsContent value="composer" className="flex-1 flex flex-col p-0 m-0">
-          <div className="p-4 flex-1 flex flex-col">
-            <div className="pb-4">
-              <div className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent text-3xl font-semibold mb-2">
-                Hello
-              </div>
-              <div className="text-black text-3xl font-semibold">
-                How can I help you today?
-              </div>
-            </div>
-
-            <Card className="mb-4">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="bg-purple-100 text-purple-800 px-2 py-1 rounded text-sm font-medium">
-                    🧩 Composer mode
+        <TabsContent value="composer" className="flex-1 flex flex-col p-0 m-0 overflow-hidden">
+          <ScrollArea className="flex-1">
+             <div className="p-4 space-y-4 text-[#073642]">
+                <div className="pb-2">
+                  <div className="text-xl font-semibold mb-1 flex items-center gap-2">
+                     <BrainCircuit className="w-5 h-5 text-primary"/>
+                     How can I help with the document?
                   </div>
                 </div>
-                <p className="text-gray-700">
-                  Composer can directly edit and work on your document. It has full, real-time knowledge of your document.
-                </p>
-              </CardContent>
-            </Card>
-
-            <div className="space-y-4 flex-1">
-              <Textarea 
-                placeholder="Add a title to give context to the document."
-                className="resize-none min-h-[60px]"
-              />
-              <Textarea 
-                placeholder="Include a brief introduction outlining the purpose or objectives of the content."
-                className="resize-none min-h-[80px]"
-              />
-              <Textarea 
-                placeholder="Insert bullet points to summarize key information for easier readability."
-                className="resize-none min-h-[80px]"
-              />
-            </div>
-          </div>
-
-          <div className="p-4 border-t">
-            <div className="flex items-center gap-2">
-              <Input 
-                placeholder="Ask me to do anything..." 
-                className="flex-1"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSendMessage();
-                  }
-                }}
-              />
-              <Button 
-                size="icon" 
-                variant="ghost" 
-                className="rounded-full bg-black text-white hover:bg-gray-800"
-                onClick={handleSendMessage}
-                disabled={!input.trim() || isLoading}
-              >
-                <Send className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+                <Card className="bg-card border-border">
+                  <CardContent className="p-3">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <div className="bg-primary/10 text-primary px-2 py-0.5 rounded-sm text-xs font-medium">
+                        Composer Mode
+                      </div>
+                    </div>
+                    <p className="text-muted-foreground text-xs">
+                      Composer edits your document directly and knows its current content. Ask it to write, edit, or summarize.
+                    </p>
+                  </CardContent>
+                </Card>
+                <div className="text-center text-muted-foreground pt-6 text-sm">
+                  Use the input below to instruct the Composer.
+                  <br/>
+                  (e.g., "Summarize the previous section", "Write an introduction about X")
+                </div>
+              </div>
+          </ScrollArea>
+          {renderInputArea()}
         </TabsContent>
       </Tabs>
     </div>

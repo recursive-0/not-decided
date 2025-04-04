@@ -339,7 +339,7 @@ export const ProseMirrorEditor = () => {
   return (
     <div className="flex flex-col w-full h-full">
       <div
-        className="prosemirror-editor w-full max-h-[calc(100vh - 60px)] h-full overflow-scroll p-4 px-4 rounded border border-neutral-400 outline-none"
+        className="prosemirror-editor w-full max-h-[calc(100vh - 60px)] h-full overflow-scroll p-4 px-4 border-t border-neutral-400 outline-none"
         ref={editorRef}
       />
       {/* <StreamingMarkdownDemo /> */}
