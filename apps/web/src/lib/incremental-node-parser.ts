@@ -10,7 +10,13 @@ enum ParserState {
   TEXT = "text",
 }
 
+enum StreamingState {
+  CHAT = "CHAT",
+  COMPOSER = "COMPOSER"
+}
+
 interface ParserCallbacks {
+  sendTokensCallback: (tokens: string) => void,
   onOpenTag: (tag: Tags) => void;
   onCloseTag: (tag: Tags) => void;
   onTextContent: (txt: string) => void;
@@ -18,7 +24,7 @@ interface ParserCallbacks {
 
 const ALLOWED_TAGS = ["H1", "H2", "H3", "B", "I", "P", "CODE", "UL", "LI", "QUOTE", "OL", "CHECKBOX", "ICODE"]
 
-const TAGS = ["[H1]", "[H2]", "[H3]", "[B]", "[I]", "[P]", "[CODE]", "[UL]", "[LI]", "[QUOTE]", "[OL]", "[CHECKBOX]", "[ICODE]"]
+const TAGS = ["[H1]", "[H2]", "[H3]", "[B]", "[I]", "[P]", "[CODE]", "[UL]", "[LI]", "[QUOTE]", "[OL]", "[CHECKBOX]", "[ICODE]", "<CHAT>", "<COMPOSER>"]
 
 const includesAllowedTags = (ch: string) => {
 
@@ -28,10 +34,12 @@ const includesAllowedTags = (ch: string) => {
 
 export class IncrementalParser {
   private state: ParserState = ParserState.NORMAL;
+  private streamingState: StreamingState = StreamingState.CHAT
   private textBuffer: string = "";
   private currentTagName: string = "";
   private tagStack: string[] = [];
   private isStreaming: boolean = false;
+
 
   constructor(private callbacks: ParserCallbacks) {}
 
@@ -83,7 +91,15 @@ export class IncrementalParser {
 
       switch (this.state) {
         case ParserState.NORMAL:
-          if (char === "[") {
+          if(this.streamingState === StreamingState.CHAT){
+            this.callbacks.onChatModeTokens(char)
+          } else if(this.streamingState === StreamingState.COMPOSER){
+            this.callbacks.onComposerModeTokens(char)
+          } else if(char === "<"){
+             this.flushTextBuffer()
+             this.textBuffer += char
+             this.state = ParserState.TAG_START 
+          } else if (char === "[") {
             console.log("Found [, switching to TAG_START", this.textBuffer);
             this.flushTextBuffer();
             this.textBuffer += char;
@@ -109,7 +125,10 @@ export class IncrementalParser {
           break;
 
         case ParserState.TAG_NAME:
-          if (char === "]") {
+          if(char === ">"){
+            this.textBuffer += char
+            this.openAngleTag()
+          } else if (char === "]") {
             this.textBuffer += char;
             this.openTag();
           } else {
@@ -144,6 +163,8 @@ export class IncrementalParser {
     return /^[A-Za-z]$/.test(char);
   }
 
+
+
   private flushTextBuffer() {
     if (this.textBuffer.length > 0) {
       console.log(`Emitting text: "${this.textBuffer}"`);
@@ -158,6 +179,24 @@ export class IncrementalParser {
 
   private clearCurrentTagName() {
     this.currentTagName = "";
+  }
+
+  private openAngleTag(){
+    const currentTag = this.textBuffer
+
+    if(includesAllowedTags(currentTag)){
+       if(currentTag === '<CHAT>'){
+          this.streamingState = StreamingState.CHAT
+       } else if(currentTag === "<COMPOSER>"){
+        this.streamingState = StreamingState.COMPOSER
+       } else {
+          throw new Error("Formed angle tag is niether chat nor composer")
+       }
+       this.clearTextBuffer()
+    } else {
+      this.flushTextBuffer()
+      this.state = ParserState.NORMAL
+    }
   }
 
   private openTag() {
@@ -197,4 +236,5 @@ export class IncrementalParser {
     this.state = ParserState.NORMAL;
     this.callbacks.onCloseTag(closingTag as Tags);
   }
+
 }

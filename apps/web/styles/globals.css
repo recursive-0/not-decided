@@ -4,102 +4,142 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Solarized Light Theme */
+/* Updated Theme Colors from Image 1 */
 :root {
   /* Core UI */
-  --background: #fdf6e3; /* base3 */
-  --foreground: #657b83; /* base00 */
-  --card: #eee8d5; /* base2 */
-  --card-foreground: #657b83; /* base00 */
-  --popover: #eee8d5; /* base2 */
-  --popover-foreground: #657b83; /* base00 */
-  --primary: #268bd2; /* blue */
-  --primary-foreground: #fdf6e3; /* base3 - contrast for blue */
-  --secondary: #eee8d5; /* base2 - subtle bg */
-  --secondary-foreground: #586e75; /* base01 - slightly darker for secondary context */
-  --muted: #eee8d5; /* base2 */
-  --muted-foreground: #93a1a1; /* base1 - lower contrast text */
-  --accent: #eee8d5; /* base2 - hover/active states */
-  --accent-foreground: #268bd2; /* blue - primary color for text on accent */
-  --destructive: #dc322f; /* red */
-  --destructive-foreground: #fdf6e3; /* base3 - contrast for red */
-  --border: #93a1a1; /* base1 - visible border */
-  --input: #eee8d5; /* base2 - input background */
-  --ring: #268bd2; /* blue - focus indicator */
+  --background: #f2eddc; /* Light cream from image 2 */
+  --foreground: #657b83; /* Keeping original text color */
+  --card: #d9d0bf; /* Light beige from image 1 */
+  --card-foreground: #657b83; /* Keeping original text color */
+  --popover: #d9d0bf;
+  --popover-foreground: #657b83;
+  --primary: #d9c589; /* Gold/tan from image 1 */
+  --primary-foreground: #262626; /* Dark color for contrast */
+  --secondary: #f2eddc; /* Light cream from image 2 */
+  --secondary-foreground: #586e75;
+  --muted: #d9d0bf;
+  --muted-foreground: #93a1a1;
+  --accent: #d99982; /* Salmon pink from image 1 */
+  --accent-foreground: #262626;
+  --destructive: #dc322f; /* Keeping original */
+  --destructive-foreground: #fdf6e3;
+  --border: #bbb7ab; /* Light gray from image 2 */
+  --input: #f2eddc;
+  --ring: #d9c589;
 
-  /* Charts */
-  --chart-1: #cb4b16; /* orange */
-  --chart-2: #2aa198; /* cyan */
-  --chart-3: #268bd2; /* blue */
-  --chart-4: #bab298; /* yellow */
-  --chart-5: #d33682; /* magenta */
-  --chart-6: #d7d1c1;
-  --chart-7: #d4ba6b; /* yellow */
+  /* UI Colors from Screenshot */
+  --ui-background: #f2eddc; /* Light cream from image 2 */
+  --ui-chat-background: #f6f4ec;
+  --ui-input-background: #f9f7f2;
+  --ui-icon-active: #d9c589; /* Gold from image 1 */
+  --ui-button-background: #d9c589; /* Gold from image 1 */
+  --ui-button-hover: #c9b579; /* Slightly darker gold */
+  --ui-button-text: #262626; /* Dark from images */
+  --ui-placeholder-text: #a3a3a3;
+  --ui-border: #d9d0bf; /* Light beige from image 1 */
+  --ui-done-button: #6c6c6c; /* Gray from image 2 */
 
+  /* Palette Colors from Image 1 */
+  --palette-gold-dark: #deca88;
+  --palette-gold: #d9c589; /* #D9C589 */
+  --palette-gold-light: #ddd6c1;
+  --palette-cream: #f2eddc; /* #F2EDDC */
+  --palette-beige: #d9d0bf; /* #D9D0BF */
+  --palette-beige-1: #F7F1DF;
+  --palette-beige-2: #EEE8D5;
+  --palette-salmon: #d99982; /* #D99982 */
+  --palette-dark: #586E75;
 
-  --yellow-background: #bab298;
+  /* Palette Colors from Image 2 */
+  --palette-gray: #6c6c6c; /* #6C6C6C */
+  --palette-cream-2: #f2eddc; /* #F2EDDC (same as Image 1) */
+  --palette-light-gray: #bbb7ab; /* #BBB7AB */
+  --palette-light-cream: #eee8d5; /* #EEE8D5 */
+  --palette-dark-2: #262626; /* #262626 (same as Image 1) */
+
+  /* Charts - Updated with palette colors */
+  --chart-1: #d9c589; /* gold */
+  --chart-2: #d99982; /* salmon */
+  --chart-3: #6c6c6c; /* gray */
+  --chart-4: #bbb7ab; /* light gray */
+  --chart-5: #d9d0bf; /* beige */
+  --chart-6: #f2eddc; /* cream */
+  --chart-7: #eee8d5; /* light cream */
+
+  --yellow-background: #d9c589;
 
   /* Radius */
-  --radius: 0.6rem; /* Keep original or adjust if needed */
+  --radius: 0.6rem;
 
-  /* Sidebar Specific (Example mapping) */
-  --sidebar-background: #eee8d5; /* base2 */
-  --sidebar-foreground: #586e75; /* base01 */
-  --inline-code: #f9edc9; /* base2 */
-  --sidebar-primary: #268bd2; /* blue */
-  --sidebar-primary-foreground: #fdf6e3; /* base3 */
-  --sidebar-accent: #fdf6e3; /* base3 - slightly lighter hover */
-  --sidebar-accent-foreground: #268bd2; /* blue */
-  --sidebar-border: #93a1a1; /* base1 */
-  --sidebar-ring: #268bd2; /* blue */
+  /* Sidebar Specific */
+  --sidebar-background: #f2eddc;
+  --sidebar-foreground: #6c6c6c;
+  --inline-code: #d9c589;
+  --inline-code-2: #d99982;
+  --sidebar-primary: #d9c589;
+  --sidebar-primary-foreground: #262626;
+  --sidebar-accent: #d99982;
+  --sidebar-accent-foreground: #262626;
+  --sidebar-border: #bbb7ab;
+  --sidebar-ring: #d9c589;
 }
 
-/* Solarized Dark Theme */
+/* Dark Theme with updated colors */
 .dark {
   /* Core UI */
-  --background: #002b36; /* base03 */
-  --foreground: #839496; /* base0 */
-  --card: #073642; /* base02 */
-  --card-foreground: #839496; /* base0 */
-  --popover: #073642; /* base02 */
-  --popover-foreground: #839496; /* base0 */
-  --primary: #268bd2; /* blue */
-  --primary-foreground: #002b36; /* base03 - contrast for blue */
-  --secondary: #073642; /* base02 - subtle bg */
-  --secondary-foreground: #93a1a1; /* base1 - slightly lighter for secondary context */
-  --muted: #073642; /* base02 */
-  --muted-foreground: #586e75; /* base01 - lower contrast text */
-  --accent: #586e75; /* base01 - subtle hover/active */
-  --accent-foreground: #268bd2; /* blue - text on accent */
-  --destructive: #dc322f; /* red */
-  --destructive-foreground: #fdf6e3; /* base3 - lightest contrast for red */
-  --border: #586e75; /* base01 - visible border */
-  --input: #073642; /* base02 - input */
-  --ring: #268bd2; /* blue - focus indicator */
+  --background: #262626; /* Dark from both images */
+  --foreground: #eee8d5; /* Light cream for contrast */
+  --card: #6c6c6c; /* Gray from image 2 */
+  --card-foreground: #f2eddc;
+  --popover: #6c6c6c;
+  --popover-foreground: #f2eddc;
+  --primary: #d9c589; /* Gold from image 1 */
+  --primary-foreground: #262626;
+  --secondary: #bbb7ab; /* Light gray from image 2 */
+  --secondary-foreground: #f2eddc;
+  --muted: #6c6c6c;
+  --muted-foreground: #bbb7ab;
+  --accent: #d99982; /* Salmon from image 1 */
+  --accent-foreground: #262626;
+  --destructive: #dc322f; /* Keeping original */
+  --destructive-foreground: #f2eddc;
+  --border: #bbb7ab;
+  --input: #6c6c6c;
+  --ring: #d9c589;
 
-  /* Charts */
-  --chart-1: #cb4b16; /* orange */
-  --chart-2: #2aa198; /* cyan */
-  --chart-3: #268bd2; /* blue */
-  --chart-4: #b58900; /* yellow */
-  --chart-5: #d33682; /* magenta */
-  --chart-6: #d7d1c1;
-  --chart-7: #d4ba6b; /* yellow */
+  /* UI Colors - Dark variants */
+  --ui-background: #262626;
+  --ui-chat-background: #3a3a3a;
+  --ui-input-background: #6c6c6c;
+  --ui-icon-active: #d9c589;
+  --ui-button-background: #d9c589;
+  --ui-button-hover: #c9b579;
+  --ui-button-text: #262626;
+  --ui-placeholder-text: #bbb7ab;
+  --ui-border: #6c6c6c;
+  --ui-done-button: #bbb7ab;
 
-  /* Sidebar Specific (Example mapping) */
-  --sidebar-background: #073642; /* base02 */
-  --sidebar-foreground: #93a1a1; /* base1 */
-  --inline-code: #f9edc9; /* base2 */
-  --sidebar-primary: #268bd2; /* blue */
-  --sidebar-primary-foreground: #002b36; /* base03 */
-  --sidebar-accent: #586e75; /* base01 - subtle hover */
-  --sidebar-accent-foreground: #268bd2; /* blue */
-  --sidebar-border: #586e75; /* base01 */
-  --sidebar-ring: #268bd2; /* blue */
+  /* Charts - Same as light mode */
+  --chart-1: #d9c589; /* gold */
+  --chart-2: #d99982; /* salmon */
+  --chart-3: #6c6c6c; /* gray */
+  --chart-4: #bbb7ab; /* light gray */
+  --chart-5: #d9d0bf; /* beige */
+  --chart-6: #f2eddc; /* cream */
+  --chart-7: #eee8d5; /* light cream */
+
+  /* Sidebar Specific */
+  --sidebar-background: #6c6c6c;
+  --sidebar-foreground: #f2eddc;
+  --inline-code: #d9c589;
+  --inline-code-2: #d99982;
+  --sidebar-primary: #d9c589;
+  --sidebar-primary-foreground: #262626;
+  --sidebar-accent: #d99982;
+  --sidebar-accent-foreground: #262626;
+  --sidebar-border: #bbb7ab;
+  --sidebar-ring: #d9c589;
 }
-
-
-/* --- Keep the rest of the file as is --- */
 
 @theme inline {
   /* These variables map theme colors to semantic names used by components */
@@ -142,7 +182,31 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-inline-code: var(--inline-code);
-  --color-sidebar: var(--sidebar-background); /* Renamed from --sidebar */
+  --color-inline-code-2: var(--inline-code-2);
+  --color-sidebar: var(--sidebar-background);
+  --color-ui-background: var(--ui-background);
+  --color-ui-chat-background: var(--ui-chat-background);
+  --color-ui-input-background: var(--ui-input-background);
+  --color-ui-icon-active: var(--ui-icon-active);
+  --color-ui-button-background: var(--ui-button-background);
+  --color-ui-button-hover: var(--ui-button-hover);
+  --color-ui-button-text: var(--ui-button-text);
+  --color-ui-placeholder-text: var(--ui-placeholder-text);
+  --color-ui-border: var(--ui-border);
+  --color-ui-done-button: var(--ui-done-button);
+  /* Palette specific colors */
+  --color-palette-gold-dark: var(--palette-gold-dark);
+  --color-palette-gold: var(--palette-gold);
+  --color-palette-gold-light: var(--palette-gold-light);
+  --color-palette-cream: var(--palette-cream);
+  --color-palette-beige: var(--palette-beige);
+  --color-palette-beige-1: var(--palette-beige-1);
+  --color-palette-beige-2: var(--palette-beige-2);
+  --color-palette-salmon: var(--palette-salmon);
+  --color-palette-dark: var(--palette-dark);
+  --color-palette-gray: var(--palette-gray);
+  --color-palette-light-gray: var(--palette-light-gray);
+  --color-palette-light-cream: var(--palette-light-cream);
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
 

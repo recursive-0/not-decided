@@ -9,10 +9,10 @@ interface InitializeStreamRequestType {
 export async function initializeStream(req: Request): Promise<Response> {
 
     const body = await req.json()
-    const { prompt } = body
+    const { prompt, chatMode } = body
     const streamId = crypto.randomUUID()
 
-    userPrompts.set(streamId, prompt)
+    userPrompts.set(streamId, [prompt, chatMode])
 
     return Response.json({streamId})
 }

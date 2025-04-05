@@ -2,21 +2,36 @@ import { useCallback, useRef, useState } from "react";
 import { extendedProseMirrorSchema, useEditor } from "@/providers/editor-context-provider";
 import { IncrementalProsemirrorRenderer } from "@/lib/incremental-prosemirror-renderer";
 import { IncrementalParser } from "@/lib/incremental-node-parser";
+import type { ChatMode } from "@/types/messgaes";
+import { ChatModeIncrementalParser } from "@/lib/chat-mode-parser";
+import { ComposerModeParser, Tags } from "@/lib/composer-mode-parser";
+import { useChatStore } from "@/store/chat";
 
 export const useSSEStream = () => {
     const [content, setContent] = useState<string>("");
-    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const chatMode = useChatStore(state => state.currentChatMode)
+    const [isStreaming, setIsStreaming] = useState<boolean>(false);
     const [error, setError] = useState<Error | null>(null);
+    const [currentStreamId, setCurrentStreamId] = useState<string>("")
     const { editorView } = useEditor();
     
-    const parserRef = useRef<IncrementalParser | null>(null);
+    const chatParserRef = useRef<ChatModeIncrementalParser | null>(null);
+    const composerParserRef = useRef<ComposerModeParser | null>(null)
     const rendererRef = useRef<IncrementalProsemirrorRenderer | null>(null);
     const eventSourceRef = useRef<EventSource | null>(null);
 
-    const startStreaming = useCallback(async (prompt: string) => {
+    const getCurrentParser = useCallback(() => {
+        if(chatMode === "CHAT"){
+            return chatParserRef
+        } else {
+            return composerParserRef
+        }
+    }, [chatMode])
+
+    const startStreaming = useCallback(async (chatMode: ChatMode, prompt: string, sendTokensCallback: (token: string) => void) => {
         try {
 
-            setIsLoading(true);
+            setIsStreaming(true);
             setError(null);
             setContent("");
 
@@ -34,19 +49,42 @@ export const useSSEStream = () => {
             }
         
 
-            if (!parserRef.current && rendererRef.current) {
-                parserRef.current = new IncrementalParser({
-                    onOpenTag: (tag) => rendererRef.current?.onOpenTag(tag),
-                    onCloseTag: (tag) => rendererRef.current?.onCloseTag(tag),
-                    onTextContent: (text) => rendererRef.current?.onTextContent(text)
-                });
+            if(!chatParserRef.current && rendererRef.current){
+                chatParserRef.current = new ChatModeIncrementalParser(sendTokensCallback)
             }
+
+            if(!composerParserRef.current && rendererRef.current){
+                composerParserRef.current = new ComposerModeParser({
+                    sendTokensCallback: (tokens: string) => sendTokensCallback(tokens),
+                    onOpenTag: (tag: Tags) => rendererRef.current?.onOpenTag(tag),
+                    onCloseTag: (tag: Tags) => rendererRef.current?.onCloseTag(tag),
+                    onTextContent: (text: Tags) => rendererRef.current?.onTextContent(text)
+                })
+            }
+
+            // if (!parserRef.current && rendererRef.current) {
+            //     if(chatMode === "CHAT"){
+            //         parserRef.current = new ChatModeIncrementalParser(sendTokensCallback)
+            //     } else if(chatMode === "COMPOSER") {
+
+            //     } else {
+
+            //     }
+            //     parserRef.current = new IncrementalParser(chatMode, {
+            //         sendTokensCallback: (tokens: string) => sendTokensCallback(tokens),
+            //         onOpenTag: (tag) => rendererRef.current?.onOpenTag(tag),
+            //         onCloseTag: (tag) => rendererRef.current?.onCloseTag(tag),
+            //         onTextContent: (text) => rendererRef.current?.onTextContent(text)
+            //     });
+            // }
+
+
 
             // Initialize stream
             const response = await fetch("http://localhost:3007/api/generate/init", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ prompt })
+                body: JSON.stringify({ prompt: prompt, chatMode: chatMode })
             });
 
             if (!response.ok) {
@@ -54,6 +92,7 @@ export const useSSEStream = () => {
             }
 
             const { streamId } = await response.json();
+            setCurrentStreamId(streamId)
             
             // Setup SSE
             eventSourceRef.current = new EventSource(
@@ -69,19 +108,19 @@ export const useSSEStream = () => {
                 switch (token.trim()) {
                     case "[DONE]":
                     case "END_STREAM":
-                        parserRef.current?.stopStreaming();
-                        setIsLoading(false);
+                        getCurrentParser()?.current.stopStreaming();
+                        setIsStreaming(false);
                         eventSourceRef.current?.close();
                         return;
                         
                     case "START_STREAM":
-                        parserRef.current?.startStreaming();
+                        getCurrentParser()?.current.startStreaming();
                         return;
                         
                     default:
                         const decodedToken = token.replace(/\\n/g, "\n").replace(/\\r/g, "\r").replace(/\\t/g, "\t");
                         setContent(prev => prev + decodedToken);
-                        parserRef.current?.process(decodedToken);
+                        getCurrentParser()?.current.processChunk(decodedToken);
                 }
             };
 
@@ -89,34 +128,36 @@ export const useSSEStream = () => {
             eventSourceRef.current.onerror = (err) => {
                 console.error("SSE Error:", err);
                 setError(new Error("Stream error occurred"));
-                parserRef.current?.stopStreaming();
+                getCurrentParser()?.current.stopStreaming();
                 eventSourceRef.current?.close();
-                setIsLoading(false);
+                setIsStreaming(false);
             };
 
         } catch (error: any) {
             setError(error);
-            setIsLoading(false);
+            setIsStreaming(false);
         }
     }, [editorView]);
 
     const stopStreaming = useCallback(() => {
-        parserRef.current?.stopStreaming();
+        getCurrentParser().current?.stopStreaming();
         
         if (eventSourceRef.current) {
             eventSourceRef.current.close();
             eventSourceRef.current = null;
         }
         
-        setIsLoading(false);
+        setIsStreaming(false);
         setContent("");
     }, []);
 
     return { 
         content,
-        isLoading, 
+        isStreaming, 
         error,
         startStreaming,
-        stopStreaming
+        stopStreaming,
+        currentStreamId,
+        setCurrentStreamId
     };
 };

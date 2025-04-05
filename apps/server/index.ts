@@ -3,7 +3,7 @@ import { initializeStream } from "./src/routes/initialize-stream";
 import { testSimpleStream } from "./src/routes/test-simple-stream";
 
 
-export const userPrompts = new Map<string, string>()
+export const userPrompts = new Map<string, [string, string]>()
 
 function cors(handler: (req: Request) => Response | Promise<Response>){
 
