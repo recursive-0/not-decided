@@ -96,7 +96,7 @@ const Toolbar = () => {
 
   return (
     <TooltipProvider delayDuration={150}> {}
-      <div className="h-10 w-full flex items-center justify-start bg-background px-2 py-1.5 gap-1">
+      <div className="h-10 w-full flex items-center justify-center bg-background px-2 py-1.5 gap-1">
         <div className="flex items-center gap-0.5"> {}
           {formatOptions.map((option) => (
             <FormatButton

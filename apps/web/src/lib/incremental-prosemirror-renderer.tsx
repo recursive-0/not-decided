@@ -1,4 +1,4 @@
-import { Node, type Mark, type Schema } from "prosemirror-model";
+import { MarkType, Node, type Mark, type Schema } from "prosemirror-model";
 import type { EditorView } from "prosemirror-view";
 
 export enum Tags {
@@ -12,6 +12,7 @@ export enum Tags {
   "OL" = "OL",
   "LI" = "LI",
   "CODE" = "CODE",
+  "ICODE" = "ICODE",
   "QUOTE" = "QUOTE",
   "CHECKBOX" = "CHECKBOX"
 }
@@ -25,7 +26,7 @@ interface NodeContextType {
 }
 
 interface MarkContext {
-  type: Tags.B | Tags.I;
+  type: Tags.B | Tags.I | Tags.ICODE
   startPosition: number;
 }
 
@@ -41,7 +42,7 @@ export class IncrementalProsemirrorRenderer {
   }
 
   private isMarkTag(tag: Tags): boolean {
-    return tag === Tags.B || tag === Tags.I;
+    return tag === Tags.B || tag === Tags.I || tag === Tags.ICODE;
   }
 
   createListNode(type: "ul" | "ol") {
@@ -70,8 +71,11 @@ export class IncrementalProsemirrorRenderer {
   onOpenTag(tag: Tags) {
     if (this.isMarkTag(tag)) {
       const pos = this.getInsertPosition();
+      if(tag === "ICODE"){
+        console.log("PUSHING icode to active marks")
+      }
       this.activeMarks.push({
-        type: tag as Tags.B | Tags.I,
+        type: tag as Tags.B | Tags.I | Tags.ICODE,
         startPosition: pos,
       });
     } else {
@@ -133,15 +137,20 @@ export class IncrementalProsemirrorRenderer {
         parentListNode.insertNextLiPos = nextLiInsertPos;
       }
 
+
       this.nodeStack.pop();
     }
   }
 
   onTextContent(txt: string) {
     let textToInsert = txt;
+    if(txt.length === 0) return
     console.log("TEXT IS: ", textToInsert);
     console.log("TEXT LENGHT IS: ", textToInsert.length);
-    textToInsert = textToInsert.replace(/\n\n+/g, "\n");
+
+    if(this.nodeStack[this.nodeStack.length - 1].type !== Tags.CODE){
+      textToInsert = textToInsert.replace(/\n+/g, "");
+    textToInsert = textToInsert.replace(/\n\n+/g, "");
 
     if (this.nodeStack.length > 0) {
       const currentNode = this.nodeStack[this.nodeStack.length - 1];
@@ -150,43 +159,63 @@ export class IncrementalProsemirrorRenderer {
       }
     }
 
+    }
     if (textToInsert.length === 0) return;
 
     const insertPos = this.getInsertPosition();
     const endPos = insertPos + textToInsert.length;
-
+  
     const tr = this.editorView.state.tr;
-
     tr.insertText(textToInsert, insertPos);
-
-    const currentRendererMarks = this.activeMarks
-      .map((markContext) => {
-        if (markContext.type === Tags.B) {
-          return this.schema.marks.strong?.create();
-        } else if (markContext.type === Tags.I) {
-          return this.schema.marks.em?.create();
-        }
-        return null;
-      })
-      .filter((mark): mark is Mark => mark !== null);
-
-    const possibleMarkTypes = [
-      this.schema.marks.strong,
-      this.schema.marks.em,
-    ].filter(Boolean);
-
-    if (currentRendererMarks.length > 0) {
-      tr.addMark(insertPos, endPos, currentRendererMarks[0]);
-    } else {
-      possibleMarkTypes.forEach((markType) => {
-        tr.removeMark(insertPos, endPos, markType);
-      });
+  
+    // --- Mark Handling Section ---
+    const currentRendererActiveMarkTypes = new Set(this.activeMarks.map(m => m.type));
+  
+    // Get MarkType objects from schema based on active tags
+    const marksToAdd: Mark[] = [];
+    if (currentRendererActiveMarkTypes.has(Tags.B)) {
+      this.schema.marks.strong && marksToAdd.push(this.schema.marks.strong.create());
     }
-
+    if (currentRendererActiveMarkTypes.has(Tags.I)) {
+      this.schema.marks.em && marksToAdd.push(this.schema.marks.em.create());
+    }
+    if (currentRendererActiveMarkTypes.has(Tags.ICODE)) { // <--- Add ICODE here
+      try{
+      console.log("WILL RENDER INLINE CODE")
+      this.schema.marks.inline_code && marksToAdd.push(this.schema.marks.inline_code.create());
+      } catch (e) {
+        console.log("GOT ITTTTTTTTT", e)
+      }
+    }
+  
+    // Define all possible mark types managed by the renderer
+    const possibleMarkTypes = [
+        this.schema.marks.strong,
+        this.schema.marks.em,
+        this.schema.marks.inline_code // <--- Add ICODE here
+    ].filter((mt): mt is MarkType => !!mt); // Ensure they exist in the schema
+  
+  
+    // Apply active marks
+    marksToAdd.forEach(markInstance => {
+        tr.addMark(insertPos, endPos, markInstance);
+    });
+  
+    // Remove marks that are possible but not currently active
+    const activeMarkTypeNames = new Set(marksToAdd.map(m => m.type.name));
+    possibleMarkTypes.forEach(markType => {
+        if (!activeMarkTypeNames.has(markType.name)) {
+            tr.removeMark(insertPos, endPos, markType);
+        }
+    });
+    // --- End Mark Handling Section ---
+  
     this.editorView.dispatch(tr);
-
+  
+    // Update parent content position (NO CHANGE NEEDED HERE)
     if (this.nodeStack.length > 0) {
       const currentNode = this.nodeStack[this.nodeStack.length - 1];
+      // The endPos already reflects the position after the inserted text
       currentNode.contentPosition = endPos;
     }
   }
@@ -245,6 +274,11 @@ export class IncrementalProsemirrorRenderer {
 
     if(tag === Tags.CHECKBOX){
       this.handleCheckboxItemInsertion(node)
+      return
+    }
+
+    if(tag === Tags.ICODE){
+      this.handleInlineCodeInsertion(node)
       return
     }
 
@@ -384,6 +418,19 @@ export class IncrementalProsemirrorRenderer {
       type: Tags.CHECKBOX,
       startPosition: insertPos,
       contentPosition: cursorPos,
+    })
+  }
+
+  handleInlineCodeInsertion(node: Node){
+    const insertPos = this.getInsertPosition()
+
+    const tr = this.editorView.state.tr.insert(insertPos, node)
+    this.editorView.dispatch(tr)
+
+    this.nodeStack.push({
+      type: Tags.ICODE,
+      startPosition: insertPos,
+      contentPosition: insertPos + 1
     })
   }
 

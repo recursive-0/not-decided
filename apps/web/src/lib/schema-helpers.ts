@@ -46,3 +46,51 @@ export function createCheckboxSpec(): NodeSpec{
     }
 }
 
+
+
+
+
+export function createInlineCodeSpec(): NodeSpec {
+  return {
+    
+    group: "inline", 
+    content: "text*", 
+    inline: true, 
+    code: true, 
+    defining: true, 
+
+    
+    marks: "", 
+               
+
+    
+    toDOM() {
+      
+      
+      return ["code", { class: "inline-code-node" }, 0];
+    },
+
+    
+    parseDOM: [
+      {
+        
+        tag: "code.inline-code-node"
+      },
+      {
+        
+        
+        
+        tag: "code",
+        priority: 50, 
+        getAttrs: (domNode) => {
+            
+            if (domNode instanceof HTMLElement && !domNode.closest('pre.custom-code-block-pre')) {
+                
+                return {}; 
+            }
+            return false; 
+        }
+      }
+    ]
+  };
+}

@@ -1,5 +1,5 @@
 import { schema } from "prosemirror-schema-basic";
-import { createCheckboxSpec } from "./schema-helpers";
+import { createCheckboxSpec, createInlineCodeSpec } from "./schema-helpers";
 import { addListNodes } from "prosemirror-schema-list";
 
 

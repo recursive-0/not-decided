@@ -269,15 +269,15 @@
     align-items: center;
     justify-content: space-between;
     padding: 0.4em 0.8em;
-    background-color: var(--color-chart-6);
-    border-bottom: 1px solid var(--color-card);
+    background-color: var(--color-card);
+    border-bottom: 1px solid var(--color-chart-7);
     font-size: 0.85em;
   }
 
 
   .custom-code-block .code-block-language {
     /* Keep muted */
-    color: var(--color-muted-foreground);
+    color: #073642;
     background-color: var(--color--background);
     font-weight: 500;
     text-transform: uppercase;
@@ -286,7 +286,7 @@
 
 
   .custom-code-block .code-block-copy-button {
-    background-color: var(--color-border);
+    background-color: var(--color-chart-7);
     /* Use #073642 */
     color: #073642; /* Was: var(--color-secondary-foreground) */
     border: none;
@@ -386,4 +386,34 @@
   text-decoration: line-through;
   /* Keep muted */
   color: var(--color-muted-foreground);
+}
+
+/* Styling for the custom inline_code node */
+.prosemirror-editor code.inline-code-node { /* Target the specific class */
+  display: inline; /* Ensure it stays inline (default for <code> but good to be explicit) */
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace; /* Monospace font */
+  background-color: var(--color-chart-7); /* Subtle background (Solarized base2) */
+  color: #073642; /* High contrast text (Solarized base02) */
+  padding: 0.15em 0.4em; /* Small padding */
+  border-radius: var(--radius-sm); /* Use theme radius */
+  font-size: 0.9em; /* Slightly smaller font size */
+  white-space: nowrap; /* Prevent wrapping of short code snippets */
+  vertical-align: baseline; /* Align nicely with surrounding text */
+}
+
+.inline-code { /* Or just 'code' if your toDOM doesn't add a class */
+  background-color: var(--color-card); /* Light gray background */
+  padding: 0.4em 0.4em;
+  border-radius: 5px;
+  font-family: monospace;
+  font-size: 0.9em;
+  /* Default browser wrapping should now work! Avoid 'white-space: nowrap;' */
+}
+
+/* Ensure it doesn't get confused with code blocks */
+pre code.inline-code {
+    /* Maybe reset some styles if needed, usually not necessary */
+    background-color: transparent;
+    padding: 0;
+    border-radius: 0;
 }

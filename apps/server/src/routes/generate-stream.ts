@@ -2,6 +2,7 @@ import { userPrompts } from "../..";
 import { handleClaudeStream } from "../ai-models/claude";
 import { handleDeepseekStream, streamWithDeepseek } from "../ai-models/deepseek";
 import { handleGeminiStream } from "../ai-models/gemini";
+import { handleGroqStream } from "../ai-models/groq";
 import { simpleStaticStream } from "./simple-static-stream";
 
 export async function generateStream(req: Request): Promise<Response> {
@@ -10,7 +11,7 @@ export async function generateStream(req: Request): Promise<Response> {
     const prompt = userPrompts.get(streamId!)
 
     try {
-        return await handleClaudeStream({prompt: prompt!});
+        return await handleGeminiStream({prompt: prompt!});
     } catch (error) {
         return new Response(
             JSON.stringify({ error: error }), 

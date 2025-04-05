@@ -1,16 +1,28 @@
 
 import React, { createContext, useContext, useState, useRef } from 'react';
 import { EditorView } from 'prosemirror-view';
-import { Schema } from 'prosemirror-model';
+import { Schema, type MarkSpec } from 'prosemirror-model';
 import { schema } from 'prosemirror-schema-basic';
 import { finalNodes } from '@/lib/config-schema';
 
+const inlineCodeMarkSpec: MarkSpec = { // Optionally add MarkSpec type here
+  parseDOM: [{ tag: "code" }],
+  toDOM() {
+    // Use 'as const' to tell TS this is a specific tuple structure
+    return ["code", { class: "inline-code" }, 0] as const;
+  }
+};
+const baseMarks = schema.spec.marks.remove("code")
+const finalMarks = baseMarks.addToEnd("inline_code", inlineCodeMarkSpec); // Add yours
+
+console.log("FInal marks are: ", finalMarks)
+
+console.log("FINAL NODES: ", finalNodes)
 
 export const extendedProseMirrorSchema = new Schema({
-  nodes: finalNodes,
-  marks: schema.spec.marks
+     nodes: finalNodes,
+     marks: finalMarks
 });
-
 
 console.log("PROSEMIRROR EXTENDED: ", extendedProseMirrorSchema)
 

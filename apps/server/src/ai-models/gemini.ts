@@ -47,6 +47,7 @@ export async function handleGeminiStream(props: HandleGeminiStreamProps) {
               .replace(/\n/g, "\\n")
               .replace(/\r/g, "\\r")
               .replace(/\t/g, "\\t");
+              console.log("CHUNK IS: ", safeText)
             controller.enqueue(`data: ${safeText}\n\n`);
           }
         }

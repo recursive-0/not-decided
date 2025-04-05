@@ -16,11 +16,13 @@ interface ParserCallbacks {
   onTextContent: (txt: string) => void;
 }
 
-const ALLOWED_TAGS = ["H1", "H2", "H3", "B", "I", "P", "CODE", "UL", "LI", "QUOTE", "OL", "CHECKBOX",]
+const ALLOWED_TAGS = ["H1", "H2", "H3", "B", "I", "P", "CODE", "UL", "LI", "QUOTE", "OL", "CHECKBOX", "ICODE"]
 
-const StartsWithAllowedTags = (ch: string) => {
+const TAGS = ["[H1]", "[H2]", "[H3]", "[B]", "[I]", "[P]", "[CODE]", "[UL]", "[LI]", "[QUOTE]", "[OL]", "[CHECKBOX]", "[ICODE]"]
 
-  return !ALLOWED_TAGS.find((tag) => tag.startsWith(ch)) ? false : true
+const includesAllowedTags = (ch: string) => {
+
+  return TAGS.find((tag) => tag.includes(ch)) ? true : false
 
 }
 
@@ -96,14 +98,13 @@ export class IncrementalParser {
             console.log("Found /, switching to CLOSING_TAG_START");
             this.textBuffer += char;
             this.state = ParserState.CLOSING_TAG_START;
-          } else if (char === " " || !StartsWithAllowedTags(char)) {
-            // If it's a space or not an alphabetical character, it's not a valid tag
-            this.textBuffer += char;
-            this.state = ParserState.NORMAL;
-          } else {
+          } else if (includesAllowedTags(this.textBuffer + char)){
             this.textBuffer += char;
             this.currentTagName = char;
             this.state = ParserState.TAG_NAME;
+          } else {
+            this.textBuffer += char;
+            this.state = ParserState.NORMAL;
           }
           break;
 
@@ -119,6 +120,7 @@ export class IncrementalParser {
 
         case ParserState.CLOSING_TAG_START:
           if (char === "]") {
+            console.log("CLOSING TAG IS: ", this.currentTagName)
             this.textBuffer += char;
             this.closeTag();
           } else {
