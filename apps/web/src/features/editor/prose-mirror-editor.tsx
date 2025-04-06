@@ -187,51 +187,51 @@ export const ProseMirrorEditor = () => {
 
     const container = editorRef.current; // This is your div with overflow-scroll
 
-      container.scrollTop = container.scrollHeight - container.clientHeight;
+      container.scrollTop = container.scrollHeight - container.clientHeight + 50
   };
 
-  useEffect(() => {
-    const style = document.createElement("style");
-    style.textContent = `
-    .ProseMirror {
-        /* Add perspective to the container */
-        perspective: 1000px;
-        transform-style: preserve-3d;
-    }
+//   useEffect(() => {
+//     const style = document.createElement("style");
+//     style.textContent = `
+//     .ProseMirror {
+//         /* Add perspective to the container */
+//         perspective: 1000px;
+//         transform-style: preserve-3d;
+//     }
 
-    .animated-char {
-        display: inline-block;
-        will-change: transform, opacity;
-        /* Move transform origin up a bit */
-        transform-origin: top center;
-        /* Ensure the character maintains its natural dimensions */
-        vertical-align: baseline;
-        position: relative;
-    }
+//     .animated-char {
+//         display: inline-block;
+//         will-change: transform, opacity;
+//         /* Move transform origin up a bit */
+//         transform-origin: top center;
+//         /* Ensure the character maintains its natural dimensions */
+//         vertical-align: baseline;
+//         position: relative;
+//     }
 
-    @keyframes typeIn {
-        from {
-            opacity: 0;
-            /* Use a gentler transform that won't stretch */
-            transform: translateY(8px) rotateX(30deg) scale(0.95);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0) rotateX(0) scale(1);
-        }
-    }
+//     @keyframes typeIn {
+//         from {
+//             opacity: 0;
+//             /* Use a gentler transform that won't stretch */
+//             transform: translateY(8px) rotateX(30deg) scale(0.95);
+//         }
+//         to {
+//             opacity: 1;
+//             transform: translateY(0) rotateX(0) scale(1);
+//         }
+//     }
 
-    /* Special handling for spaces to maintain consistent width */
-    .animated-space {
-        display: inline-block;
-        width: 0.25em;
-        white-space: pre;
-        position: relative;
-    }
-`;
-    document.head.appendChild(style);
-    return () => style.remove();
-  }, []);
+//     /* Special handling for spaces to maintain consistent width */
+//     .animated-space {
+//         display: inline-block;
+//         width: 0.25em;
+//         white-space: pre;
+//         position: relative;
+//     }
+// `;
+//     document.head.appendChild(style);
+//     return () => style.remove();
+//   }, []);
 
   useEffect(() => {
     if (!editorRef.current) return;
@@ -338,7 +338,7 @@ export const ProseMirrorEditor = () => {
   return (
     <div className="flex flex-col w-full h-full">
       <div
-        className="prosemirror-editor w-full max-h-[calc(100vh - 60px)] h-full overflow-scroll p-4 px-4 border-t border-neutral-400 outline-none"
+        className="prosemirror-editor w-full max-h-[calc(100vh - 60px)] h-full overflow-scroll py-2 px-4 border-t border-neutral-400 outline-none"
         ref={editorRef}
       />
       {/* <StreamingMarkdownDemo /> */}

@@ -1,4 +1,4 @@
-import type { ChatMode, Message } from "@/types/messgaes"
+import type { ChatMode, Message } from "@/types/messages"
 import { create } from "zustand"
 
 export interface ChatStoreProps {
@@ -11,7 +11,7 @@ export interface ChatStoreProps {
 }
 
 export const useChatStore = create<ChatStoreProps>((set) => ({
-    currentChatMode: "CHAT",
+    currentChatMode: "COMPOSER",
     chatMessages: [],
     setCurrentChatMode: (mode) => set((state) => ({currentChatMode: mode})),
     addChatMessage: (newMessage) => set((state) => ({

@@ -13,7 +13,7 @@ export function App() {
             <EditorContainer />
           </ResizablePanel>
           <ResizableHandle withHandle className="before:w-[1px]" />
-          <ResizablePanel defaultSize={35}>
+          <ResizablePanel defaultSize={35} className="min-w-1/4">
             <AIChat />
           </ResizablePanel>
         </ResizablePanelGroup>

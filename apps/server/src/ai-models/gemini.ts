@@ -16,6 +16,8 @@ interface HandleGeminiStreamProps {
 export async function handleGeminiStream(props: HandleGeminiStreamProps) {
   const { prompt, chatMode } = props;
 
+  console.log("CHATMODE IS: ", chatMode)
+
   const systemInstructionContent = chatMode === "CHAT" ? chatModePrompt() : composerModePrompt()
 
   const stream = new ReadableStream({

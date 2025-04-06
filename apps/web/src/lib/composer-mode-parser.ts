@@ -37,7 +37,20 @@ interface ParserCallbacks {
   onTextContent: (txt: string) => void;
 }
 
-const allowed_tags = [
+const all_tags = [
+    "[H1]",
+    "[H2]",
+    "[H3]",
+    "[B]",
+    "[I]",
+    "[P]",
+    "[CODE]",
+    "[ICODE]",
+    "[UL]",
+    "[LI]",
+    "[QUOTE]",
+    "[OL]",
+    "[CHECKBOX]",
   "[THOUGHT]",
   "[/THOUGHT]",
   "[EDITOR_CONTENT]",
@@ -58,6 +71,8 @@ const ALLOWED_TAGS = [
   "OL",
   "CHECKBOX",
   "ICODE",
+  "THOUGHT",
+  "EDITOR_CONTENT"
 ];
 
 const isValidTag = (tag: string) => {
@@ -65,7 +80,7 @@ const isValidTag = (tag: string) => {
 };
 
 const includesAllowedTags = (tag: string) => {
-  return ALLOWED_TAGS.find((tag) => tag.includes(tag)) ? true : false;
+  return all_tags.find((t) => t.includes(tag)) ? true : false;
 };
 
 export class ComposerModeParser {
@@ -86,13 +101,18 @@ export class ComposerModeParser {
   private flushTextBuffer() {
     if (this.textBuffer.length === 0) return;
 
-    if (this.mode === "THOUGHT") {
-      this.callbacks.sendTokensCallback(this.textBuffer);
-    } else if (this.mode === "EDITOR_CONTENT") {
-      this.callbacks.onTextContent(this.textBuffer);
-    }
-
-    this.clearTextBuffer();
+    if(this.state === ParserState.normal){
+        if (this.mode === "THOUGHT") {
+            this.callbacks.sendTokensCallback(this.textBuffer);
+          } else if (this.mode === "EDITOR_CONTENT") {
+            this.callbacks.onTextContent(this.textBuffer);
+          } else {
+              console.warn("FLUSHING TEXT BUFFER BUT MODE IS NORMAL!!!")
+              this.callbacks.sendTokensCallback(this.textBuffer)
+          }
+      
+          this.clearTextBuffer();
+    } 
   }
 
   private clearTextBuffer() {
@@ -120,6 +140,8 @@ export class ComposerModeParser {
       this.processEachCharacter(char);
     }
 
+    console.log("TAG STACK IS: ", this.tagStack)
+
     this.flushTextBuffer();
   }
 
@@ -128,94 +150,107 @@ export class ComposerModeParser {
     const originalTagText = `[${this.currentTagName}]`;
     console.log(`Parser: Attempting to open tag: "${tagName}"`);
 
-    this.clearTextBuffer();
-
-    if (tagName === "THOUGHT") {
-      if (this.mode !== "NORMAL") {
-        console.warn(
-          `Parser: Opening [THOUGHT] while already inside ${this.mode}.`
-        );
-      }
-      this.mode = "THOUGHT";
-      this.tagStack.push(tagName);
-      console.log(`Parser: Mode changed to THOUGHT.`);
-    } else if (tagName === "EDITOR_CONTENT") {
-      if (this.mode !== "NORMAL") {
-        console.warn(
-          `Parser: Opening [EDITOR_CONTENT] while already inside ${this.mode}.`
-        );
-      }
-      this.mode = "EDITOR_CONTENT";
-      this.tagStack.push(tagName);
-      console.log(`Parser: Mode changed to EDITOR_CONTENT.`);
-    } else if (this.mode === "EDITOR_CONTENT" && isValidTag(tagName)) {
-      console.log(`Parser: Calling onOpenTag for EDITOR tag: ${tagName}`);
-      this.tagStack.push(tagName);
-      this.callbacks.onOpenTag(tagName as Tags);
-    } else {
-      console.warn(
-        `Parser: Tag sequence "${originalTagText}" is invalid or unexpected in mode ${this.mode}. Treating as text.`
-      );
-
-      if (this.mode === "THOUGHT") {
-        this.callbacks.sendTokensCallback(originalTagText);
-      } else if (this.mode === "EDITOR_CONTENT") {
-        this.callbacks.onTextContent(originalTagText);
-      }
+    if(!isValidTag(tagName)){
+        this.flushTextBuffer()
+        this.state = ParserState.normal
+        this.currentTagName = ""
+        return
     }
 
-    this.currentTagName = "";
-    this.state = ParserState.normal;
+    if(tagName === "THOUGHT"){
+        this.mode = "THOUGHT"
+        this.tagStack.push(tagName)
+        this.clearTextBuffer()
+        this.state = ParserState.normal
+        this.currentTagName = ""
+        return
+    }
+
+    if(tagName === "EDITOR_CONTENT"){
+        this.mode = "EDITOR_CONTENT"
+        this.tagStack.push(tagName)
+        this.clearTextBuffer()
+        this.state = ParserState.normal
+        this.currentTagName = ""
+        return
+    }
+
+    if(this.mode === "THOUGHT"){
+        this.callbacks.sendTokensCallback(this.textBuffer)
+    } else if(this.mode === "EDITOR_CONTENT"){
+        this.callbacks.onOpenTag(tagName as Tags)
+        this.tagStack.push(tagName)
+    } else {
+        this.flushTextBuffer()
+    }
+
+    this.currentTagName = ""
+    this.state = ParserState.normal
+    this.clearTextBuffer();
   }
 
   private closeTag() {
     const closingTag = this.currentTagName.toUpperCase();
     const originalTagText = `[/${this.currentTagName}]`;
-    console.log(`Parser: Attempting to close tag: "${closingTag}"`);
-    const expectedTag =
-      this.tagStack.length > 0 ? this.tagStack[this.tagStack.length - 1] : null;
+    const topTagInStack = this.tagStack[this.tagStack.length - 1]
 
-    this.clearTextBuffer();
-
-    if (!expectedTag) {
-      console.warn(
-        `Parser: Closing tag "${originalTagText}" found, but tag stack is empty. Ignoring.`
-      );
-    } else if (closingTag === expectedTag) {
-      const closedTag = this.tagStack.pop()!;
-      console.log(
-        `Parser: Matched closing tag "${originalTagText}". Stack: [${this.tagStack.join(
-          ", "
-        )}]`
-      );
-
-      if (closedTag === "THOUGHT" || closedTag === "EDITOR_CONTENT") {
-        this.mode = "NORMAL";
-        console.log(`Parser: Mode changed to NORMAL.`);
-      } else if (isValidTag(closedTag)) {
-        if (
-          this.mode === "EDITOR_CONTENT" ||
-          (this.mode === "NORMAL" &&
-            (expectedTag === "THOUGHT" || expectedTag === "EDITOR_CONTENT"))
-        ) {
-          console.log(
-            `Parser: Calling onCloseTag for EDITOR tag: ${closedTag}`
-          );
-          this.callbacks.onCloseTag(closedTag as Tags);
-        } else {
-          console.warn(
-            `Parser: Closed editor tag "[/${closedTag}]" but not in EDITOR_CONTENT mode (Mode: ${this.mode}). Stack may be corrupted.`
-          );
-        }
-      }
-    } else {
-      console.warn(
-        `Parser: Tag mismatch! Expected "[/${expectedTag}]", but got "${originalTagText}". Ignoring closing tag.`
-      );
+    if(!isValidTag(closingTag)){
+        this.flushTextBuffer()
+        this.state = ParserState.normal
+        this.currentTagName = ""
+        return
     }
 
-    this.currentTagName = "";
-    this.state = ParserState.normal;
+    if(closingTag === "THOUGHT"){
+        const topTagInStack = this.tagStack[this.tagStack.length - 1]
+        if(topTagInStack === closingTag){
+            this.tagStack.pop()
+            this.mode = "NORMAL"
+            this.clearTextBuffer()
+            this.currentTagName = ""
+            this.state = ParserState.normal
+        } else {
+            console.warn(`EXPECTED ${closingTag} TAG but Found ${topTagInStack}`)
+            throw new Error(`EXPECTED ${closingTag} TAG but Found ${topTagInStack}`)
+        }
+
+        return
+    }
+
+    if(closingTag === "EDITOR_CONTENT"){
+        const topTagInStack = this.tagStack[this.tagStack.length - 1]
+        if(topTagInStack === closingTag){
+            this.tagStack.pop()
+            this.mode = "NORMAL"
+            this.clearTextBuffer()
+            this.currentTagName = ""
+            this.state = ParserState.normal
+        } else {
+            console.warn(`EXPECTED ${closingTag} TAG but Found ${topTagInStack}`)
+            throw new Error(`EXPECTED ${closingTag} TAG but Found ${topTagInStack}`)
+        }
+
+        return
+    }
+
+    if(this.mode === "THOUGHT"){
+        this.callbacks.sendTokensCallback(this.textBuffer)
+    } else if(this.mode === "EDITOR_CONTENT"){
+        if(topTagInStack === closingTag){
+            this.callbacks.onCloseTag(closingTag as Tags)
+            this.tagStack.pop()
+        } else {
+            this.callbacks.onTextContent(this.textBuffer)
+        }
+    } else {
+        this.flushTextBuffer()
+    }
+
+
+    this.currentTagName = ""
+    this.state = ParserState.normal
+    this.clearTextBuffer();
+
   }
 
   processEachCharacter(char: string) {

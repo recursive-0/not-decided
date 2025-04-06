@@ -44,6 +44,8 @@
     "react-markdown": "^10.1.0",
     "react-resizable-panels": "^2.1.7",
     "react-syntax-highlighter": "^15.6.1",
+    "rehype-raw": "^7.0.0",
+    "remark-gfm": "^4.0.1",
     "streaming-markdown": "^0.1.0",
     "tailwind-merge": "^3.0.1",
     "tailwindcss": "^4.0.6",

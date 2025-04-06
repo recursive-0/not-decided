@@ -240,3 +240,95 @@
     -moz-osx-font-smoothing: grayscale;
   }
 }
+
+
+
+/* Add this to your global CSS */
+
+.markdown-content {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+}
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
+  margin-top: 1.5em;
+  margin-bottom: 0.75em;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.markdown-content h1 {
+  font-size: 1.5rem;
+}
+
+.markdown-content h2 {
+  font-size: 1.25rem;
+}
+
+.markdown-content h3 {
+  font-size: 1.125rem;
+}
+
+.markdown-content p {
+  margin-bottom: 1em;
+  line-height: 1.6;
+  white-space: pre-line; /* This preserves the newlines */
+}
+
+.markdown-content ul,
+.markdown-content ol {
+  margin-top: 0.5em;
+  margin-bottom: 1em;
+  padding-left: 1.5em;
+}
+
+.markdown-content li {
+  margin-bottom: 0.25em;
+}
+
+.markdown-content code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.875em;
+  padding: 0.1em 0.2em;
+  border-radius: 0.25em;
+}
+
+.markdown-content pre {
+  margin-top: 1em;
+  margin-bottom: 1em;
+  overflow-x: auto;
+}
+
+.markdown-content blockquote {
+  border-left: 3px solid;
+  padding-left: 1em;
+  margin-left: 0;
+  margin-right: 0;
+  font-style: italic;
+}
+
+.markdown-content a {
+  text-decoration: none;
+}
+
+.markdown-content a:hover {
+  text-decoration: underline;
+}
+
+/* Proper spacing for inline code */
+.markdown-content p code,
+.markdown-content li code {
+  white-space: normal;
+  word-break: break-word;
+}
+
+/* Ensures proper spacing between paragraphs */
+.markdown-content > p + p {
+  margin-top: 1em;
+}

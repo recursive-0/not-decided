@@ -17,7 +17,7 @@ import { useSSEStream } from "@/hooks/use-sse-stream";
 import { useEditor } from "@/providers/editor-context-provider";
 import { cn } from "@/lib/utils";
 import { ChatMessages } from "./chat-messages";
-import type { ChatMode, Message } from "@/types/messgaes";
+import type { ChatMode, Message } from "@/types/messages";
 import { useChatStore } from "@/store/chat";
 
 const AIChat = () => {
@@ -91,15 +91,22 @@ const AIChat = () => {
         streamingMessageId.current = llmMessageId;
         startStreaming("CHAT", trimmedInput, handleTokenReceived);
       } else if (currentChatMode === "COMPOSER") {
-        streamingMessageId.current = null;
+        const llmMessageId = uuidv4();
+        addChatMessage({
+          id: llmMessageId,
+          role: "echo",
+          content: "",
+        });
+        streamingMessageId.current = llmMessageId;
         startStreaming("COMPOSER", trimmedInput, handleTokenReceived);
       }
     }
   };
 
-  const handleTokenReceived = (token) => {
+  const handleTokenReceived = (token: string) => {
     if (currentChatMode === "COMPOSER" && isEditorReady) {
-      insertTextAtCursor(token);
+      console.log("TOKEN IS: ", token)
+      appendTokenToMessage(token)
     } else if (currentChatMode === "CHAT" && streamingMessageId.current) {
       appendTokenToMessage(token);
     }
@@ -164,13 +171,12 @@ const AIChat = () => {
         <Textarea
           ref={textareaRef}
           placeholder="Ask anything (⌘L), @ to mention code blocks"
-          className={cn(
-            "flex-1 bg-[var(--color-palette-beige-2)] text-sm rounded-md resize-none overflow-hidden",
-            "border border-[var(--color-palette-gold-dark)]",
-            "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-            "text-[var(--color-palette-dark)] placeholder:text-muted-foreground",
-            "pr-8 py-2 min-h-[38px] max-h-[150px]"
-          )}
+          style={{
+            backgroundColor: "var(--color-palette-gold-light)"
+          }}
+          className="flex-1 text-sm rounded-md resize-none overflow-hidden border border-[var(--color-palette-gold-dark)]
+            text-[var(--color-palette-dark)] placeholder:text-muted-foreground
+            pr-8 py-2 min-h-[38px] max-h-[150px]"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -182,12 +188,12 @@ const AIChat = () => {
             "absolute right-2 top-2 flex items-center justify-center w-6 h-6",
             isStreaming || !input.trim()
               ? "cursor-not-allowed opacity-50"
-              : "cursor-pointer hover:text-[#073642]"
+              : "cursor-pointer hover:text-destructive"
           )}
           onClick={!isStreaming && input.trim() ? handleSendMessage : undefined}
           aria-label="Send message"
         >
-          <CornerDownLeft className="h-4 w-4 text-muted-foreground" />
+          <CornerDownLeft className={`h-4 w-4 text-palette-dark`} />
         </div>
       </div>
     </div>
@@ -208,7 +214,7 @@ const AIChat = () => {
             className="flex-1 flex flex-col p-0 m-0 overflow-hidden h-full"
           >
             <ScrollArea className="w-full flex-1 h-0" ref={scrollAreaRef}>
-              <div className="max-w-full px-4">
+              <div className="px-2 min-w-0">
                 <ChatMessages messages={chatMessages} />
               </div>
             </ScrollArea>
@@ -220,14 +226,16 @@ const AIChat = () => {
             className="flex-1 flex flex-col p-0 m-0 overflow-hidden h-full"
           >
             <ScrollArea className="flex-1 h-0" ref={scrollAreaRef}>
-              <div className="p-4 space-y-4 text-[#073642]">
+              {chatMessages.length ?  <div className="px-2 min-w-0">
+                <ChatMessages messages={chatMessages} />
+              </div> : <div className="p-4 space-y-4 text-[#073642]">
                 <div className="pb-2">
                   <div className="text-xl font-semibold mb-1 flex items-center gap-2">
                     <BrainCircuit className="w-5 h-5 text-primary" />
                     How can I help with the document?
                   </div>
                 </div>
-                <Card className="bg-card border-border">
+                <Card className="bg-palette-beige-1 border-border">
                   <CardContent className="p-3">
                     <div className="flex items-center gap-2 mb-1.5">
                       <div className="bg-primary/10 text-primary px-2 py-0.5 rounded-sm text-xs font-medium">
@@ -246,7 +254,7 @@ const AIChat = () => {
                   (e.g., "Summarize the previous section", "Write an
                   introduction about X")
                 </div>
-              </div>
+              </div>}
             </ScrollArea>
             {renderInputArea()}
           </TabsContent>

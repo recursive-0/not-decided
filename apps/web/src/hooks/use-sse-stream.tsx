@@ -1,8 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { extendedProseMirrorSchema, useEditor } from "@/providers/editor-context-provider";
 import { IncrementalProsemirrorRenderer } from "@/lib/incremental-prosemirror-renderer";
-import { IncrementalParser } from "@/lib/incremental-node-parser";
-import type { ChatMode } from "@/types/messgaes";
+import type { ChatMode } from "@/types/messages";
 import { ChatModeIncrementalParser } from "@/lib/chat-mode-parser";
 import { ComposerModeParser, Tags } from "@/lib/composer-mode-parser";
 import { useChatStore } from "@/store/chat";
@@ -10,6 +9,7 @@ import { useChatStore } from "@/store/chat";
 export const useSSEStream = () => {
     const [content, setContent] = useState<string>("");
     const chatMode = useChatStore(state => state.currentChatMode)
+    console.log("CHAT MODE CHANGED in use sse: ", chatMode)
     const [isStreaming, setIsStreaming] = useState<boolean>(false);
     const [error, setError] = useState<Error | null>(null);
     const [currentStreamId, setCurrentStreamId] = useState<string>("")
@@ -20,15 +20,16 @@ export const useSSEStream = () => {
     const rendererRef = useRef<IncrementalProsemirrorRenderer | null>(null);
     const eventSourceRef = useRef<EventSource | null>(null);
 
-    const getCurrentParser = useCallback(() => {
+    const getCurrentParser = () => {
         if(chatMode === "CHAT"){
             return chatParserRef
         } else {
             return composerParserRef
         }
-    }, [chatMode])
+    }
 
     const startStreaming = useCallback(async (chatMode: ChatMode, prompt: string, sendTokensCallback: (token: string) => void) => {
+
         try {
 
             setIsStreaming(true);
@@ -103,7 +104,7 @@ export const useSSEStream = () => {
             eventSourceRef.current.onmessage = (event) => {
                 const token = event.data;
 
-                console.log("TOKEN IS", token)
+                console.log("CURRENT PARSER IS: ", getCurrentParser())
 
                 switch (token.trim()) {
                     case "[DONE]":
@@ -137,7 +138,7 @@ export const useSSEStream = () => {
             setError(error);
             setIsStreaming(false);
         }
-    }, [editorView]);
+    }, [editorView, chatMode]);
 
     const stopStreaming = useCallback(() => {
         getCurrentParser().current?.stopStreaming();

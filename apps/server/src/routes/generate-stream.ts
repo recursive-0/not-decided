@@ -23,6 +23,7 @@ export async function generateStream(req: Request): Promise<Response> {
 
     try {
         return await handleGeminiStream({prompt, chatMode: chatMode as "CHAT" | "COMPOSER"});
+        // return await simpleStaticStream()
     } catch (error) {
         return new Response(
             JSON.stringify({ error: error }), 

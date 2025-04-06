@@ -151,9 +151,8 @@ const Toolbar = () => {
         {}
         <Tooltip>
           <TooltipTrigger asChild>
-             {}
             <button
-              onClick={() => startStreaming("hey there")} 
+              // onClick={() => startStreaming("hey there")} 
               className="flex items-center gap-1 rounded-sm px-2 py-1 transition-colors text-violet-600 hover:bg-violet-500/10" 
             >
               <Sparkles className="h-4 w-4" /> {}
