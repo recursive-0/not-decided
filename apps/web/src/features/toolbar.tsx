@@ -52,8 +52,12 @@ import {
   applyHeading,
   setTextAlignment,
   toggleBlockquote,
-  toggleList
+  toggleList,
+  insertLink
 } from '@/lib/prosemirror-tool-handlers';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 // Expanded types for all formatting options
 type TextFormatType = "bold" | "italic" | "underline" | "strikethrough" | "superscript" | "subscript";
@@ -135,7 +139,7 @@ const FormatButton = ({
             "rounded-sm p-1.5 transition-colors", 
             active
               ? "bg-secondary text-[#073642]" 
-              : "text-[#073642] hover:bg-secondary/50" 
+              : "text-[#073642] hover:bg-background hover:shadow-md" 
           )}
           onClick={onClick}
           aria-label={label} 
@@ -173,16 +177,20 @@ const ColorButton = ({
           <Icon className="h-4 w-4" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-48">
-        <div className="grid grid-cols-4 gap-1 p-1">
+      <DropdownMenuContent 
+       style={{
+        backgroundColor: "var(--color-palette-beige-2)"
+      }}
+      className="w-48">
+        <div className="grid grid-cols-4 gap-1 p-0.5">
           {options.map((option) => (
             <DropdownMenuItem
               key={option.color}
-              className="flex flex-col items-center justify-center p-1"
+              className="flex flex-col items-center justify-center hover:!bg-primary/80 py-1 px-1"
               onClick={() => onSelect(option.color)}
             >
               <div 
-                className="w-6 h-6 rounded" 
+                className="w-4 h-4 rounded" 
                 style={{ backgroundColor: option.color, border: '1px solid #ccc' }}
                 title={option.label}
               />
@@ -198,9 +206,29 @@ const Toolbar = () => {
   const [activeTextFormats, setActiveTextFormats] = useState<TextFormatType[]>([]);
   const [activeAlignment, setActiveAlignment] = useState<AlignmentType>("alignLeft");
   const [activeBlockType, setActiveBlockType] = useState<BlockType>("paragraph");
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [linkText, setLinkText] = useState("");
+  const [linkUrl, setLinkUrl] = useState("");
   
   const { startStreaming } = useSSEStream();
   const { editorView } = useEditor();
+
+    // Update the handleInsertLink function
+    const handleInsertLink = () => {
+      setLinkDialogOpen(true);
+    };
+  
+    // Add this function to insert the link into the editor
+    const handleAddLink = () => {
+      // This function will need to be implemented based on your editor's API
+      // For example, it might look something like this:
+      insertLink(editorView.current, linkText, linkUrl);
+      
+      // Close the dialog and reset fields
+      setLinkDialogOpen(false);
+      setLinkText("");
+      setLinkUrl("");
+    };
 
   // Handler for text formatting options
   const toggleTextFormat = (format: TextFormatType) => {
@@ -308,59 +336,7 @@ const Toolbar = () => {
   return (
     <TooltipProvider delayDuration={150}>
       <div className="h-10 w-full flex items-center justify-center bg-background px-2 py-1.5 gap-1">
-        {/* Text formatting section */}
-        <div className="flex items-center gap-0.5">
-          {textFormatOptions.map((option) => (
-            <FormatButton
-              key={option.id}
-              icon={option.icon}
-              label={option.label}
-              shortcut={option.shortcut}
-              active={activeTextFormats.includes(option.id as TextFormatType)}
-              onClick={() => toggleTextFormat(option.id as TextFormatType)}
-            />
-          ))}
-        </div>
 
-        {/* Divider */}
-        <div className="w-px h-5 mx-1.5 bg-border" />
-        
-        {/* Color options */}
-        <div className="flex items-center gap-0.5">
-          <ColorButton
-            icon={Palette}
-            label="Text Color"
-            options={textColorOptions}
-            onSelect={(color) => setTextColor(editorView.current, color)}
-          />
-          <ColorButton
-            icon={HighlighterIcon}
-            label="Highlight Color"
-            options={highlightOptions}
-            onSelect={(color) => setHighlightColor(editorView.current, color)}
-          />
-        </div>
-
-        {/* Divider */}
-        <div className="w-px h-5 mx-1.5 bg-border" />
-        
-        {/* Alignment section */}
-        <div className="flex items-center gap-0.5">
-          {alignmentOptions.map((option) => (
-            <FormatButton
-              key={option.id}
-              icon={option.icon}
-              label={option.label}
-              shortcut={option.shortcut}
-              active={activeAlignment === option.id}
-              onClick={() => setAlignment(option.id as AlignmentType)}
-            />
-          ))}
-        </div>
-
-        {/* Divider */}
-        <div className="w-px h-5 mx-1.5 bg-border" />
-        
         {/* Block formatting section */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -392,11 +368,66 @@ const Toolbar = () => {
           </DropdownMenuContent>
         </DropdownMenu>
 
+          {/* Divider */}
+          <div className="w-px h-5 mx-1.5 bg-border" />
+        {/* Text formatting section */}
+        <div className="flex items-center gap-0.5">
+          {textFormatOptions.map((option) => (
+            <FormatButton
+              key={option.id}
+              icon={option.icon}
+              label={option.label}
+              shortcut={option.shortcut}
+              active={activeTextFormats.includes(option.id as TextFormatType)}
+              onClick={() => toggleTextFormat(option.id as TextFormatType)}
+            />
+          ))}
+        </div>
+
         {/* Divider */}
         <div className="w-px h-5 mx-1.5 bg-border" />
         
-        {/* Indentation controls */}
+        {/* Color options */}
         <div className="flex items-center gap-0.5">
+          <ColorButton
+            icon={Type}
+            label="Text Color"
+            options={textColorOptions}
+            onSelect={(color) => setTextColor(editorView.current, color)}
+          />
+          <ColorButton
+            icon={HighlighterIcon}
+            label="Highlight Color"
+            options={highlightOptions}
+            onSelect={(color) => setHighlightColor(editorView.current, color)}
+          />
+        </div>
+
+        {/* Divider */}
+        <div className="w-px h-5 mx-1.5 bg-border" />
+        
+        {/* Alignment section */}
+        <div className="flex items-center gap-0.5">
+          {alignmentOptions.map((option) => (
+            <FormatButton
+              key={option.id}
+              icon={option.icon}
+              label={option.label}
+              shortcut={option.shortcut}
+              active={activeAlignment === option.id}
+              onClick={() => setAlignment(option.id as AlignmentType)}
+            />
+          ))}
+        </div>
+
+        {/* Divider */}
+        <div className="w-px h-5 mx-1.5 bg-border" />
+
+        {/* Divider */}
+        {/* <div className="w-px h-5 mx-1.5 bg-border" /> */}
+        
+        {/* Indentation controls */}
+        {/* <div className="flex items-center gap-0.5">
           <FormatButton
             icon={Outdent}
             label="Decrease Indent"
@@ -411,15 +442,17 @@ const Toolbar = () => {
             active={false}
             onClick={() => console.log("Increase indent not implemented")}
           />
-        </div>
+        </div> */}
 
         {/* Divider */}
-        <div className="w-px h-5 mx-1.5 bg-border" />
+        {/* <div className="w-px h-5 mx-1.5 bg-border" /> */}
         
         {/* Link section */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <button className="flex items-center gap-1 rounded-sm px-2 py-1 transition-colors text-[#073642] hover:bg-secondary/50">
+            <button 
+            onClick={handleInsertLink}
+            className="flex items-center gap-1 rounded-sm px-2 py-1 transition-colors text-[#073642] hover:bg-secondary/50">
               <Link className="h-4 w-4" />
               <span className="text-xs font-medium">Add Link</span>
             </button>
@@ -429,6 +462,48 @@ const Toolbar = () => {
              <span className="flex items-center rounded border border-border bg-secondary px-1 text-xs font-semibold text-secondary-foreground">⌘K</span>
           </TooltipContent>
         </Tooltip>
+
+        <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Add Link</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-3 items-center gap-4">
+                {/* <label htmlFor="linkText" className="text-right text-sm font-medium">
+                  Text
+                </label> */}
+                <Input
+                  id="linkText"
+                  value={linkText}
+                  onChange={(e) => setLinkText(e.target.value)}
+                  className="col-span-3 bg-palette-beige-1 border-border"
+                  placeholder='Link Text'
+                />
+              </div>
+              <div className="grid grid-cols-3 items-center gap-4">
+                {/* <label htmlFor="linkUrl" className="text-right text-sm font-medium">
+                  URL
+                </label> */}
+                <Input
+                  id="linkUrl"
+                  value={linkUrl}
+                  onChange={(e) => setLinkUrl(e.target.value)}
+                  className="col-span-3 bg-palette-beige-1 border-border"
+                  placeholder="https://link.com"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="secondary" onClick={() => setLinkDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" onClick={handleAddLink}>
+                Add Link
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Divider */}
         <div className="w-px h-5 mx-1.5 bg-border" />

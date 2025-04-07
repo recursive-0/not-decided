@@ -181,6 +181,11 @@
   color: #073642; /* Was: var(--color-secondary-foreground) */
 }
 
+.prosemirror-editor .link{
+  text-decoration: underline;
+  color: blue;
+}
+
 .prosemirror-editor .underline-mark {
    text-decoration: underline;
 

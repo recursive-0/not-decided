@@ -139,9 +139,9 @@ export const strikethroughText = (editorView: EditorView, apply: boolean): void 
 };
 
 
-// handlers.ts (extended)
 
-// Text colors
+
+
 export const setTextColor = (editorView: EditorView, color: string): void => {
     console.log("Setting text color to:", color);
     const { state } = editorView;
@@ -168,7 +168,7 @@ export const setTextColor = (editorView: EditorView, color: string): void => {
     editorView.dispatch(tr);
   };
   
-  // Background/highlight color
+  
   export const setHighlightColor = (editorView: EditorView, color: string): void => {
     console.log("Setting highlight color to:", color);
     const { state } = editorView;
@@ -195,7 +195,7 @@ export const setTextColor = (editorView: EditorView, color: string): void => {
     editorView.dispatch(tr);
   };
   
-  // Superscript
+  
   export const superscriptText = (editorView: EditorView, apply: boolean): void => {
     console.log("Toggling Superscript, apply:", apply);
     const { state } = editorView;
@@ -226,7 +226,7 @@ export const setTextColor = (editorView: EditorView, color: string): void => {
     editorView.dispatch(tr);
   };
   
-  // Subscript
+  
   export const subscriptText = (editorView: EditorView, apply: boolean): void => {
     console.log("Toggling Subscript, apply:", apply);
     const { state } = editorView;
@@ -257,7 +257,7 @@ export const setTextColor = (editorView: EditorView, color: string): void => {
     editorView.dispatch(tr);
   };
   
-  // Apply a heading style
+  
   export const applyHeading = (editorView: EditorView, level: number): void => {
     console.log("Applying heading level:", level);
     const { state } = editorView;
@@ -283,8 +283,66 @@ export const setTextColor = (editorView: EditorView, color: string): void => {
     const transaction = tr.setBlockType(range.start, range.end, nodeType, attrs);
     editorView.dispatch(transaction);
   };
+
+  export const insertLink = (editorView: EditorView, linkText: string, linkUrl: string) => {
+    const { state } = editorView;
+    const { selection, schema, tr } = state;
+    const { from, to } = selection;
+    
+    const resolvedFrom = Math.min(from, to);
+    const resolvedTo = Math.max(from, to);
+    
+    
+    const linkMarkType = schema.marks.link;
+    
+    if (!linkMarkType) {
+      console.warn("Schema missing 'link' mark type.");
+      return;
+    }
+    
+    
+    if (resolvedFrom === resolvedTo) {
+      console.log("InsertLink: No selection, inserting at cursor position");
+      
+      
+      const textNode = schema.text(linkText);
+      tr.insert(resolvedFrom, textNode);
+      
+      
+      tr.addMark(
+        resolvedFrom, 
+        resolvedFrom + linkText.length, 
+        linkMarkType.create({ href: linkUrl })
+      );
+    } else {
+      
+      console.log(`InsertLink: Replacing selection from ${resolvedFrom} to ${resolvedTo}`);
+      
+      
+      if (linkText && linkText.trim() !== '') {
+        tr.replaceWith(resolvedFrom, resolvedTo, schema.text(linkText));
+        
+        
+        tr.addMark(
+          resolvedFrom, 
+          resolvedFrom + linkText.length, 
+          linkMarkType.create({ href: linkUrl })
+        );
+      } else {
+        
+        tr.addMark(
+          resolvedFrom, 
+          resolvedTo, 
+          linkMarkType.create({ href: linkUrl })
+        );
+      }
+    }
+    
+    
+    editorView.dispatch(tr);
+  }
   
-  // Text alignment
+  
   export const setTextAlignment = (editorView: EditorView, alignment: 'left' | 'center' | 'right' | 'justify'): void => {
     console.log("Setting text alignment to:", alignment);
     const { state } = editorView;
@@ -298,7 +356,7 @@ export const setTextColor = (editorView: EditorView, color: string): void => {
       return;
     }
     
-    // We'll need to add this attribute to your node types
+    
     const transaction = tr.setNodeMarkup(range.start, null, { 
       ...tr.doc.nodeAt(range.start)?.attrs,
       align: alignment 
@@ -307,7 +365,7 @@ export const setTextColor = (editorView: EditorView, color: string): void => {
     editorView.dispatch(transaction);
   };
   
-  // Blockquote toggle
+  
   export const toggleBlockquote = (editorView: EditorView): void => {
     console.log("Toggling blockquote");
     const { state } = editorView;
@@ -321,15 +379,15 @@ export const setTextColor = (editorView: EditorView, color: string): void => {
       return;
     }
     
-    // Check if we're already in a blockquote
+    
     const isInBlockquote = range.parent.type === schema.nodes.blockquote;
     
     if (isInBlockquote) {
-      // Unwrap from blockquote
+      
       const transaction = tr.lift(range, 0);
       editorView.dispatch(transaction);
     } else {
-      // Wrap in blockquote
+      
       const blockquoteType = schema.nodes.blockquote;
       if (!blockquoteType) {
         console.warn("Schema missing 'blockquote' node type.");
@@ -347,7 +405,7 @@ export const setTextColor = (editorView: EditorView, color: string): void => {
     }
   };
   
-  // Lists
+  
   export const toggleList = (editorView: EditorView, listType: 'bullet_list' | 'ordered_list'): void => {
     console.log(`Toggling ${listType}`);
     const { state } = editorView;
@@ -369,15 +427,15 @@ export const setTextColor = (editorView: EditorView, color: string): void => {
       return;
     }
     
-    // Check if we're already in this type of list
+    
     const isInList = range.parent.type === nodeType;
     
     if (isInList) {
-      // Unwrap from list
+      
       const transaction = tr.lift(range, 0);
       editorView.dispatch(transaction);
     } else {
-      // Wrap in list
+      
       const canWrap = range && range.depth >= 1;
       if (!canWrap) {
         console.log(`Cannot wrap in ${listType}, invalid range or depth.`);
