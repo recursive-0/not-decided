@@ -3,17 +3,7 @@ import React, { createContext, useContext, useState, useRef } from 'react';
 import { EditorView } from 'prosemirror-view';
 import { Schema, type MarkSpec } from 'prosemirror-model';
 import { schema } from 'prosemirror-schema-basic';
-import { finalNodes } from '@/lib/config-schema';
-
-const inlineCodeMarkSpec: MarkSpec = { // Optionally add MarkSpec type here
-  parseDOM: [{ tag: "code" }],
-  toDOM() {
-    // Use 'as const' to tell TS this is a specific tuple structure
-    return ["code", { class: "inline-code" }, 0] as const;
-  }
-};
-const baseMarks = schema.spec.marks.remove("code")
-const finalMarks = baseMarks.addToEnd("inline_code", inlineCodeMarkSpec); // Add yours
+import { finalMarks, finalNodes } from '@/lib/config-schema';
 
 console.log("FInal marks are: ", finalMarks)
 
@@ -42,7 +32,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const editorView = useRef<EditorView | null>(null);
   const [isEditorReady, setEditorReady] = useState(false);
 
-  
+
   const insertTextAtCursor = (text: string) => {
     if (!editorView.current) return;
 
@@ -90,7 +80,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         insertTextAtCursor,
         replaceText,
         getCurrentContent,
-        customDispatchTransaction
+        customDispatchTransaction,
       }}
     >
       {children}

@@ -1,10 +1,16 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger
 } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import {
   Bold,
@@ -14,24 +20,96 @@ import {
   AlignLeft,
   AlignCenter,
   AlignJustify,
+  AlignRight,
   Link,
-  Sparkles 
+  Sparkles,
+  Superscript,
+  Subscript,
+  Heading1,
+  Heading2,
+  Heading3,
+  List,
+  ListOrdered,
+  Quote,
+  Palette,
+  HighlighterIcon,
+  Indent,
+  Outdent,
+  Type,
+  QuoteIcon
 } from 'lucide-react';
 import { useSSEStream } from '@/hooks/use-sse-stream';
+import { useEditor } from '@/providers/editor-context-provider';
+import { 
+  boldText, 
+  italicizeText, 
+  strikethroughText, 
+  underlineText,
+  superscriptText,
+  subscriptText,
+  setTextColor,
+  setHighlightColor,
+  applyHeading,
+  setTextAlignment,
+  toggleBlockquote,
+  toggleList
+} from '@/lib/prosemirror-tool-handlers';
 
+// Expanded types for all formatting options
+type TextFormatType = "bold" | "italic" | "underline" | "strikethrough" | "superscript" | "subscript";
+type AlignmentType = "alignLeft" | "alignCenter" | "alignRight" | "alignJustify";
+type BlockType = "heading1" | "heading2" | "heading3" | "paragraph" | "bulletList" | "orderedList" | "blockquote";
 
-const formatOptions = [
+// Combined type for state tracking
+type FormatType = TextFormatType | AlignmentType | BlockType;
+
+// Format options for basic text styling
+const textFormatOptions = [
   { id: 'bold', icon: Bold, label: 'Bold', shortcut: '⌘B' },
   { id: 'italic', icon: Italic, label: 'Italic', shortcut: '⌘I' },
   { id: 'underline', icon: Underline, label: 'Underline', shortcut: '⌘U' },
   { id: 'strikethrough', icon: Strikethrough, label: 'Strikethrough', shortcut: '⌘⇧X' },
+  { id: 'superscript', icon: Superscript, label: 'Superscript' },
+  { id: 'subscript', icon: Subscript, label: 'Subscript' },
 ];
 
-
+// Alignment options
 const alignmentOptions = [
-  { id: 'alignLeft', icon: AlignLeft, label: 'Align Left', shortcut: '⌘L' },
-  { id: 'alignCenter', icon: AlignCenter, label: 'Align Center', shortcut: '⌘E' },
-  { id: 'alignJustify', icon: AlignJustify, label: 'Justify', shortcut: '⌘J' },
+  { id: 'alignLeft', icon: AlignLeft, label: 'Align Left', shortcut: '⌘⇧L' },
+  { id: 'alignCenter', icon: AlignCenter, label: 'Align Center', shortcut: '⌘⇧E' },
+  { id: 'alignRight', icon: AlignRight, label: 'Align Right', shortcut: '⌘⇧R' },
+  { id: 'alignJustify', icon: AlignJustify, label: 'Justify', shortcut: '⌘⇧J' },
+];
+
+// Heading and block options
+const blockOptions = [
+  { id: 'heading1', icon: Heading1, label: 'Heading 1', shortcut: '⌘⌥1' },
+  { id: 'heading2', icon: Heading2, label: 'Heading 2', shortcut: '⌘⌥2' },
+  { id: 'heading3', icon: Heading3, label: 'Heading 3', shortcut: '⌘⌥3' },
+  { id: 'paragraph', icon: Type, label: 'Normal Text', shortcut: '⌘⌥0' },
+  { id: 'bulletList', icon: List, label: 'Bullet List', shortcut: '⌘⇧8' },
+  { id: 'orderedList', icon: ListOrdered, label: 'Numbered List', shortcut: '⌘⇧7' },
+  { id: 'blockquote', icon: Quote, label: 'Quote', shortcut: '⌘⇧B' },
+];
+
+// Color options
+const textColorOptions = [
+  { color: '#000000', label: 'Black' },
+  { color: '#555555', label: 'Dark Gray' },
+  { color: '#FF0000', label: 'Red' },
+  { color: '#0000FF', label: 'Blue' },
+  { color: '#008000', label: 'Green' },
+  { color: '#FFA500', label: 'Orange' },
+  { color: '#800080', label: 'Purple' },
+];
+
+const highlightOptions = [
+  { color: '#FFFF00', label: 'Yellow' },
+  { color: '#00FFFF', label: 'Cyan' },
+  { color: '#FF00FF', label: 'Magenta' },
+  { color: '#90EE90', label: 'Light Green' },
+  { color: '#FFD700', label: 'Gold' },
+  { color: '#F08080', label: 'Light Coral' },
 ];
 
 type FormatButtonProps = {
@@ -41,7 +119,6 @@ type FormatButtonProps = {
   active: boolean;
   onClick: () => void;
 };
-
 
 const FormatButton = ({
   icon: Icon,
@@ -63,10 +140,9 @@ const FormatButton = ({
           onClick={onClick}
           aria-label={label} 
         >
-          <Icon className="h-4 w-4" /> {}
+          <Icon className="h-4 w-4" />
         </button>
       </TooltipTrigger>
-      {}
       <TooltipContent className="bg-card text-card-foreground border-border flex items-center gap-2">
         <span>{label}</span>
         {shortcut && (
@@ -79,41 +155,196 @@ const FormatButton = ({
   );
 };
 
-const Toolbar = () => {
-  
-  const [activeFormats, setActiveFormats] = useState<string[]>(['italic']);
-  const { startStreaming } = useSSEStream();
+const ColorButton = ({ 
+  icon: Icon, 
+  label, 
+  options, 
+  onSelect 
+}: { 
+  icon: React.ElementType; 
+  label: string; 
+  options: Array<{ color: string; label: string }>; 
+  onSelect: (color: string) => void;
+}) => {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="rounded-sm p-1.5 transition-colors text-[#073642] hover:bg-secondary/50">
+          <Icon className="h-4 w-4" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-48">
+        <div className="grid grid-cols-4 gap-1 p-1">
+          {options.map((option) => (
+            <DropdownMenuItem
+              key={option.color}
+              className="flex flex-col items-center justify-center p-1"
+              onClick={() => onSelect(option.color)}
+            >
+              <div 
+                className="w-6 h-6 rounded" 
+                style={{ backgroundColor: option.color, border: '1px solid #ccc' }}
+                title={option.label}
+              />
+            </DropdownMenuItem>
+          ))}
+        </div>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
 
-  const toggleFormat = (format: string) => {
+const Toolbar = () => {
+  const [activeTextFormats, setActiveTextFormats] = useState<TextFormatType[]>([]);
+  const [activeAlignment, setActiveAlignment] = useState<AlignmentType>("alignLeft");
+  const [activeBlockType, setActiveBlockType] = useState<BlockType>("paragraph");
+  
+  const { startStreaming } = useSSEStream();
+  const { editorView } = useEditor();
+
+  // Handler for text formatting options
+  const toggleTextFormat = (format: TextFormatType) => {
+    const isAlreadySelected = activeTextFormats.includes(format);
+
+    switch(format) {
+      case "bold":
+        boldText(editorView.current, !isAlreadySelected);
+        break;
+      case "italic":
+        italicizeText(editorView.current, !isAlreadySelected);
+        break;
+      case "underline":
+        underlineText(editorView.current, !isAlreadySelected);
+        break;
+      case "strikethrough":
+        strikethroughText(editorView.current, !isAlreadySelected);
+        break;
+      case "superscript":
+        superscriptText(editorView.current, !isAlreadySelected);
+        break;
+      case "subscript":
+        subscriptText(editorView.current, !isAlreadySelected);
+        break;
+      default:
+        break;
+    }
     
-    setActiveFormats(prev =>
+    // Update active formats
+    setActiveTextFormats(prev =>
       prev.includes(format)
         ? prev.filter(f => f !== format)
         : [...prev, format]
     );
+  };
+
+  // Handler for alignment options
+  const setAlignment = (alignment: AlignmentType) => {
+    // Map alignment options to ProseMirror alignment values
+    const alignmentMap = {
+      alignLeft: 'left',
+      alignCenter: 'center',
+      alignRight: 'right',
+      alignJustify: 'justify'
+    };
     
+    // Apply alignment to editor
+    setTextAlignment(editorView.current, alignmentMap[alignment] as 'left' | 'center' | 'right' | 'justify');
+    
+    // Update active alignment
+    setActiveAlignment(alignment);
+  };
+
+  const renderActiveBlockIcon = () => {
+    switch (activeBlockType){
+      case "blockquote":
+        return <Quote className="h-4 w-4" />
+      case "bulletList":
+        return <List className='h-4 w-4' />
+      case "heading1":
+        return <Heading1 className='h-4 w-4' />
+      case "heading2":
+        return <Heading2 className='h-4 w-4' />
+      case "heading3":
+        return <Heading3 className='h-4 w-4' />
+      case "orderedList":
+        return <ListOrdered className='h-4 w-4' />
+      case "paragraph":
+        return <Type className='h-4 w-4' />
+    }
+  }
+
+  // Handler for block formatting
+  const setBlockFormat = (blockType: BlockType) => {
+    switch(blockType) {
+      case "heading1":
+        applyHeading(editorView.current, 1);
+        break;
+      case "heading2":
+        applyHeading(editorView.current, 2);
+        break;
+      case "heading3":
+        applyHeading(editorView.current, 3);
+        break;
+      case "paragraph":
+        applyHeading(editorView.current, 0); // 0 = paragraph
+        break;
+      case "bulletList":
+        toggleList(editorView.current, 'bullet_list');
+        break;
+      case "orderedList":
+        toggleList(editorView.current, 'ordered_list');
+        break;
+      case "blockquote":
+        toggleBlockquote(editorView.current);
+        break;
+      default:
+        break;
+    }
+    
+    // Update active block type
+    setActiveBlockType(blockType);
   };
 
   return (
-    <TooltipProvider delayDuration={150}> {}
+    <TooltipProvider delayDuration={150}>
       <div className="h-10 w-full flex items-center justify-center bg-background px-2 py-1.5 gap-1">
-        <div className="flex items-center gap-0.5"> {}
-          {formatOptions.map((option) => (
+        {/* Text formatting section */}
+        <div className="flex items-center gap-0.5">
+          {textFormatOptions.map((option) => (
             <FormatButton
               key={option.id}
               icon={option.icon}
               label={option.label}
               shortcut={option.shortcut}
-              active={activeFormats.includes(option.id)}
-              onClick={() => toggleFormat(option.id)}
+              active={activeTextFormats.includes(option.id as TextFormatType)}
+              onClick={() => toggleTextFormat(option.id as TextFormatType)}
             />
           ))}
         </div>
 
-        {}
+        {/* Divider */}
         <div className="w-px h-5 mx-1.5 bg-border" />
+        
+        {/* Color options */}
+        <div className="flex items-center gap-0.5">
+          <ColorButton
+            icon={Palette}
+            label="Text Color"
+            options={textColorOptions}
+            onSelect={(color) => setTextColor(editorView.current, color)}
+          />
+          <ColorButton
+            icon={HighlighterIcon}
+            label="Highlight Color"
+            options={highlightOptions}
+            onSelect={(color) => setHighlightColor(editorView.current, color)}
+          />
+        </div>
 
-        {}
+        {/* Divider */}
+        <div className="w-px h-5 mx-1.5 bg-border" />
+        
+        {/* Alignment section */}
         <div className="flex items-center gap-0.5">
           {alignmentOptions.map((option) => (
             <FormatButton
@@ -121,19 +352,73 @@ const Toolbar = () => {
               icon={option.icon}
               label={option.label}
               shortcut={option.shortcut}
-              active={activeFormats.includes(option.id)} 
-              onClick={() => toggleFormat(option.id)} 
+              active={activeAlignment === option.id}
+              onClick={() => setAlignment(option.id as AlignmentType)}
             />
           ))}
         </div>
 
-        {}
+        {/* Divider */}
         <div className="w-px h-5 mx-1.5 bg-border" />
+        
+        {/* Block formatting section */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex items-center gap-1 rounded-sm px-2 py-1 transition-colors text-[#073642] hover:bg-secondary/50">
+              {renderActiveBlockIcon()}
+              <span className="text-xs font-medium">{activeBlockType}</span>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+          style={{
+            backgroundColor: "var(--color-palette-beige-2)"
+          }}
+          className='bg-palette-gold-light'>
+            {blockOptions.map((option) => (
+              <DropdownMenuItem 
+              className='hover:!bg-primary/80'
+                key={option.id}
+                onClick={() => setBlockFormat(option.id as BlockType)}
+              >
+                <div className="flex items-center gap-2">
+                  <option.icon className="h-4 w-4" />
+                  <span>{option.label}</span>
+                  {option.shortcut && (
+                    <span className="ml-auto text-xs text-muted-foreground">{option.shortcut}</span>
+                  )}
+                </div>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
-        {}
+        {/* Divider */}
+        <div className="w-px h-5 mx-1.5 bg-border" />
+        
+        {/* Indentation controls */}
+        <div className="flex items-center gap-0.5">
+          <FormatButton
+            icon={Outdent}
+            label="Decrease Indent"
+            shortcut="⌘["
+            active={false}
+            onClick={() => console.log("Decrease indent not implemented")}
+          />
+          <FormatButton
+            icon={Indent}
+            label="Increase Indent"
+            shortcut="⌘]"
+            active={false}
+            onClick={() => console.log("Increase indent not implemented")}
+          />
+        </div>
+
+        {/* Divider */}
+        <div className="w-px h-5 mx-1.5 bg-border" />
+        
+        {/* Link section */}
         <Tooltip>
           <TooltipTrigger asChild>
-            {}
             <button className="flex items-center gap-1 rounded-sm px-2 py-1 transition-colors text-[#073642] hover:bg-secondary/50">
               <Link className="h-4 w-4" />
               <span className="text-xs font-medium">Add Link</span>
@@ -145,23 +430,22 @@ const Toolbar = () => {
           </TooltipContent>
         </Tooltip>
 
-        {}
+        {/* Divider */}
         <div className="w-px h-5 mx-1.5 bg-border" />
-
-        {}
+        
+        {/* AI section - kept as is */}
         <Tooltip>
           <TooltipTrigger asChild>
             <button
-              // onClick={() => startStreaming("hey there")} 
               className="flex items-center gap-1 rounded-sm px-2 py-1 transition-colors text-violet-600 hover:bg-violet-500/10" 
             >
-              <Sparkles className="h-4 w-4" /> {}
+              <Sparkles className="h-4 w-4" />
               <span className="text-xs font-medium">Ask AI</span>
             </button>
           </TooltipTrigger>
           <TooltipContent className="bg-card text-card-foreground border-border flex items-center gap-2">
             <span>Generate text with AI</span>
-             <span className="flex items-center rounded border border-border bg-secondary px-1 text-xs font-semibold text-secondary-foreground">⌘/</span>
+            <span className="flex items-center rounded border border-border bg-secondary px-1 text-xs font-semibold text-secondary-foreground">⌘/</span>
           </TooltipContent>
         </Tooltip>
       </div>

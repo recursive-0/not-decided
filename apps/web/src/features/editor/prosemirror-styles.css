@@ -181,6 +181,16 @@
   color: #073642; /* Was: var(--color-secondary-foreground) */
 }
 
+.prosemirror-editor .underline-mark {
+   text-decoration: underline;
+
+}
+
+.prosemirror-editor .strikethrough-mark {
+  text-decoration:line-through;
+
+}
+
 
 .prosemirror-editor > *:last-child {
   min-height: 1rem;

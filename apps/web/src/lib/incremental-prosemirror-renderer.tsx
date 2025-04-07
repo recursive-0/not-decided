@@ -103,7 +103,7 @@ export class IncrementalProsemirrorRenderer {
 
       if (!lastNode || lastNode.type !== tag) {
         const insertPos = this.getInsertPosition()
-        const tr = this.editorView.state.tr.insertText(`[${tag}]`, insertPos)
+        const tr = this.editorView.state.tr.insertText(`[${tag}]`, insertPos).setMeta('isStreaming', true)
         this.editorView.dispatch(tr)
         console.warn(`Invalid closing tag: ${tag}`);
         return
@@ -164,7 +164,7 @@ export class IncrementalProsemirrorRenderer {
       );
       textToInsert = textToInsert.replace(/\n+/g, "");
       const insertPos = this.getInsertPosition();
-      tr.insertText(textToInsert, insertPos);
+      tr.insertText(textToInsert, insertPos).setMeta('isStreaming', true)
     } else {
       if (this.nodeStack[this.nodeStack.length - 1].type !== Tags.CODE) {
         textToInsert = textToInsert.replace(/\n+/g, "");
@@ -175,7 +175,7 @@ export class IncrementalProsemirrorRenderer {
       const insertPos = this.getInsertPosition();
       const endPos = insertPos + textToInsert.length;
 
-      tr.insertText(textToInsert, insertPos);
+      tr.insertText(textToInsert, insertPos).setMeta('isStreaming', true)
       const currentRendererActiveMarkTypes = new Set(
         this.activeMarks.map((m) => m.type)
       );

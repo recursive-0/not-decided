@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { EditorView } from "prosemirror-view";
 import { EditorState, TextSelection,} from "prosemirror-state";
 import {
@@ -19,6 +19,7 @@ import { undo, redo, history } from "prosemirror-history";
 import { trailingNode } from 'prosemirror-trailing-node'
 import { CodeBlock } from "@/custom-nodes/code-block";
 import { InlineCodeNodeView } from "@/custom-nodes/inline-code";
+import { useSSEStream } from "@/hooks/use-sse-stream";
 
 // // // Create an extended schema that includes heading nodes
 // // const schema = new Schema({
@@ -181,13 +182,14 @@ const plugins = [
 export const ProseMirrorEditor = () => {
   const editorRef = useRef<HTMLDivElement | null>(null);
   const { editorView, setEditorReady, isEditorReady } = useEditor();
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const {isStreaming, userInteractedRef} = useSSEStream()
 
   const scrollToBottom = () => {
-    if (!editorRef.current) return; // Use editorRef instead of editorView for scrolling
-
-    const container = editorRef.current; // This is your div with overflow-scroll
-
-      container.scrollTop = container.scrollHeight - container.clientHeight + 50
+    if (!editorRef.current || userInteractedRef.current) return;
+    
+    const container = editorRef.current;
+    container.scrollTop = container.scrollHeight - container.clientHeight + 50;
   };
 
 //   useEffect(() => {
@@ -249,70 +251,22 @@ export const ProseMirrorEditor = () => {
             return new CodeBlock(node, view, getPos)
           },
         },
-        dispatchTransaction: (transaction) => {
-          // Get the state *before* this transaction is applied.
-          // We need this to apply our *final* transaction correctly.
+        dispatchTransaction(tr) {
           const originalState = editorView.current.state;
-      
-          // Check the incoming transaction to see if it matches our trigger pattern
-          const endPos = transaction.selection.$head.pos;
-          const pos = transaction.doc.resolve(endPos);
-          const textBefore = transaction.doc.textBetween(Math.max(0, endPos - 2), endPos);
-      
-          // Condition: Is it a paragraph? Does it end with "-h"? Is the cursor right after "-h"?
-          // NOTE: We are checking the state *after* the original transaction (containing '-h') would be applied.
-          if (textBefore === "-h" && pos.parent.type.name === "paragraph" && pos.parentOffset === 2) {
-              console.log("Creating bullet list");
-      
-              // --- Create a NEW transaction starting from the ORIGINAL state ---
-              // This is generally cleaner than modifying the incoming one for complex replacements.
-              let newTr = originalState.tr;
-      
-              // Calculate the range in the *original state* to replace.
-              // This is the range containing just the "-" before 'h' was typed.
-              const replaceStart = originalState.selection.$head.pos - 1; // Position of '-'
-              const replaceEnd = originalState.selection.$head.pos;       // Position after '-'
-      
-              // Create the list structure WITH content in the paragraph
-              const schema = originalState.schema;
-              const zeroWidthSpace = schema.text("\u200B"); // Zero-width space is ideal!
-              const paragraphNode = schema.nodes.paragraph.create(null, [zeroWidthSpace]);
-              const listItemNode = schema.nodes.list_item.create(null, [paragraphNode]);
-              const bulletListNode = schema.nodes.bullet_list.create(null, [listItemNode]);
-      
-              // Replace the "-" character with the entire bullet list structure
-              newTr = newTr.replaceWith(replaceStart, replaceEnd, bulletListNode);
-      
-              // Calculate the new cursor position:
-              // replaceStart is where the bulletList node begins.
-              // +1 to enter bullet_list `<ul>`
-              // +1 to enter list_item `<li>`
-              // +1 to enter paragraph `<p>`
-              // +1 to be *after* the zero-width space `\u200B`
-              const newCursorPos = replaceStart + 4;
-      
-              // Set the selection explicitly in our new transaction
-              newTr = newTr.setSelection(TextSelection.create(newTr.doc, newCursorPos));
-      
-              // --- Dispatch OUR transaction INSTEAD of the original one ---
-              editorView.current.dispatch(newTr);
-
-              console.log("NEW TR IS: ", newTr)
-      
-              if (newTr.docChanged) {
-                  requestAnimationFrame(scrollToBottom); // Use requestAnimationFrame
-              }
-      
-          } else {
-              // --- Condition not met: Apply the original transaction as usual ---
-              const newState = originalState.apply(transaction);
-              editorView.current.updateState(newState);
-      
-              if (transaction.docChanged) {
-                  requestAnimationFrame(scrollToBottom); // Use requestAnimationFrame
-              }
+          const newState = originalState.apply(tr);
+          editorView.current.updateState(newState);
+        
+          // Only auto-scroll if the change was from streaming AND user hasn't interacted
+          const isStreamingChange = tr.getMeta('isStreaming');
+          console.log("IS PROGRAM: ", isStreamingChange)
+          console.log("User INERACED: ", userInteractedRef.current)
+          
+          if (tr.docChanged && isStreamingChange && !userInteractedRef.current) {
+            requestAnimationFrame(() => {
+              scrollToBottom();
+            });
           }
-      },
+        }
       });
 
       setEditorReady(true);
@@ -328,6 +282,30 @@ export const ProseMirrorEditor = () => {
   }, [editorView, setEditorReady]);
 
   useEffect(() => {
+    if (!editorRef.current) return;
+    
+    const handleUserInteraction = () => {
+      console.log("calling user interaction")
+      userInteractedRef.current = true
+      // Optionally reset after some time if you want to resume auto-scrolling later
+      // setTimeout(() => setUserHasInteracted(false), 5000);
+    };
+    
+    const editorElement = editorRef.current;
+    
+    editorElement.addEventListener('touchstart', handleUserInteraction);
+    editorElement.addEventListener('wheel', handleUserInteraction);
+    
+    return () => {
+      // Clean up listeners
+      if(editorElement){
+      editorElement.removeEventListener('touchstart', handleUserInteraction);
+      editorElement.removeEventListener('wheel', handleUserInteraction);
+      }
+    };
+  }, [editorRef.current]);
+
+  useEffect(() => {
     if (editorView.current && isEditorReady) {
       setTimeout(() => {
         editorView.current.focus();
@@ -336,7 +314,7 @@ export const ProseMirrorEditor = () => {
   }, [isEditorReady]);
 
   return (
-    <div className="flex flex-col w-full h-full">
+    <div ref={containerRef} className="flex flex-col w-full h-full">
       <div
         className="prosemirror-editor w-full max-h-[calc(100vh - 60px)] h-full overflow-scroll py-2 px-4 border-t border-neutral-400 outline-none"
         ref={editorRef}

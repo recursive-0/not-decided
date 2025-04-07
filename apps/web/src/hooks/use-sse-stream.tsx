@@ -9,12 +9,12 @@ import { useChatStore } from "@/store/chat";
 export const useSSEStream = () => {
     const [content, setContent] = useState<string>("");
     const chatMode = useChatStore(state => state.currentChatMode)
-    console.log("CHAT MODE CHANGED in use sse: ", chatMode)
     const [isStreaming, setIsStreaming] = useState<boolean>(false);
     const [error, setError] = useState<Error | null>(null);
     const [currentStreamId, setCurrentStreamId] = useState<string>("")
     const { editorView } = useEditor();
     
+    const userInteractedRef = useRef<boolean>(false)
     const chatParserRef = useRef<ChatModeIncrementalParser | null>(null);
     const composerParserRef = useRef<ComposerModeParser | null>(null)
     const rendererRef = useRef<IncrementalProsemirrorRenderer | null>(null);
@@ -29,7 +29,7 @@ export const useSSEStream = () => {
     }
 
     const startStreaming = useCallback(async (chatMode: ChatMode, prompt: string, sendTokensCallback: (token: string) => void) => {
-
+        userInteractedRef.current = false;
         try {
 
             setIsStreaming(true);
@@ -159,6 +159,7 @@ export const useSSEStream = () => {
         startStreaming,
         stopStreaming,
         currentStreamId,
-        setCurrentStreamId
+        setCurrentStreamId,
+        userInteractedRef
     };
 };
