@@ -73,8 +73,8 @@ const textFormatOptions = [
   { id: 'italic', icon: Italic, label: 'Italic', shortcut: '⌘I' },
   { id: 'underline', icon: Underline, label: 'Underline', shortcut: '⌘U' },
   { id: 'strikethrough', icon: Strikethrough, label: 'Strikethrough', shortcut: '⌘⇧X' },
-  { id: 'superscript', icon: Superscript, label: 'Superscript' },
-  { id: 'subscript', icon: Subscript, label: 'Subscript' },
+  // { id: 'superscript', icon: Superscript, label: 'Superscript' },
+  // { id: 'subscript', icon: Subscript, label: 'Subscript' },
 ];
 
 // Alignment options
