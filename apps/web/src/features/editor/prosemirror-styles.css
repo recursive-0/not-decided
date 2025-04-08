@@ -1,14 +1,14 @@
-/* Base Editor Styles */
+
 .prosemirror-editor {
   position: relative;
   word-wrap: break-word;
   padding-bottom: 6rem;
   white-space: pre-wrap;
   line-height: 1.5;
-  /* Updated to use #073642 for maximum contrast like Windsurf */
-  color: #073642; /* Was: var(--color-secondary-foreground) */
+  
+  color: #073642; 
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  /* padding: 1rem; */
+  
   background-color: var(--color-background);
 }
 
@@ -36,7 +36,7 @@
   font-size: 2rem;
   font-weight: 700;
   line-height: 1.2;
-  /* Updated to use #073642 */
+  
   color: #073642;
   margin-top: 1.5rem;
   margin-bottom: 1.4rem;
@@ -50,8 +50,8 @@
   font-size: 1.5rem;
   font-weight: 700;
   line-height: 1.25;
-  /* Updated to use #073642 */
-  color: #073642; /* Was: var(--color-secondary-foreground) */
+  
+  color: #073642; 
   margin-top: 1.25rem;
   margin-bottom: 0.9rem;
 }
@@ -60,8 +60,8 @@
   font-size: 1.25rem;
   font-weight: 700;
   line-height: 1.3;
-  /* Updated to use #073642 */
-  color: #073642; /* Was: var(--color-secondary-foreground) */
+  
+  color: #073642; 
   margin-top: 1rem;
   margin-bottom: 0.7rem;
 }
@@ -71,7 +71,7 @@
   margin-top: 0;
   margin-bottom: 0.5rem;
   line-height: 1.6;
-  /* Updated to use #073642 */
+  
   color: var(--color--sidebar-background);
 }
 
@@ -108,7 +108,7 @@
   padding-left: 1.5rem;
   margin-bottom: 0.25rem;
   line-height: 1.6;
-   /* List item text color inherits from .prosemirror-editor (now #073642) */
+   
 }
 
 
@@ -116,8 +116,8 @@
   content: "•";
   position: absolute;
   left: 0.5rem;
-  /* Updated to use #073642 */
-  color: #073642; /* Was: var(--color-secondary-foreground) */
+  
+  color: #073642; 
 }
 
 
@@ -130,15 +130,15 @@
   counter-increment: item;
   position: absolute;
   left: 0;
-  /* Updated to use #073642 */
-  color: #073642; /* Was: var(--color-secondary-foreground) */
+  
+  color: #073642; 
 }
 
 
 .prosemirror-editor li p {
   margin: 0;
   display: inline;
-   /* Paragraphs inside lists inherit color (now #073642) */
+   
 }
 
 
@@ -149,7 +149,7 @@
 }
 
 
-/* Default pre - NOT the custom code block */
+
 .prosemirror-editor pre:not(.custom-code-block pre) {
   background-color: var(--color-secondary);
   border-radius: 0.25rem;
@@ -162,23 +162,23 @@
   border: 1px solid var(--color-border);
 }
 
-/* Default pre code */
+
 .prosemirror-editor pre:not(.custom-code-block pre) > code {
-  /* Use #073642 for high contrast code text too */
-  color: #073642; /* Was: var(--color-secondary-foreground) */
+  
+  color: #073642; 
 }
 
 
 .prosemirror-editor strong {
   font-weight: 600;
-  /* Updated to use #073642 */
-  color: #073642; /* Was: var(--color-secondary-foreground) */
+  
+  color: #073642; 
 }
 
 .prosemirror-editor em {
   font-style: italic;
-  /* Updated to use #073642 */
-  color: #073642; /* Was: var(--color-secondary-foreground) */
+  
+  color: #073642; 
 }
 
 .prosemirror-editor .link{
@@ -217,7 +217,7 @@
 
 .prosemirror-editor:empty:before {
   content: attr(placeholder);
-  /* Keep placeholder muted */
+  
   color: var(--color-muted-foreground);
   pointer-events: none;
   height: 0;
@@ -234,8 +234,8 @@
   border-left: 4px solid var(--color-primary);
   border-radius: 0.25rem;
   font-style: italic;
-   /* Use #073642 for blockquote text */
-  color: #073642; /* Was: var(--color-secondary-foreground) */
+   
+  color: #073642; 
   box-shadow: 0 1px 3px var(--color-background);
 }
 
@@ -245,7 +245,7 @@
   top: -0.5rem;
   left: 0.5rem;
   font-size: 2.5rem;
-  /* Keep decorative quote muted */
+  
   color: var(--color-muted-foreground);
   font-family: Georgia, serif;
   opacity: 0.4;
@@ -254,16 +254,16 @@
 .prosemirror-editor blockquote p {
   margin: 0;
   line-height: 1.6;
-  /* Inherits color from blockquote (now #073642) */
+  
 }
 
 .prosemirror-editor blockquote strong {
-   /* Updated to use #073642 */
-  color: #073642; /* Was: var(--color-secondary-foreground) */
+   
+  color: #073642; 
 }
 
 .prosemirror-editor blockquote em {
-  /* Keep primary color for emphasis in blockquote */
+  
   color: var(--color-primary);
 }
 
@@ -272,7 +272,7 @@
 
   .custom-code-block {
     background-color: #eee8d5;
-    /* border: 1px solid var(--color-border); */
+    
     border-radius: 4px;
     margin: 1em 0;
     position: relative;
@@ -292,7 +292,7 @@
 
 
   .custom-code-block .code-block-language {
-    /* Keep muted */
+    
     color: #073642;
     background-color: var(--color--background);
     font-weight: 500;
@@ -303,8 +303,8 @@
 
   .custom-code-block .code-block-copy-button {
     background-color: var(--color-chart-7);
-    /* Use #073642 */
-    color: #073642; /* Was: var(--color-secondary-foreground) */
+    
+    color: #073642; 
     border: none;
     padding: 0.3em 0.6em;
     border-radius: 3px;
@@ -325,7 +325,7 @@
 
 
   .custom-code-block .code-block-copy-button.copied {
-      background-color: var(--color-chart-5, #859900); /* Solarized Green */
+      background-color: var(--color-chart-5, #859900); 
       color: var(--color-background);
   }
 
@@ -345,14 +345,14 @@
   }
 
   .custom-code-block code {
-    /* Use #073642 for code text */
-    color: #073642; /* Was: var(--color-secondary-foreground) */
+    
+    color: #073642; 
     display: block;
   }
 
 }
 
-/* Checkbox styling */
+
 .ProseMirror .checkbox-container {
   position: relative;
   display: flex;
@@ -391,44 +391,44 @@
 .ProseMirror .checkbox-paragraph {
   margin: 0;
   line-height: 1.6;
-  /* Use #073642 */
-  color: #073642; /* Was: var(--color-secondary-foreground) */
+  
+  color: #073642; 
   font-family: inherit;
   flex-grow: 1;
 }
 
-/* Styling for checked state text */
+
 .ProseMirror .checkbox-container[checked="true"] .checkbox-paragraph {
   text-decoration: line-through;
-  /* Keep muted */
+  
   color: var(--color-muted-foreground);
 }
 
-/* Styling for the custom inline_code node */
-.prosemirror-editor code.inline-code-node { /* Target the specific class */
-  display: inline; /* Ensure it stays inline (default for <code> but good to be explicit) */
-  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace; /* Monospace font */
-  background-color: var(--color-chart-7); /* Subtle background (Solarized base2) */
-  color: #073642; /* High contrast text (Solarized base02) */
-  padding: 0.15em 0.4em; /* Small padding */
-  border-radius: var(--radius-sm); /* Use theme radius */
-  font-size: 0.9em; /* Slightly smaller font size */
-  white-space: nowrap; /* Prevent wrapping of short code snippets */
-  vertical-align: baseline; /* Align nicely with surrounding text */
+
+.prosemirror-editor code.inline-code-node { 
+  display: inline; 
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace; 
+  background-color: var(--color-chart-7); 
+  color: #073642; 
+  padding: 0.15em 0.4em; 
+  border-radius: var(--radius-sm); 
+  font-size: 0.9em; 
+  white-space: nowrap; 
+  vertical-align: baseline; 
 }
 
-.inline-code { /* Or just 'code' if your toDOM doesn't add a class */
-  background-color: var(--color-card); /* Light gray background */
+.inline-code { 
+  background-color: var(--color-card); 
   padding: 0.4em 0.4em;
   border-radius: 5px;
   font-family: monospace;
   font-size: 0.9em;
-  /* Default browser wrapping should now work! Avoid 'white-space: nowrap;' */
+  
 }
 
-/* Ensure it doesn't get confused with code blocks */
+
 pre code.inline-code {
-    /* Maybe reset some styles if needed, usually not necessary */
+    
     background-color: transparent;
     padding: 0;
     border-radius: 0;

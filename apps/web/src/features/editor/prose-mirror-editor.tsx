@@ -2,238 +2,256 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { EditorView } from "prosemirror-view";
-import { EditorState, TextSelection,} from "prosemirror-state";
+import { EditorState, TextSelection } from "prosemirror-state";
 import {
   extendedProseMirrorSchema,
   useEditor,
 } from "@/providers/editor-context-provider";
 import "./prosemirror-styles.css";
-import { baseKeymap, chainCommands, deleteSelection, joinBackward, joinTextblockBackward } from "prosemirror-commands"
-import { keymap } from "prosemirror-keymap"
 import {
-  splitListItem, // <--- This command handles Enter
+  baseKeymap,
+  chainCommands,
+  deleteSelection,
+  joinBackward,
+  joinTextblockBackward,
+} from "prosemirror-commands";
+import { keymap } from "prosemirror-keymap";
+import {
+  splitListItem, 
   liftListItem,
   sinkListItem,
 } from "prosemirror-schema-list";
 import { undo, redo, history } from "prosemirror-history";
-import { trailingNode } from 'prosemirror-trailing-node'
+import { trailingNode } from "prosemirror-trailing-node";
 import { CodeBlock } from "@/custom-nodes/code-block";
 import { InlineCodeNodeView } from "@/custom-nodes/inline-code";
 import { useSSEStream } from "@/hooks/use-sse-stream";
+import { Textarea } from "@/components/ui/textarea";
+import { CornerDownLeft } from "lucide-react";
 
-// // // Create an extended schema that includes heading nodes
-// // const schema = new Schema({
-// //   nodes: addListNodes(basicSchema.spec.nodes, "paragraph block*", "block"),
-// //   marks: basicSchema.spec.marks
-// // })
 
-// const characterPluginKey = new PluginKey("character-animation");
 
-// // Create our animation plugin
-// const characterPlugin = new Plugin({
-//   key: characterPluginKey,
 
-//   state: {
-//     init() {
-//       return {
-//         newlyInsertedRanges: [], // Track ranges of inserted content
-//       };
-//     },
 
-//     apply(tr, value, oldState, newState) {
-//       // Reset the tracking if we're not in a transaction chain
-//       if (!tr.docChanged) {
-//         // Clear animations after they've had time to play
-//         if (value.newlyInsertedRanges.length && !tr.getMeta("animating")) {
-//           return { newlyInsertedRanges: [] };
-//         }
-//         return value;
-//       }
 
-//       // Track newly inserted content
-//       const newRanges = [];
-//       tr.mapping.maps.forEach((map) => {
-//         map.forEach((oldStart, oldEnd, newStart, newEnd) => {
-//           if (newEnd > newStart && oldEnd - oldStart < newEnd - newStart) {
-//             // This is an insertion
-//             newRanges.push({ from: newStart, to: newEnd });
-//           }
-//         });
-//       });
 
-//       // Map old ranges through the transaction
-//       const mappedOldRanges = value.newlyInsertedRanges.map((range) => {
-//         return {
-//           from: tr.mapping.map(range.from),
-//           to: tr.mapping.map(range.to),
-//         };
-//       });
 
-//       return {
-//         newlyInsertedRanges: [...mappedOldRanges, ...newRanges],
-//       };
-//     },
-//   },
 
-//   props: {
-//     decorations(state) {
-//       const { newlyInsertedRanges } = this.getState(state);
-//       if (!newlyInsertedRanges.length) return null;
 
-//       const decorations = [];
 
-//       // For each inserted range, create character-by-character decorations
-//       newlyInsertedRanges.forEach((range) => {
-//         let charIndex = 0;
 
-//         state.doc.nodesBetween(range.from, range.to, (node, pos) => {
-//           if (!node.isText) return true;
 
-//           const startPos = Math.max(range.from, pos);
-//           const endPos = Math.min(range.to, pos + node.nodeSize);
 
-//           for (let i = startPos; i < endPos; i++) {
-//             if (i >= pos && i < pos + node.text.length) {
-//               // Get the actual character
-//               const charPos = i - pos;
-//               const char = node.text[charPos];
 
-//               // Handle spaces specially
-//               const isSpace = char === " ";
 
-//               decorations.push(
-//                 Decoration.inline(i, i + 1, {
-//                   class: isSpace ? "animated-space" : "animated-char",
-//                   style: `
-//                                         display: inline-block;
-//                                         opacity: 0;
-//                                         animation: typeIn 0.1s forwards;
-//                                         animation-delay: ${charIndex * 2}ms;
-//                                     `,
-//                 })
-//               );
-//               charIndex++;
-//             }
-//           }
 
-//           return true;
-//         });
-//       });
 
-//       return DecorationSet.create(state.doc, decorations);
-//     },
-//   },
-// });
 
-// // Our dummy content to insert
-// const dummyContent = {
-//   type: "doc",
-//   content: [
-//     {
-//       type: "heading",
-//       attrs: { level: 1 },
-//       content: [
-//         {
-//           type: "text",
-//           text: "The best cursor for docs yeah am sure this is the best cursor for docs with my own touch",
-//         },
-//       ],
-//     },
-//   ],
-// };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 function liftListItemOnlyAtStart(listItemType) {
-  return function(state, dispatch, view) {
-    const {$head, empty} = state.selection;
-    // Condition: Selection must be empty AND cursor must be at offset 0 of its parent block
+  return function (state, dispatch, view) {
+    const { $head, empty } = state.selection;
+    
     if (!empty || $head.parentOffset !== 0) {
-      return false; // Fail if cursor is not at start or if text is selected
+      return false; 
     }
-    // If condition met, try to execute the actual liftListItem command
-    // We might need additional checks here if liftListItem itself does more complex things
-    // but the core idea is to gate it behind the cursor position check.
+    
+    
+    
     return liftListItem(listItemType)(state, dispatch, view);
-  }
+  };
 }
 
 const listRelatedKeymap = keymap({
-  // V V V THIS IS THE IMPORTANT BINDING V V V
+  
   Enter: splitListItem(extendedProseMirrorSchema.nodes.list_item),
 
-  Backspace: chainCommands( deleteSelection, liftListItemOnlyAtStart(extendedProseMirrorSchema.nodes.list_item), joinTextblockBackward)
-  // Tab: sinkListItem(/* ... */),
-  // ... other list bindings ...
+  Backspace: chainCommands(
+    deleteSelection,
+    liftListItemOnlyAtStart(extendedProseMirrorSchema.nodes.list_item),
+    joinTextblockBackward
+  ),
+  
+  
 });
 
-// --- Combine all plugins ---
+
 const plugins = [
   history(),
-  listRelatedKeymap, // <--- Add the list keymap HERE
-  keymap(baseKeymap), // Base keymap handles things list keymap doesn't
-  keymap({ // Undo/Redo
-      "Mod-z": undo,
-      "Mod-y": redo,
-      "Shift-Mod-z": redo,
+  listRelatedKeymap, 
+  keymap(baseKeymap), 
+  keymap({
+    
+    "Mod-z": undo,
+    "Mod-y": redo,
+    "Shift-Mod-z": redo,
   }),
-  // trailingNode({ignoredNodes: ["bullet_list", "list_item", "ordered_list"], nodeName: "paragraph"})
-  // ... other plugins ...
+  
+  
 ];
 
 export const ProseMirrorEditor = () => {
   const editorRef = useRef<HTMLDivElement | null>(null);
   const { editorView, setEditorReady, isEditorReady } = useEditor();
-  const containerRef = useRef<HTMLDivElement | null>(null)
-  const {isStreaming, userInteractedRef} = useSSEStream()
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const { isStreaming, userInteractedRef } = useSSEStream();
+  const isDialogClosingRef = useRef(false);
+  const [smartAiPopupPos, setSmartAiPopupPos] = useState<null | {
+    x: Number;
+    y: Number;
+  }>(null);
 
   const scrollToBottom = () => {
     if (!editorRef.current || userInteractedRef.current) return;
-    
+
     const container = editorRef.current;
     container.scrollTop = container.scrollHeight - container.clientHeight + 50;
   };
 
-//   useEffect(() => {
-//     const style = document.createElement("style");
-//     style.textContent = `
-//     .ProseMirror {
-//         /* Add perspective to the container */
-//         perspective: 1000px;
-//         transform-style: preserve-3d;
-//     }
+  
+  
+  
+  
+  
+  
+  
+  
 
-//     .animated-char {
-//         display: inline-block;
-//         will-change: transform, opacity;
-//         /* Move transform origin up a bit */
-//         transform-origin: top center;
-//         /* Ensure the character maintains its natural dimensions */
-//         vertical-align: baseline;
-//         position: relative;
-//     }
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
-//     @keyframes typeIn {
-//         from {
-//             opacity: 0;
-//             /* Use a gentler transform that won't stretch */
-//             transform: translateY(8px) rotateX(30deg) scale(0.95);
-//         }
-//         to {
-//             opacity: 1;
-//             transform: translateY(0) rotateX(0) scale(1);
-//         }
-//     }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
-//     /* Special handling for spaces to maintain consistent width */
-//     .animated-space {
-//         display: inline-block;
-//         width: 0.25em;
-//         white-space: pre;
-//         position: relative;
-//     }
-// `;
-//     document.head.appendChild(style);
-//     return () => style.remove();
-//   }, []);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   useEffect(() => {
     if (!editorRef.current) return;
@@ -248,25 +266,27 @@ export const ProseMirrorEditor = () => {
         state,
         nodeViews: {
           code_block: (node, view, getPos) => {
-            return new CodeBlock(node, view, getPos)
+            return new CodeBlock(node, view, getPos);
           },
         },
         dispatchTransaction(tr) {
           const originalState = editorView.current.state;
           const newState = originalState.apply(tr);
           editorView.current.updateState(newState);
-        
-          // Only auto-scroll if the change was from streaming AND user hasn't interacted
-          const isStreamingChange = tr.getMeta('isStreaming');
-          console.log("IS PROGRAM: ", isStreamingChange)
-          console.log("User INERACED: ", userInteractedRef.current)
+
           
-          if (tr.docChanged && isStreamingChange && !userInteractedRef.current) {
+          const isStreamingChange = tr.getMeta("isStreaming");
+
+          if (
+            tr.docChanged &&
+            isStreamingChange &&
+            !userInteractedRef.current
+          ) {
             requestAnimationFrame(() => {
               scrollToBottom();
             });
           }
-        }
+        },
       });
 
       setEditorReady(true);
@@ -281,29 +301,43 @@ export const ProseMirrorEditor = () => {
     };
   }, [editorView, setEditorReady]);
 
-  useEffect(() => {
-    if (!editorRef.current) return;
+  const handleDialogClose = () => {
+    isDialogClosingRef.current = true;
+    setSmartAiPopupPos(null);
     
-    const handleUserInteraction = () => {
-      console.log("calling user interaction")
-      userInteractedRef.current = true
-      // Optionally reset after some time if you want to resume auto-scrolling later
-      // setTimeout(() => setUserHasInteracted(false), 5000);
-    };
     
-    const editorElement = editorRef.current;
+    setTimeout(() => {
+      isDialogClosingRef.current = false;
+    }, 100); 
+  };
+
+
+
+useEffect(() => {
+  const editorElement = editorRef.current;
+  if (!editorElement || !editorView) return;
+
+  const handleSelectionCheck = (event) => {
     
-    editorElement.addEventListener('touchstart', handleUserInteraction);
-    editorElement.addEventListener('wheel', handleUserInteraction);
+    if (isDialogClosingRef.current) return;
     
-    return () => {
-      // Clean up listeners
-      if(editorElement){
-      editorElement.removeEventListener('touchstart', handleUserInteraction);
-      editorElement.removeEventListener('wheel', handleUserInteraction);
+    setTimeout(() => {
+      if (!editorView.current) return;
+      const { state } = editorView.current;
+      const { selection } = state;
+      
+      if (selection instanceof TextSelection && !selection.empty) {
+        setSmartAiPopupPos({ x: event.clientX, y: event.clientY });
       }
-    };
-  }, [editorRef.current]);
+    }, 0);
+  };
+
+  editorElement.addEventListener('mouseup', handleSelectionCheck);
+
+  return () => {
+    editorElement.removeEventListener('mouseup', handleSelectionCheck);
+  };
+}, [editorRef, editorView]); 
 
   useEffect(() => {
     if (editorView.current && isEditorReady) {
@@ -319,7 +353,100 @@ export const ProseMirrorEditor = () => {
         className="prosemirror-editor w-full max-h-[calc(100vh - 60px)] h-full overflow-scroll py-2 px-4 border-t border-neutral-400 outline-none"
         ref={editorRef}
       />
-      {/* <StreamingMarkdownDemo /> */}
+      {}
+      {smartAiPopupPos !== null && (
+        <FloatingCommandDialog
+          clientX={smartAiPopupPos.x}
+          clientY={smartAiPopupPos.y}
+          onClose={() => handleDialogClose()}
+          onSubmit={(text) => console.log(text)}
+        />
+      )}
+    </div>
+  );
+};
+
+const FloatingCommandDialog = ({ clientX, clientY, onClose, onSubmit }) => {
+  const [input, setInput] = useState("");
+  const dialogRef = useRef(null);
+  const textareaRef = useRef(null);
+
+  useEffect(() => {
+    
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
+
+    
+    const handleClickOutside = (event: MouseEvent) => {
+      event.stopPropagation()
+      if (dialogRef.current && !dialogRef.current.contains(event.target)) {
+        onClose();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [onClose]);
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      if (input.trim()) {
+        onSubmit(input);
+        setInput("");
+      }
+    } else if (e.key === "Escape") {
+      onClose();
+    }
+  };
+
+  const handleSendMessage = () => {
+    if (input.trim()) {
+      onSubmit(input);
+      setInput("");
+    }
+  };
+
+  return (
+    <div
+      ref={dialogRef}
+      className="absolute z-50 bg-white rounded-md shadow-lg border border-neutral-200"
+      style={{
+        left: `${clientX}px`,
+        top: `${clientY}px`,
+        width: "300px",
+      }}
+    >
+      <div className="p-2">
+        <div className="relative flex items-start">
+          <Textarea
+            ref={textareaRef}
+            placeholder="Improve this section, rewrite this, etc."
+            className="flex-1 text-sm rounded-md resize-none overflow-hidden border border-neutral-200
+              text-neutral-800 placeholder:text-neutral-400
+              pr-8 py-2 min-h-[38px] max-h-[150px]"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            rows={2}
+          />
+          <div
+            className={`absolute right-2 top-2 flex items-center justify-center w-6 h-6 
+              ${
+                !input.trim()
+                  ? "cursor-not-allowed opacity-50"
+                  : "cursor-pointer hover:text-blue-500"
+              }`}
+            onClick={input.trim() ? handleSendMessage : undefined}
+            aria-label="Send command"
+          >
+            <CornerDownLeft className="h-4 w-4" />
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
