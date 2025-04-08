@@ -4,74 +4,74 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Updated Theme Colors from Image 1 */
+
 :root {
-  /* Core UI */
-  --background: #f2eddc; /* Light cream from image 2 */
-  --foreground: #657b83; /* Keeping original text color */
-  --card: #d9d0bf; /* Light beige from image 1 */
-  --card-foreground: #657b83; /* Keeping original text color */
+  
+  --background: #f2eddc; 
+  --foreground: #657b83; 
+  --card: #d9d0bf; 
+  --card-foreground: #657b83; 
   --popover: #d9d0bf;
   --popover-foreground: #657b83;
-  --primary: #d9c589; /* Gold/tan from image 1 */
-  --primary-foreground: #262626; /* Dark color for contrast */
-  --secondary: #f2eddc; /* Light cream from image 2 */
+  --primary: #d9c589; 
+  --primary-foreground: #262626; 
+  --secondary: #f2eddc; 
   --secondary-foreground: #586e75;
   --muted: #d9d0bf;
   --muted-foreground: #93a1a1;
-  --accent: #d99982; /* Salmon pink from image 1 */
+  --accent: #d99982; 
   --accent-foreground: #262626;
-  --destructive: #dc322f; /* Keeping original */
+  --destructive: #dc322f; 
   --destructive-foreground: #fdf6e3;
-  --border: #bbb7ab; /* Light gray from image 2 */
+  --border: #bbb7ab; 
   --input: #f2eddc;
   --ring: #d9c589;
 
-  /* UI Colors from Screenshot */
-  --ui-background: #f2eddc; /* Light cream from image 2 */
+  
+  --ui-background: #f2eddc; 
   --ui-chat-background: #f6f4ec;
   --ui-input-background: #f9f7f2;
-  --ui-icon-active: #d9c589; /* Gold from image 1 */
-  --ui-button-background: #d9c589; /* Gold from image 1 */
-  --ui-button-hover: #c9b579; /* Slightly darker gold */
-  --ui-button-text: #262626; /* Dark from images */
+  --ui-icon-active: #d9c589; 
+  --ui-button-background: #d9c589; 
+  --ui-button-hover: #c9b579; 
+  --ui-button-text: #262626; 
   --ui-placeholder-text: #a3a3a3;
-  --ui-border: #d9d0bf; /* Light beige from image 1 */
-  --ui-done-button: #6c6c6c; /* Gray from image 2 */
+  --ui-border: #d9d0bf; 
+  --ui-done-button: #6c6c6c; 
 
-  /* Palette Colors from Image 1 */
+  
   --palette-gold-dark: #deca88;
-  --palette-gold: #d9c589; /* #D9C589 */
+  --palette-gold: #d9c589; 
   --palette-gold-light: #ddd6c1;
-  --palette-cream: #f2eddc; /* #F2EDDC */
-  --palette-beige: #d9d0bf; /* #D9D0BF */
+  --palette-cream: #f2eddc; 
+  --palette-beige: #d9d0bf; 
   --palette-beige-1: #F7F1DF;
   --palette-beige-2: #EEE8D5;
-  --palette-salmon: #d99982; /* #D99982 */
+  --palette-salmon: #d99982; 
   --palette-dark: #586E75;
 
-  /* Palette Colors from Image 2 */
-  --palette-gray: #6c6c6c; /* #6C6C6C */
-  --palette-cream-2: #f2eddc; /* #F2EDDC (same as Image 1) */
-  --palette-light-gray: #bbb7ab; /* #BBB7AB */
-  --palette-light-cream: #eee8d5; /* #EEE8D5 */
-  --palette-dark-2: #262626; /* #262626 (same as Image 1) */
+  
+  --palette-gray: #6c6c6c; 
+  --palette-cream-2: #f2eddc; 
+  --palette-light-gray: #bbb7ab; 
+  --palette-light-cream: #eee8d5; 
+  --palette-dark-2: #262626; 
 
-  /* Charts - Updated with palette colors */
-  --chart-1: #d9c589; /* gold */
-  --chart-2: #d99982; /* salmon */
-  --chart-3: #6c6c6c; /* gray */
-  --chart-4: #bbb7ab; /* light gray */
-  --chart-5: #d9d0bf; /* beige */
-  --chart-6: #f2eddc; /* cream */
-  --chart-7: #eee8d5; /* light cream */
+  
+  --chart-1: #d9c589; 
+  --chart-2: #d99982; 
+  --chart-3: #6c6c6c; 
+  --chart-4: #bbb7ab; 
+  --chart-5: #d9d0bf; 
+  --chart-6: #f2eddc; 
+  --chart-7: #eee8d5; 
 
   --yellow-background: #d9c589;
 
-  /* Radius */
+  
   --radius: 0.6rem;
 
-  /* Sidebar Specific */
+  
   --sidebar-background: #f2eddc;
   --sidebar-foreground: #6c6c6c;
   --inline-code: #d9c589;
@@ -84,30 +84,30 @@
   --sidebar-ring: #d9c589;
 }
 
-/* Dark Theme with updated colors */
+
 .dark {
-  /* Core UI */
-  --background: #262626; /* Dark from both images */
-  --foreground: #eee8d5; /* Light cream for contrast */
-  --card: #6c6c6c; /* Gray from image 2 */
+  
+  --background: #262626; 
+  --foreground: #eee8d5; 
+  --card: #6c6c6c; 
   --card-foreground: #f2eddc;
   --popover: #6c6c6c;
   --popover-foreground: #f2eddc;
-  --primary: #d9c589; /* Gold from image 1 */
+  --primary: #d9c589; 
   --primary-foreground: #262626;
-  --secondary: #bbb7ab; /* Light gray from image 2 */
+  --secondary: #bbb7ab; 
   --secondary-foreground: #f2eddc;
   --muted: #6c6c6c;
   --muted-foreground: #bbb7ab;
-  --accent: #d99982; /* Salmon from image 1 */
+  --accent: #d99982; 
   --accent-foreground: #262626;
-  --destructive: #dc322f; /* Keeping original */
+  --destructive: #dc322f; 
   --destructive-foreground: #f2eddc;
   --border: #bbb7ab;
   --input: #6c6c6c;
   --ring: #d9c589;
 
-  /* UI Colors - Dark variants */
+  
   --ui-background: #262626;
   --ui-chat-background: #3a3a3a;
   --ui-input-background: #6c6c6c;
@@ -119,16 +119,16 @@
   --ui-border: #6c6c6c;
   --ui-done-button: #bbb7ab;
 
-  /* Charts - Same as light mode */
-  --chart-1: #d9c589; /* gold */
-  --chart-2: #d99982; /* salmon */
-  --chart-3: #6c6c6c; /* gray */
-  --chart-4: #bbb7ab; /* light gray */
-  --chart-5: #d9d0bf; /* beige */
-  --chart-6: #f2eddc; /* cream */
-  --chart-7: #eee8d5; /* light cream */
+  
+  --chart-1: #d9c589; 
+  --chart-2: #d99982; 
+  --chart-3: #6c6c6c; 
+  --chart-4: #bbb7ab; 
+  --chart-5: #d9d0bf; 
+  --chart-6: #f2eddc; 
+  --chart-7: #eee8d5; 
 
-  /* Sidebar Specific */
+  
   --sidebar-background: #6c6c6c;
   --sidebar-foreground: #f2eddc;
   --inline-code: #d9c589;
@@ -142,8 +142,8 @@
 }
 
 @theme inline {
-  /* These variables map theme colors to semantic names used by components */
-  /* They automatically pick up the values from :root or .dark */
+  
+  
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -194,7 +194,7 @@
   --color-ui-placeholder-text: var(--ui-placeholder-text);
   --color-ui-border: var(--ui-border);
   --color-ui-done-button: var(--ui-done-button);
-  /* Palette specific colors */
+  
   --color-palette-gold-dark: var(--palette-gold-dark);
   --color-palette-gold: var(--palette-gold);
   --color-palette-gold-light: var(--palette-gold-light);
@@ -229,13 +229,21 @@
   }
 }
 
+::-moz-selection {
+  background-color: var(--color-palette-gold-dark)
+}
+
+::selection {
+background-color: var(--color-palette-gold-dark)
+}
+
 @layer base {
   * {
-    @apply border-border outline-ring/50; /* Keep outline semi-transparent */
+    @apply border-border outline-ring/50;
   }
   body {
     @apply bg-background text-foreground;
-    /* Add font smoothing for better text rendering */
+    
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -243,7 +251,7 @@
 
 
 
-/* Add this to your global CSS */
+
 
 .markdown-content {
   overflow-wrap: break-word;
@@ -278,7 +286,7 @@
 .markdown-content p {
   margin-bottom: 1em;
   line-height: 1.6;
-  white-space: pre-line; /* This preserves the newlines */
+  white-space: pre-line; 
 }
 
 .markdown-content ul,
@@ -321,14 +329,16 @@
   text-decoration: underline;
 }
 
-/* Proper spacing for inline code */
+
 .markdown-content p code,
 .markdown-content li code {
   white-space: normal;
   word-break: break-word;
 }
 
-/* Ensures proper spacing between paragraphs */
+
 .markdown-content > p + p {
   margin-top: 1em;
 }
+
+
