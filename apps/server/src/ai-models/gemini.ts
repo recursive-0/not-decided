@@ -3,7 +3,8 @@ import {
   HarmCategory,
   HarmBlockThreshold,
 } from "@google/generative-ai";
-import { chatModePrompt, composerModePrompt } from "../prompts/markdown-instructions-prompt";
+import { chatModePrompt } from "../prompts/markdown-instructions-prompt";
+import { composerModePrompt } from "../prompts/composer-mode-prompt";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
@@ -11,14 +12,15 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 interface HandleGeminiStreamProps {
   prompt: string;
   chatMode: "CHAT" | "COMPOSER"
+  contentNodes: any
 }
 
 export async function handleGeminiStream(props: HandleGeminiStreamProps) {
-  const { prompt, chatMode } = props;
+  const { prompt, chatMode, contentNodes } = props;
 
   console.log("CHATMODE IS: ", chatMode)
 
-  const systemInstructionContent = chatMode === "CHAT" ? chatModePrompt() : composerModePrompt()
+  const systemInstructionContent = chatMode === "CHAT" ? chatModePrompt() : composerModePrompt(prompt, contentNodes)
 
   const stream = new ReadableStream({
     async start(controller) {

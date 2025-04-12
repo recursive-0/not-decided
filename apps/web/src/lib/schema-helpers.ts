@@ -99,13 +99,14 @@ export function createInlineCodeSpec(): NodeSpec {
 // Node for content suggested to be deleted
 export function createDeletionSuggestionSpec(): NodeSpec {
   return {
-    content: "inline*",
+    content: "(heading | paragraph | blockquote | code_block | bullet_list | ordered_list | code_block | checkbox_item )+",
     group: "block",
     draggable: false,
-    code: true,
+    definingAsContext: true,
     attrs: {
       id: { default: "" }, // Unique identifier for the suggestion
-      originalContent: { default: "" } // Optional: store original content for reference
+      originalNodeType: { default: "" },
+      originalAttrs: { default: "{}" }   
     },
     toDOM(node) {
       return [
@@ -118,7 +119,7 @@ export function createDeletionSuggestionSpec(): NodeSpec {
         [
           "div",
           { class: "suggestion-content deletion-content" },
-          0 // Content goes here
+          0
         ],
         [
           "div",
@@ -135,6 +136,7 @@ export function createDeletionSuggestionSpec(): NodeSpec {
             "button",
             { 
               class: "suggestion-reject", 
+              onclick: () => {console.log("CLICKED on REJECT BUTTON: ", node)},
               title: "Reject deletion" 
             },
             "Reject"
@@ -162,7 +164,7 @@ export function createAdditionSuggestionSpec(): NodeSpec {
     group: "block",
     draggable: false,
     attrs: {
-      id: { default: "" } // Unique identifier for the suggestion
+      id: { default: "" },
     },
     toDOM(node) {
       return [

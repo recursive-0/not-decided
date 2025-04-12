@@ -126,9 +126,10 @@ export const useSSEStream = () => {
                         const deletionSuggestion = state.schema.nodes.deletion_suggestion.create(
                             {
                                 id: `deletion-${Date.now()}`, // Generate a unique ID
-                                originalContent: JSON.stringify(originalNode.toJSON())
+                                originalNodeType: originalNode.type.name,
+                                originalAttrs: JSON.stringify(originalNode.attrs)
                             },
-                            originalNode.content // Preserve the original content
+                            originalNode
                         );
                         
                         // 4. Replace the original node with the deletion suggestion
@@ -163,7 +164,7 @@ export const useSSEStream = () => {
             async function checkFingerprints(node: string){
                 fingerprintManagerRef.current.generateEditorNodesFingerprints(editorView.current)
                 console.log("STR ndoe is: ", node)
-                const hash = fingerprintManagerRef.current.fastHash(node)
+                const hash = fingerprintManagerRef.current.fastHash(node.trim().toLowerCase().normalize())
                 const matchedNode = fingerprintManagerRef.current.matchFingerprint(hash)
                 console.log("FOUND IS: ", matchedNode)
                 if(matchedNode){

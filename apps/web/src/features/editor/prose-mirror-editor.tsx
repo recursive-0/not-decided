@@ -28,6 +28,7 @@ import { InlineCodeNodeView } from "@/custom-nodes/inline-code";
 import { useSSEStream } from "@/hooks/use-sse-stream";
 import { Textarea } from "@/components/ui/textarea";
 import { CornerDownLeft } from "lucide-react";
+import { Suggestion } from "@/custom-nodes/accept-suggestion";
 
 function liftListItemOnlyAtStart(listItemType) {
   return function (state, dispatch, view) {
@@ -92,6 +93,9 @@ export const ProseMirrorEditor = () => {
       editorView.current = new EditorView(editorRef.current, {
         state,
         nodeViews: {
+          deletion_suggestion: (node, view, getPos) => {
+            return new Suggestion(node, view, getPos)
+          },
           code_block: (node, view, getPos) => {
             return new CodeBlock(node, view, getPos);
           },

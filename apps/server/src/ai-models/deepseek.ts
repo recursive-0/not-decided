@@ -1,12 +1,12 @@
 import OpenAI from "openai";
-import { markdownFormatPrompt } from "../prompts/markdown-instructions-prompt";
+import { chatModePrompt } from "../prompts/chat-mode-prompt";
+import { composerModePrompt } from "../prompts/composer-mode-prompt";
 
 const openai = new OpenAI({
   baseURL: "https://api.deepseek.com",
   apiKey: process.env.DEEPSEEK_API_KEY,
 });
 
-const systemPrompt = markdownFormatPrompt();
 
 export async function streamWithDeepseek(prompt: string) {
   const completion = await openai.chat.completions.create({
@@ -14,7 +14,7 @@ export async function streamWithDeepseek(prompt: string) {
     messages: [
       {
         role: "system",
-        content: systemPrompt,
+        content: prompt,
       },
       {
         role: "user",
@@ -30,16 +30,20 @@ export async function streamWithDeepseek(prompt: string) {
 
 interface HandleDeepseekStreamProps {
   prompt: string;
+  chatMode: "COMPOSER" | "CHAT"
+  contentNodes: any
 }
 
 export async function handleDeepseekStream(props: HandleDeepseekStreamProps) {
-  const { prompt } = props;
+  const { prompt, chatMode, contentNodes } = props;
+
+  const systemPrompt = chatMode === "CHAT" ? chatModePrompt() : composerModePrompt(prompt, contentNodes)
 
   const stream = new ReadableStream({
     async start(controller) {
       try {
         controller.enqueue(`data: START_STREAM \n\n`)
-        const streamedToken = await streamWithDeepseek(prompt);
+        const streamedToken = await streamWithDeepseek(systemPrompt);
 
         for await (const chunk of streamedToken) {
           const content = chunk.choices[0]?.delta.content;
