@@ -23,6 +23,7 @@ export enum Tags {
   "ICODE" = "ICODE",
   "QUOTE" = "QUOTE",
   "CHECKBOX" = "CHECKBOX",
+  "DELETION" = "DELETION",
 }
 
 interface MarkContext {
@@ -35,31 +36,36 @@ export class IncrementalProsemirrorRenderer {
   private nodeStack: NodeContextType[] = [];
   private activeMarks: MarkContext[] = [];
   private schema: Schema | null = null;
-  private insertionPoint: number | null = null
-  private editorMode: "COMPOSER" | "CHAT" = "COMPOSER"
-
+  private insertionPoint: number | null = null;
+  private editorMode: "COMPOSER" | "CHAT" = "COMPOSER";
+  private deletionFlag: boolean = false;
 
   constructor(editorView: EditorView, extendedSchema: Schema) {
     this.editorView = editorView;
     this.schema = extendedSchema;
   }
 
-  public setMode(mode: "COMPOSER" | "CHAT"){
-    this.editorMode = mode
+  public setMode(mode: "COMPOSER" | "CHAT") {
+    this.editorMode = mode;
   }
 
-  public setInsertionPoint(targetedPos: number){
-    if(this.editorMode === "COMPOSER"){
-    this.insertionPoint = targetedPos
+  public setInsertionPoint(targetedPos: number) {
+    if (this.editorMode !== "COMPOSER" || !this.editorView || !this.schema) {
+      console.warn(
+        "setInsertionPoint: Not in COMPOSER mode or view/schema missing."
+      );
+      return;
     }
+
+    this.insertionPoint = targetedPos;
   }
 
   private isMarkTag(tag: Tags): boolean {
     return tag === Tags.B || tag === Tags.I || tag === Tags.ICODE;
   }
 
-  public updateInsertionPoint(insertAt: number){
-    this.insertionPoint = insertAt
+  public updateInsertionPoint(insertAt: number) {
+    this.insertionPoint = insertAt;
   }
 
   createListNode(type: "ul" | "ol") {
@@ -117,13 +123,14 @@ export class IncrementalProsemirrorRenderer {
       const lastNode = this.nodeStack[this.nodeStack.length - 1];
       console.log(`LAst nnode  for ${tag} is: ", ${JSON.stringify(lastNode)}`);
 
-
       if (!lastNode || lastNode.type !== tag) {
-        const insertPos = this.getInsertPosition()
-        const tr = this.editorView.state.tr.insertText(`[${tag}]`, insertPos).setMeta('isStreaming', true)
-        this.editorView.dispatch(tr)
+        const insertPos = this.getInsertPosition();
+        const tr = this.editorView.state.tr
+          .insertText(`[${tag}]`, insertPos)
+          .setMeta("isStreaming", true);
+        this.editorView.dispatch(tr);
         console.warn(`Invalid closing tag: ${tag}`);
-        return
+        return;
       }
 
       if (tag === Tags.QUOTE) {
@@ -181,18 +188,19 @@ export class IncrementalProsemirrorRenderer {
       );
       textToInsert = textToInsert.replace(/\n+/g, "");
       const insertPos = this.getInsertPosition();
-      tr.insertText(textToInsert, insertPos).setMeta('isStreaming', true)
+      tr.insertText(textToInsert, insertPos).setMeta("isStreaming", true);
     } else {
       if (this.nodeStack[this.nodeStack.length - 1].type !== Tags.CODE) {
         textToInsert = textToInsert.replace(/\n+/g, "");
-        // textToInsert = textToInsert.replace(/\n\n+/g, "");
       }
       if (textToInsert.length === 0) return;
 
       const insertPos = this.getInsertPosition();
-      const endPos = insertPos + textToInsert.length;
+      const mappedInsertPos = tr.mapping.map(insertPos)
+      const endPos = mappedInsertPos+ textToInsert.length;
 
-      tr.insertText(textToInsert, insertPos).setMeta('isStreaming', true)
+      tr.insertText(textToInsert, mappedInsertPos).setMeta("isStreaming", true);
+
       const currentRendererActiveMarkTypes = new Set(
         this.activeMarks.map((m) => m.type)
       );
@@ -234,7 +242,6 @@ export class IncrementalProsemirrorRenderer {
 
       if (this.nodeStack.length > 0) {
         const currentNode = this.nodeStack[this.nodeStack.length - 1];
-
         currentNode.contentPosition = endPos;
       }
     }
@@ -273,6 +280,69 @@ export class IncrementalProsemirrorRenderer {
 
   insertAndUpdateNodeContext(node: Node, tag: Tags) {
     console.log("INSERTING NODE ", tag);
+
+    if (!this.deletionFlag) {
+      console.log("HEYYYYYYYYYYYYYY");
+      console.log(
+        `setInsertionPoint: Received targetedPos: ${this.insertionPoint}`
+      );
+
+      this.nodeStack = [];
+      this.activeMarks = [];
+
+      try {
+        const { state } = this.editorView;
+
+        const suggestionNodeType = this.schema.nodes.addition_suggestion;
+        if (!suggestionNodeType) {
+          console.error(
+            "setInsertionPoint: Node type 'deletion_suggestion' not found!"
+          );
+          return;
+        }
+        const paragraphNodeType = this.schema.nodes.paragraph;
+        if (!paragraphNodeType) {
+          console.error("setInsertionPoint: Node type 'paragraph' not found!");
+          return;
+        }
+
+        const emptyParagraph = paragraphNodeType.create();
+
+        const suggestionNode = suggestionNodeType.create(
+          {
+            id: `exp-suggestion-${Date.now()}`,
+            originalNodeType: "EXPERIMENT_CONTAINER",
+            originalAttrs: "{}",
+          },
+          // emptyParagraph
+        );
+
+        const startPos = this.editorView.state.doc.content.size;
+
+        const tr = state.tr.insert(startPos, suggestionNode);
+        console.log(
+          `setInsertionPoint: Inserting suggestion node at ${this.insertionPoint}`
+        );
+        this.editorView.dispatch(tr);
+
+        console.log(
+          `setInsertionPoint: Setting next insertionPoint inside container to: ${
+            startPos + 2
+          }`
+        );
+
+        this.insertionPoint = startPos + 1
+
+        this.deletionFlag = true;
+      } catch (error) {
+        console.error(
+          "setInsertionPoint: Error during experimental setup:",
+          error
+        );
+
+        this.insertionPoint = null;
+      }
+    }
 
     if (tag === Tags.UL) {
       this.handleUnorderedListInsertion(node);
@@ -449,13 +519,12 @@ export class IncrementalProsemirrorRenderer {
   }
 
   private getInsertPosition(): number {
-
-    if(this.insertionPoint !== null){
-      const insertPos = this.insertionPoint
-      this.insertionPoint = null
-      return insertPos
+    if (this.insertionPoint !== null) {
+      const insertPos = this.insertionPoint;
+      this.insertionPoint = null;
+      return insertPos;
     }
-    
+
     if (this.nodeStack.length === 0) {
       return this.editorView.state.doc.content.size;
     } else {

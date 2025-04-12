@@ -141,6 +141,9 @@ export const useSSEStream = () => {
                         
                         // 5. Apply the transaction
                         editorView.current.dispatch(updatedTr);
+
+                        // const nextInsertionPos = updatedTr.mapping.map(nodePos + originalNode.nodeSize);
+                        // rendererRef.current.setInsertionPoint(nextInsertionPos);
                     }
                 }
             };
@@ -163,8 +166,9 @@ export const useSSEStream = () => {
 
             async function checkFingerprints(node: string){
                 fingerprintManagerRef.current.generateEditorNodesFingerprints(editorView.current)
-                console.log("STR ndoe is: ", node)
-                const hash = fingerprintManagerRef.current.fastHash(node.trim().toLowerCase().normalize())
+                const normalizedNode = node.toLowerCase().normalize()
+                console.log("NORMAZED LLM NODE IS: ", normalizedNode)
+                const hash = fingerprintManagerRef.current.fastHash(normalizedNode)
                 const matchedNode = fingerprintManagerRef.current.matchFingerprint(hash)
                 console.log("FOUND IS: ", matchedNode)
                 if(matchedNode){

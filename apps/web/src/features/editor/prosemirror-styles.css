@@ -438,7 +438,7 @@ pre code.inline-code {
 .deletion-suggestion {
   background-color: rgba(255, 0, 0, 0.1);
   border-left: 3px solid #ff6b6b;
-  padding: 4px 8px;
+  padding: 4px 4px;
   margin: 8px 0;
   position: relative;
 }
@@ -450,7 +450,7 @@ pre code.inline-code {
 .addition-suggestion {
   background-color: rgba(0, 255, 0, 0.1);
   border-left: 3px solid #51cf66;
-  padding: 4px 8px;
+  padding: 4px 4px;
   margin: 8px 0;
   position: relative;
 }

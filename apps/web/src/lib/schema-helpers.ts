@@ -99,10 +99,9 @@ export function createInlineCodeSpec(): NodeSpec {
 // Node for content suggested to be deleted
 export function createDeletionSuggestionSpec(): NodeSpec {
   return {
-    content: "(heading | paragraph | blockquote | code_block | bullet_list | ordered_list | code_block | checkbox_item )+",
+    content: "block*",
     group: "block",
     draggable: false,
-    definingAsContext: true,
     attrs: {
       id: { default: "" }, // Unique identifier for the suggestion
       originalNodeType: { default: "" },
@@ -160,11 +159,13 @@ export function createDeletionSuggestionSpec(): NodeSpec {
 // Node for content suggested to be added
 export function createAdditionSuggestionSpec(): NodeSpec {
   return {
-    content: "inline*",
+    content: "block*",
     group: "block",
     draggable: false,
     attrs: {
-      id: { default: "" },
+      id: { default: "" }, // Unique identifier for the suggestion
+      originalNodeType: { default: "" },
+      originalAttrs: { default: "{}" }   
     },
     toDOM(node) {
       return [
