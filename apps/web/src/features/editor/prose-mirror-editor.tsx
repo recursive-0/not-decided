@@ -17,7 +17,7 @@ import {
 } from "prosemirror-commands";
 import { keymap } from "prosemirror-keymap";
 import {
-  splitListItem, 
+  splitListItem,
   liftListItem,
   sinkListItem,
 } from "prosemirror-schema-list";
@@ -29,143 +29,19 @@ import { useSSEStream } from "@/hooks/use-sse-stream";
 import { Textarea } from "@/components/ui/textarea";
 import { CornerDownLeft } from "lucide-react";
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function liftListItemOnlyAtStart(listItemType) {
   return function (state, dispatch, view) {
     const { $head, empty } = state.selection;
-    
+
     if (!empty || $head.parentOffset !== 0) {
-      return false; 
+      return false;
     }
-    
-    
-    
+
     return liftListItem(listItemType)(state, dispatch, view);
   };
 }
 
 const listRelatedKeymap = keymap({
-  
   Enter: splitListItem(extendedProseMirrorSchema.nodes.list_item),
 
   Backspace: chainCommands(
@@ -173,23 +49,17 @@ const listRelatedKeymap = keymap({
     liftListItemOnlyAtStart(extendedProseMirrorSchema.nodes.list_item),
     joinTextblockBackward
   ),
-  
-  
 });
-
 
 const plugins = [
   history(),
-  listRelatedKeymap, 
-  keymap(baseKeymap), 
+  listRelatedKeymap,
+  keymap(baseKeymap),
   keymap({
-    
     "Mod-z": undo,
     "Mod-y": redo,
     "Shift-Mod-z": redo,
   }),
-  
-  
 ];
 
 export const ProseMirrorEditor = () => {
@@ -209,49 +79,6 @@ export const ProseMirrorEditor = () => {
     const container = editorRef.current;
     container.scrollTop = container.scrollHeight - container.clientHeight + 50;
   };
-
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
 
   useEffect(() => {
     if (!editorRef.current) return;
@@ -273,8 +100,12 @@ export const ProseMirrorEditor = () => {
           const originalState = editorView.current.state;
           const newState = originalState.apply(tr);
           editorView.current.updateState(newState);
+          console.log("EDITOR STATE IS: ", editorView.current.state.doc);
+          console.log(
+            "JSON EDITOR SCHEMA: ",
+            editorView.current.state.doc.toJSON()
+          );
 
-          
           const isStreamingChange = tr.getMeta("isStreaming");
 
           if (
@@ -304,40 +135,36 @@ export const ProseMirrorEditor = () => {
   const handleDialogClose = () => {
     isDialogClosingRef.current = true;
     setSmartAiPopupPos(null);
-    
-    
+
     setTimeout(() => {
       isDialogClosingRef.current = false;
-    }, 100); 
+    }, 100);
   };
 
+  useEffect(() => {
+    const editorElement = editorRef.current;
+    if (!editorElement || !editorView) return;
 
+    const handleSelectionCheck = (event) => {
+      if (isDialogClosingRef.current) return;
 
-useEffect(() => {
-  const editorElement = editorRef.current;
-  if (!editorElement || !editorView) return;
+      setTimeout(() => {
+        if (!editorView.current) return;
+        const { state } = editorView.current;
+        const { selection } = state;
 
-  const handleSelectionCheck = (event) => {
-    
-    if (isDialogClosingRef.current) return;
-    
-    setTimeout(() => {
-      if (!editorView.current) return;
-      const { state } = editorView.current;
-      const { selection } = state;
-      
-      if (selection instanceof TextSelection && !selection.empty) {
-        setSmartAiPopupPos({ x: event.clientX, y: event.clientY });
-      }
-    }, 0);
-  };
+        if (selection instanceof TextSelection && !selection.empty) {
+          setSmartAiPopupPos({ x: event.clientX, y: event.clientY });
+        }
+      }, 0);
+    };
 
-  editorElement.addEventListener('mouseup', handleSelectionCheck);
+    editorElement.addEventListener("mouseup", handleSelectionCheck);
 
-  return () => {
-    editorElement.removeEventListener('mouseup', handleSelectionCheck);
-  };
-}, [editorRef, editorView]); 
+    return () => {
+      editorElement.removeEventListener("mouseup", handleSelectionCheck);
+    };
+  }, [editorRef, editorView]);
 
   useEffect(() => {
     if (editorView.current && isEditorReady) {
@@ -372,14 +199,12 @@ const FloatingCommandDialog = ({ clientX, clientY, onClose, onSubmit }) => {
   const textareaRef = useRef(null);
 
   useEffect(() => {
-    
     if (textareaRef.current) {
       textareaRef.current.focus();
     }
 
-    
     const handleClickOutside = (event: MouseEvent) => {
-      event.stopPropagation()
+      event.stopPropagation();
       if (dialogRef.current && !dialogRef.current.contains(event.target)) {
         onClose();
       }

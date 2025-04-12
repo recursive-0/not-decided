@@ -65,6 +65,7 @@ const AIChat = () => {
   }, [chatMessages]);
 
   const handleSendMessage = () => {
+    console.log("Inside handle send message")
     const trimmedInput = input.trim();
     if (trimmedInput && !isStreaming) {
       setInput("");

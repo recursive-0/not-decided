@@ -19,10 +19,12 @@ export async function generateStream(req: Request): Promise<Response> {
     }
     
     // Destructure the tuple properly
-    const [prompt, chatMode] = promptData;
+    const [prompt, chatMode, contentNodes] = promptData;
+
+    console.log("Content nodes are: ", contentNodes)
 
     try {
-        return await handleClaudeStream({prompt, chatMode: chatMode as "CHAT" | "COMPOSER"});
+        return await handleClaudeStream({prompt, chatMode: chatMode as "CHAT" | "COMPOSER", contentNodes: contentNodes});
         // return await simpleStaticStream()
     } catch (error) {
         return new Response(

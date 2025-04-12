@@ -1,5 +1,5 @@
 import { schema as basicSchema } from "prosemirror-schema-basic";
-import { createCheckboxSpec } from "./schema-helpers"; 
+import { createAdditionSuggestionSpec, createCheckboxSpec, createDeletionSuggestionSpec } from "./schema-helpers"; 
 import { addListNodes } from "prosemirror-schema-list";
 import type { MarkSpec, NodeSpec } from "prosemirror-model"; 
 
@@ -87,7 +87,8 @@ const customCodeBlockSpec = {
 nodesMap = nodesMap.update("code_block", customCodeBlockSpec);
 
 
-
+nodesMap = nodesMap.addToEnd("deletion_suggestion", createDeletionSuggestionSpec());
+nodesMap = nodesMap.addToEnd("addition_suggestion", createAdditionSuggestionSpec());
 
 
 export const finalNodes = addListNodes(nodesMap, "paragraph block*", "block");

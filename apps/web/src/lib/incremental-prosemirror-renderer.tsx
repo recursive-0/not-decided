@@ -35,14 +35,31 @@ export class IncrementalProsemirrorRenderer {
   private nodeStack: NodeContextType[] = [];
   private activeMarks: MarkContext[] = [];
   private schema: Schema | null = null;
+  private insertionPoint: number | null = null
+  private editorMode: "COMPOSER" | "CHAT" = "COMPOSER"
+
 
   constructor(editorView: EditorView, extendedSchema: Schema) {
     this.editorView = editorView;
     this.schema = extendedSchema;
   }
 
+  public setMode(mode: "COMPOSER" | "CHAT"){
+    this.editorMode = mode
+  }
+
+  public setInsertionPoint(targetedPos: number){
+    if(this.editorMode === "COMPOSER"){
+    this.insertionPoint = targetedPos
+    }
+  }
+
   private isMarkTag(tag: Tags): boolean {
     return tag === Tags.B || tag === Tags.I || tag === Tags.ICODE;
+  }
+
+  public updateInsertionPoint(insertAt: number){
+    this.insertionPoint = insertAt
   }
 
   createListNode(type: "ul" | "ol") {
@@ -432,6 +449,13 @@ export class IncrementalProsemirrorRenderer {
   }
 
   private getInsertPosition(): number {
+
+    if(this.insertionPoint !== null){
+      const insertPos = this.insertionPoint
+      this.insertionPoint = null
+      return insertPos
+    }
+    
     if (this.nodeStack.length === 0) {
       return this.editorView.state.doc.content.size;
     } else {

@@ -433,3 +433,63 @@ pre code.inline-code {
     padding: 0;
     border-radius: 0;
 }
+
+
+.deletion-suggestion {
+  background-color: rgba(255, 0, 0, 0.1);
+  border-left: 3px solid #ff6b6b;
+  padding: 4px 8px;
+  margin: 8px 0;
+  position: relative;
+}
+
+.deletion-text {
+  color: red;
+}
+
+.addition-suggestion {
+  background-color: rgba(0, 255, 0, 0.1);
+  border-left: 3px solid #51cf66;
+  padding: 4px 8px;
+  margin: 8px 0;
+  position: relative;
+}
+
+.suggestion-controls {
+  position: absolute;
+  top: -14px;
+  right: 4px;
+  display: flex;
+  gap: 4px;
+}
+
+.suggestion-accept, .suggestion-reject {
+  border: none;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 10px;
+  padding: 2px 4px;
+}
+
+.suggestion-accept {
+  border: 2px solid var(--color-teal-800);
+  background-color: var(--color-teal-950);
+  color: white;
+}
+
+.suggestion-accept &:hover {
+  background-color: var(--color-teal-300);
+}
+
+.suggestion-accept &:hover {
+  background-color: var(--color-red-300);
+}
+
+.suggestion-reject {
+  border: 2px solid var(--color-red-800);
+  background-color: var(--color-red-950);
+  color: white;
+}

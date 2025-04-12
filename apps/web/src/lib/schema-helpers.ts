@@ -94,3 +94,119 @@ export function createInlineCodeSpec(): NodeSpec {
     ]
   };
 }
+
+
+// Node for content suggested to be deleted
+export function createDeletionSuggestionSpec(): NodeSpec {
+  return {
+    content: "inline*",
+    group: "block",
+    draggable: false,
+    code: true,
+    attrs: {
+      id: { default: "" }, // Unique identifier for the suggestion
+      originalContent: { default: "" } // Optional: store original content for reference
+    },
+    toDOM(node) {
+      return [
+        "div",
+        {
+          "data-suggestion-type": "deletion",
+          "data-suggestion-id": node.attrs.id,
+          "class": "suggestion-container deletion-suggestion"
+        },
+        [
+          "div",
+          { class: "suggestion-content deletion-content" },
+          0 // Content goes here
+        ],
+        [
+          "div",
+          { class: "suggestion-controls" },
+          [
+            "button",
+            { 
+              class: "suggestion-accept", 
+              title: "Accept deletion" 
+            },
+            "Accept"
+          ],
+          [
+            "button",
+            { 
+              class: "suggestion-reject", 
+              title: "Reject deletion" 
+            },
+            "Reject"
+          ]
+        ]
+      ];
+    },
+    parseDOM: [{
+      tag: "div.suggestion-container.deletion-suggestion",
+      getAttrs(dom: HTMLElement) {
+        return { 
+          id: dom.dataset.suggestionId || "",
+          originalContent: dom.dataset.originalContent || ""
+        };
+      },
+      contentElement: "div.suggestion-content"
+    }]
+  };
+}
+
+// Node for content suggested to be added
+export function createAdditionSuggestionSpec(): NodeSpec {
+  return {
+    content: "inline*",
+    group: "block",
+    draggable: false,
+    attrs: {
+      id: { default: "" } // Unique identifier for the suggestion
+    },
+    toDOM(node) {
+      return [
+        "div",
+        {
+          "data-suggestion-type": "addition",
+          "data-suggestion-id": node.attrs.id,
+          "class": "suggestion-container addition-suggestion"
+        },
+        [
+          "div",
+          { class: "suggestion-content addition-content" },
+          0 // Content goes here
+        ],
+        [
+          "div",
+          { class: "suggestion-controls" },
+          [
+            "button",
+            { 
+              class: "suggestion-accept", 
+              title: "Accept addition" 
+            },
+            "✓"
+          ],
+          [
+            "button",
+            { 
+              class: "suggestion-reject", 
+              title: "Reject addition" 
+            },
+            "✗"
+          ]
+        ]
+      ];
+    },
+    parseDOM: [{
+      tag: "div.suggestion-container.addition-suggestion",
+      getAttrs(dom: HTMLElement) {
+        return { 
+          id: dom.dataset.suggestionId || ""
+        };
+      },
+      contentElement: "div.suggestion-content"
+    }]
+  };
+}

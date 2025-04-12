@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { chatModePrompt, composerModePrompt } from "../prompts/markdown-instructions-prompt";
+import { chatModePrompt } from "../prompts/markdown-instructions-prompt";
+import { composerModePrompt } from "../prompts/composer-mode-prompt";
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
@@ -9,12 +10,13 @@ const client = new Anthropic({
 interface HandleClaudeStreamProps {
   prompt: string;
   chatMode: "CHAT" | "COMPOSER"
+  contentNodes: any
 }
 
 export async function handleClaudeStream(props: HandleClaudeStreamProps) {
-  const { prompt, chatMode } = props;
+  const { prompt, chatMode, contentNodes } = props;
 
-  const systemPrompt = chatMode === "CHAT" ? chatModePrompt() : composerModePrompt()
+  const systemPrompt = chatMode === "CHAT" ? chatModePrompt() : composerModePrompt(prompt, contentNodes)
 
   const stream = new ReadableStream({
     async start(controller) {

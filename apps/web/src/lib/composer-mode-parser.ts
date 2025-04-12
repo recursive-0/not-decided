@@ -1,3 +1,5 @@
+
+
 enum ParserState {
   normal = "normal",
   thought = "thought",
@@ -12,7 +14,7 @@ enum ParserState {
   inside_editor_content_tag = "inside_editor_content_tag",
 }
 
-type MODE = "THOUGHT" | "EDITOR_CONTENT" | "NORMAL";
+type MODE = "THOUGHT" | "EDITOR_CONTENT" | "NORMAL" | "TARGETS" | "NODE" | "LRTC" | "CTRLD"
 
 export enum Tags {
   "H1" = "H1",
@@ -28,9 +30,13 @@ export enum Tags {
   "ICODE" = "ICODE",
   "QUOTE" = "QUOTE",
   "CHECKBOX" = "CHECKBOX",
+  "NODE" = "NODE",
+  "CTRLD" = "CTRLD"
 }
 
 interface ParserCallbacks {
+  sendJsonNode: (node: string) => void,
+  sendNodeToDelete: (node: string) => void,
   sendTokensCallback: (tokens: string) => void;
   onOpenTag: (tag: Tags) => void;
   onCloseTag: (tag: Tags) => void;
@@ -55,6 +61,14 @@ const all_tags = [
   "[/THOUGHT]",
   "[EDITOR_CONTENT]",
   "[/EDITOR_CONTENT]",
+  "[TARGETS]",
+  "[/TARGETS]",
+  "[NODE]",
+  "[/NODE]",
+  "[LRTC]",
+  "[/LRTC]",
+  "[CTRLD]",
+  "[/CTRLD]"
 ];
 
 const ALLOWED_TAGS = [
@@ -72,7 +86,10 @@ const ALLOWED_TAGS = [
   "CHECKBOX",
   "ICODE",
   "THOUGHT",
-  "EDITOR_CONTENT"
+  "EDITOR_CONTENT",
+  "TARGETS",
+  "NODE",
+  "CTRLD"
 ];
 
 const isValidTag = (tag: string) => {
@@ -90,6 +107,8 @@ export class ComposerModeParser {
   private currentTagName: string = "";
   private tagStack: string[] = [];
   private isActive: boolean = false;
+  private jsonNode: string = ""
+  private deleteNode: string = ""
 
   constructor(private callbacks: ParserCallbacks) {}
 
@@ -106,6 +125,16 @@ export class ComposerModeParser {
             this.callbacks.sendTokensCallback(this.textBuffer);
           } else if (this.mode === "EDITOR_CONTENT") {
             this.callbacks.onTextContent(this.textBuffer);
+          } else if (this.mode === "TARGETS"){
+            // this.jsonNode += this.textBuffer
+
+          } else if(this.mode === "NODE"){
+            this.jsonNode += this.textBuffer
+          } else if(this.mode === "CTRLD") {
+            console.log("Inside flushing ctrld", this.textBuffer)
+            this.deleteNode += this.textBuffer
+          } else if(this.mode === "LRTC"){
+            // do nothing here
           } else {
               console.warn("FLUSHING TEXT BUFFER BUT MODE IS NORMAL!!!")
               this.callbacks.sendTokensCallback(this.textBuffer)
@@ -124,6 +153,8 @@ export class ComposerModeParser {
     this.state = ParserState.normal;
     this.clearTextBuffer();
     this.currentTagName = "";
+    this.jsonNode = ""
+    this.deleteNode = ""
     this.tagStack = [];
     this.isActive = false;
   }
@@ -175,11 +206,57 @@ export class ComposerModeParser {
         return
     }
 
+    if(tagName === "TARGETS"){
+        this.mode = "TARGETS"
+        this.tagStack.push(tagName)
+        this.clearTextBuffer()
+        this.state = ParserState.normal
+        this.currentTagName = ""
+        return
+    }
+
+    if(tagName === "NODE"){
+      this.mode = "NODE"
+      this.jsonNode = ""
+      this.tagStack.push(tagName)
+      this.clearTextBuffer()
+      this.state = ParserState.normal
+      this.currentTagName = ""
+      return
+    }
+
+    if(tagName === "LRTC"){
+      console.log("FOUND OPENING LRTC tag")
+      this.mode = "LRTC"
+      this.tagStack.push(tagName)
+      this.clearTextBuffer()
+      this.deleteNode = ""
+      this.state = ParserState.normal
+      this.currentTagName = ""
+      return
+  }
+
+
+  if(tagName === "CTRLD"){
+    this.mode = "CTRLD"
+    this.deleteNode = ""
+    this.tagStack.push(tagName)
+    this.clearTextBuffer()
+    this.state = ParserState.normal
+    this.currentTagName = ""
+    return
+  }
+
     if(this.mode === "THOUGHT"){
         this.callbacks.sendTokensCallback(this.textBuffer)
     } else if(this.mode === "EDITOR_CONTENT"){
         this.callbacks.onOpenTag(tagName as Tags)
         this.tagStack.push(tagName)
+    } else if(this.mode === "TARGETS"){
+        this.tagStack.push(tagName)
+    } else if(this.mode === "LRTC") {
+      console.log("PUSHING CTRLD onto stakc")
+      this.tagStack.push(tagName)
     } else {
         this.flushTextBuffer()
     }
@@ -233,6 +310,75 @@ export class ComposerModeParser {
         return
     }
 
+    if(closingTag === "NODE"){
+      const topTagInStack = this.tagStack[this.tagStack.length - 1]
+      if(topTagInStack === closingTag){
+          this.tagStack.pop()
+          this.mode = "NORMAL"
+          this.clearTextBuffer()
+          this.callbacks.sendJsonNode(this.jsonNode)
+          this.jsonNode = ""
+          this.currentTagName = ""
+          this.state = ParserState.normal
+      } else {
+          console.warn(`EXPECTED ${closingTag} TAG but Found ${topTagInStack}`)
+          throw new Error(`EXPECTED ${closingTag} TAG but Found ${topTagInStack}`)
+      }
+
+      return
+  } 
+
+    if(closingTag === "TARGETS"){
+      const topTagInStack = this.tagStack[this.tagStack.length - 1]
+      if(topTagInStack === closingTag){
+          this.tagStack.pop()
+          this.mode = "NORMAL"
+          this.clearTextBuffer()
+          this.currentTagName = ""
+          this.state = ParserState.normal
+      } else {
+          console.warn(`EXPECTED ${closingTag} TAG but Found ${topTagInStack}`)
+          throw new Error(`EXPECTED ${closingTag} TAG but Found ${topTagInStack}`)
+      }
+
+      return
+  }
+
+  if(closingTag === "CTRLD"){
+    const topTagInStack = this.tagStack[this.tagStack.length - 1]
+    if(topTagInStack === closingTag){
+        this.tagStack.pop()
+        this.mode = "NORMAL"
+        this.clearTextBuffer()
+        console.log("SENDING DELETE NODE: ", this.deleteNode)
+        this.callbacks.sendNodeToDelete(this.deleteNode)
+        this.deleteNode = ""
+        this.currentTagName = ""
+        this.state = ParserState.normal
+    } else {
+        console.warn(`EXPECTED ${closingTag} TAG but Found ${topTagInStack}`)
+        throw new Error(`EXPECTED ${closingTag} TAG but Found ${topTagInStack}`)
+    }
+
+    return
+} 
+
+  if(closingTag === "LRTC"){
+    const topTagInStack = this.tagStack[this.tagStack.length - 1]
+    if(topTagInStack === closingTag){
+        this.tagStack.pop()
+        this.mode = "NORMAL"
+        this.clearTextBuffer()
+        this.currentTagName = ""
+        this.state = ParserState.normal
+    } else {
+        console.warn(`EXPECTED ${closingTag} TAG but Found ${topTagInStack}`)
+        throw new Error(`EXPECTED ${closingTag} TAG but Found ${topTagInStack}`)
+    }
+
+    return
+}
+
     if(this.mode === "THOUGHT"){
         this.callbacks.sendTokensCallback(this.textBuffer)
     } else if(this.mode === "EDITOR_CONTENT"){
@@ -242,7 +388,20 @@ export class ComposerModeParser {
         } else {
             this.callbacks.onTextContent(this.textBuffer)
         }
-    } else {
+    } else if(this.mode === "TARGETS"){
+        if(topTagInStack === closingTag){
+          this.tagStack.pop()
+        } else {
+          console.log(`We were expecting ${closingTag} but found ${topTagInStack}`)
+        }
+    } else if(this.mode === "LRTC") {
+      if(topTagInStack === closingTag){
+        this.tagStack.pop()
+      } else {
+        console.log(`We were expecting ${closingTag} but found ${topTagInStack}`)
+      }
+    }
+     else {
         this.flushTextBuffer()
     }
 

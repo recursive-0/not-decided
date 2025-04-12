@@ -3,8 +3,27 @@ import { extendedProseMirrorSchema, useEditor } from "@/providers/editor-context
 import { IncrementalProsemirrorRenderer } from "@/lib/incremental-prosemirror-renderer";
 import type { ChatMode } from "@/types/messages";
 import { ChatModeIncrementalParser } from "@/lib/chat-mode-parser";
-import { ComposerModeParser, Tags } from "@/lib/composer-mode-parser";
+import { ComposerModeParser } from "@/lib/composer-mode-parser";
 import { useChatStore } from "@/store/chat";
+import { FingerprintManager } from "@/lib/fingerprint-manager";
+import type { Node } from "prosemirror-model";
+
+export enum Tags {
+    "H1" = "H1",
+    "H2" = "H2",
+    "H3" = "H3",
+    "P" = "P",
+    "B" = "B",
+    "I" = "I",
+    "UL" = "UL",
+    "OL" = "OL",
+    "LI" = "LI",
+    "CODE" = "CODE",
+    "ICODE" = "ICODE",
+    "QUOTE" = "QUOTE",
+    "CHECKBOX" = "CHECKBOX",
+  }
+
 
 export const useSSEStream = () => {
     const [content, setContent] = useState<string>("");
@@ -15,6 +34,7 @@ export const useSSEStream = () => {
     const { editorView } = useEditor();
     
     const userInteractedRef = useRef<boolean>(false)
+    const fingerprintManagerRef = useRef<FingerprintManager | null>(null)
     const chatParserRef = useRef<ChatModeIncrementalParser | null>(null);
     const composerParserRef = useRef<ComposerModeParser | null>(null)
     const rendererRef = useRef<IncrementalProsemirrorRenderer | null>(null);
@@ -29,13 +49,13 @@ export const useSSEStream = () => {
     }
 
     const startStreaming = useCallback(async (chatMode: ChatMode, prompt: string, sendTokensCallback: (token: string) => void) => {
+        console.log("Inside start streaming")
         userInteractedRef.current = false;
         try {
 
             setIsStreaming(true);
             setError(null);
             setContent("");
-
 
             if (eventSourceRef.current) {
                 eventSourceRef.current.close();
@@ -48,6 +68,8 @@ export const useSSEStream = () => {
                     extendedProseMirrorSchema
                 );
             }
+
+
         
 
             if(!chatParserRef.current && rendererRef.current){
@@ -55,7 +77,12 @@ export const useSSEStream = () => {
             }
 
             if(!composerParserRef.current && rendererRef.current){
+
+                fingerprintManagerRef.current = new FingerprintManager(editorView.current)
+
                 composerParserRef.current = new ComposerModeParser({
+                    sendJsonNode: async (node: string) => await checkFingerprints(node),
+                    sendNodeToDelete: (node: string) => deleteNode(node),
                     sendTokensCallback: (tokens: string) => sendTokensCallback(tokens),
                     onOpenTag: (tag: Tags) => rendererRef.current?.onOpenTag(tag),
                     onCloseTag: (tag: Tags) => rendererRef.current?.onCloseTag(tag),
@@ -79,13 +106,76 @@ export const useSSEStream = () => {
             //     });
             // }
 
+            const deleteNode = (node: string) => {
+                console.log("Caught in delete node", node);
+                const hash = fingerprintManagerRef.current.fastHash(node);
+                const matchedNode = fingerprintManagerRef.current.matchFingerprint(hash);
+                console.log("DELETE NODEEEE : ", matchedNode);
+                
+                if (matchedNode && editorView.current) {
+                    // 1. Get the current editor state and transaction
+                    const { state } = editorView.current;
+                    const { tr } = state;
+                    
+                    // 2. Find the node position and size in the document
+                    const nodePos = matchedNode.startPos;
+                    const originalNode = state.doc.nodeAt(nodePos);
+                    
+                    if (originalNode) {
+                        // 3. Create a deletion suggestion node with the original content
+                        const deletionSuggestion = state.schema.nodes.deletion_suggestion.create(
+                            {
+                                id: `deletion-${Date.now()}`, // Generate a unique ID
+                                originalContent: JSON.stringify(originalNode.toJSON())
+                            },
+                            originalNode.content // Preserve the original content
+                        );
+                        
+                        // 4. Replace the original node with the deletion suggestion
+                        const updatedTr = tr.replaceWith(
+                            nodePos, 
+                            nodePos + originalNode.nodeSize, 
+                            deletionSuggestion
+                        );
+                        
+                        // 5. Apply the transaction
+                        editorView.current.dispatch(updatedTr);
+                    }
+                }
+            };
 
+            const editorDocNodes = editorView.current.state.doc.toJSON()
+            console.log("Editor doc nodes: ", editorView.current.state.doc.content)
+            const contentNodes = editorDocNodes.content.map((node: Node) => {
+                return {
+                    type: node.type,
+                    content: node.content
+                }
+            })
+
+            console.log("COntent nodes are: ", contentNodes)
+
+            // contentNodes.forEach(n => {
+            //     const print = generateNodeSignature(n)
+            //     console.log("Fingerprint is: ", print)
+            // })
+
+            async function checkFingerprints(node: string){
+                fingerprintManagerRef.current.generateEditorNodesFingerprints(editorView.current)
+                console.log("STR ndoe is: ", node)
+                const hash = fingerprintManagerRef.current.fastHash(node)
+                const matchedNode = fingerprintManagerRef.current.matchFingerprint(hash)
+                console.log("FOUND IS: ", matchedNode)
+                if(matchedNode){
+                    rendererRef.current.setInsertionPoint(matchedNode.position)
+                }
+            }
 
             // Initialize stream
-            const response = await fetch("http://localhost:3007/api/generate/init", {
+            const response = await fetch("http://localhost:4000/api/generate/init", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ prompt: prompt, chatMode: chatMode })
+                body: JSON.stringify({ prompt: prompt, chatMode: chatMode, contentNodes: contentNodes})
             });
 
             if (!response.ok) {
@@ -97,7 +187,7 @@ export const useSSEStream = () => {
             
             // Setup SSE
             eventSourceRef.current = new EventSource(
-                `http://localhost:3007/api/generate/stream/${streamId}`
+                `http://localhost:4000/api/generate/stream/${streamId}`
             );
 
             // Handle messages
@@ -116,6 +206,10 @@ export const useSSEStream = () => {
                         
                     case "START_STREAM":
                         getCurrentParser()?.current.startStreaming();
+                        rendererRef.current.setMode(chatMode)
+                        // if(chatMode === "COMPOSER"){
+                        //     generateEditorNodesFingerprints(editorView.current)
+                        // }
                         return;
                         
                     default:
