@@ -38,7 +38,9 @@ export class IncrementalProsemirrorRenderer {
   private schema: Schema | null = null;
   private insertionPoint: number | null = null;
   private editorMode: "COMPOSER" | "CHAT" = "COMPOSER";
-  private deletionFlag: boolean = false;
+  private highlighterAdded: boolean = false;
+  private isInitialGeneration: boolean = true
+  private successfulGenerations: number = 0
 
   constructor(editorView: EditorView, extendedSchema: Schema) {
     this.editorView = editorView;
@@ -47,6 +49,15 @@ export class IncrementalProsemirrorRenderer {
 
   public setMode(mode: "COMPOSER" | "CHAT") {
     this.editorMode = mode;
+  }
+
+  public updateSuccessfulGenerations(){
+    this.successfulGenerations++
+    return this.successfulGenerations
+  }
+
+  public setIsInitialGeneration(flag: boolean){
+    this.isInitialGeneration = flag
   }
 
   public setInsertionPoint(targetedPos: number) {
@@ -281,66 +292,68 @@ export class IncrementalProsemirrorRenderer {
   insertAndUpdateNodeContext(node: Node, tag: Tags) {
     console.log("INSERTING NODE ", tag);
 
-    if (!this.deletionFlag) {
-      console.log("HEYYYYYYYYYYYYYY");
-      console.log(
-        `setInsertionPoint: Received targetedPos: ${this.insertionPoint}`
-      );
-
-      this.nodeStack = [];
-      this.activeMarks = [];
-
-      try {
-        const { state } = this.editorView;
-
-        const suggestionNodeType = this.schema.nodes.addition_suggestion;
-        if (!suggestionNodeType) {
-          console.error(
-            "setInsertionPoint: Node type 'deletion_suggestion' not found!"
+    if(!this.isInitialGeneration){
+      if (!this.highlighterAdded) {
+        console.log("HEYYYYYYYYYYYYYY");
+        console.log(
+          `setInsertionPoint: Received targetedPos: ${this.insertionPoint}`
+        );
+  
+        this.nodeStack = [];
+        this.activeMarks = [];
+  
+        try {
+          const { state } = this.editorView;
+  
+          const suggestionNodeType = this.schema.nodes.addition_suggestion;
+          if (!suggestionNodeType) {
+            console.error(
+              "setInsertionPoint: Node type 'deletion_suggestion' not found!"
+            );
+            return;
+          }
+          const paragraphNodeType = this.schema.nodes.paragraph;
+          if (!paragraphNodeType) {
+            console.error("setInsertionPoint: Node type 'paragraph' not found!");
+            return;
+          }
+  
+          const emptyParagraph = paragraphNodeType.create();
+  
+          const suggestionNode = suggestionNodeType.create(
+            {
+              id: `exp-suggestion-${Date.now()}`,
+              originalNodeType: "EXPERIMENT_CONTAINER",
+              originalAttrs: "{}",
+            },
+            // emptyParagraph
           );
-          return;
+  
+          const startPos = this.editorView.state.doc.content.size;
+  
+          const tr = state.tr.insert(startPos, suggestionNode);
+          console.log(
+            `setInsertionPoint: Inserting suggestion node at ${this.insertionPoint}`
+          );
+          this.editorView.dispatch(tr);
+  
+          console.log(
+            `setInsertionPoint: Setting next insertionPoint inside container to: ${
+              startPos + 2
+            }`
+          );
+  
+          this.insertionPoint = startPos + 1
+  
+          this.highlighterAdded = true;
+        } catch (error) {
+          console.error(
+            "setInsertionPoint: Error during experimental setup:",
+            error
+          );
+  
+          this.insertionPoint = null;
         }
-        const paragraphNodeType = this.schema.nodes.paragraph;
-        if (!paragraphNodeType) {
-          console.error("setInsertionPoint: Node type 'paragraph' not found!");
-          return;
-        }
-
-        const emptyParagraph = paragraphNodeType.create();
-
-        const suggestionNode = suggestionNodeType.create(
-          {
-            id: `exp-suggestion-${Date.now()}`,
-            originalNodeType: "EXPERIMENT_CONTAINER",
-            originalAttrs: "{}",
-          },
-          // emptyParagraph
-        );
-
-        const startPos = this.editorView.state.doc.content.size;
-
-        const tr = state.tr.insert(startPos, suggestionNode);
-        console.log(
-          `setInsertionPoint: Inserting suggestion node at ${this.insertionPoint}`
-        );
-        this.editorView.dispatch(tr);
-
-        console.log(
-          `setInsertionPoint: Setting next insertionPoint inside container to: ${
-            startPos + 2
-          }`
-        );
-
-        this.insertionPoint = startPos + 1
-
-        this.deletionFlag = true;
-      } catch (error) {
-        console.error(
-          "setInsertionPoint: Error during experimental setup:",
-          error
-        );
-
-        this.insertionPoint = null;
       }
     }
 

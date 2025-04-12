@@ -205,6 +205,10 @@ export const useSSEStream = () => {
                     case "[DONE]":
                     case "END_STREAM":
                         getCurrentParser()?.current.stopStreaming();
+                        const totalGenerations = rendererRef.current.updateSuccessfulGenerations()
+                        if(totalGenerations > 0){
+                            rendererRef.current.setIsInitialGeneration(false)
+                        }
                         setIsStreaming(false);
                         eventSourceRef.current?.close();
                         return;
