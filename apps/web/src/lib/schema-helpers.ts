@@ -206,7 +206,8 @@ export function createAdditionSuggestionSpec(): NodeSpec {
       tag: "div.suggestion-container.addition-suggestion",
       getAttrs(dom: HTMLElement) {
         return { 
-          id: dom.dataset.suggestionId || ""
+          id: dom.dataset.suggestionId || "",
+          originalContent: dom.dataset.originalContent || ""
         };
       },
       contentElement: "div.suggestion-content"

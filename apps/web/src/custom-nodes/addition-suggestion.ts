@@ -4,67 +4,86 @@ import type { Decoration, DecorationSource, EditorView, NodeView } from "prosemi
 export class AdditionSuggestion implements NodeView {
     dom: HTMLElement;
     contentDOM: HTMLElement;
+    node: Node;
+    view: EditorView;
+    getPos: () => number | undefined;
 
     constructor(node: Node, view: EditorView, getPos: () => number | undefined) {
-        // Create main container
+
+        this.node = node;
+        this.view = view;
+        this.getPos = getPos;
+        
         this.dom = document.createElement('div');
         this.dom.className = 'suggestion-container addition-suggestion';
         this.dom.setAttribute('data-suggestion-type', 'addition');
         this.dom.setAttribute('data-suggestion-id', node.attrs.id);
 
-        // Create content container (where Prosemirror will put the content)
+        
         const contentContainer = document.createElement('div');
         contentContainer.className = 'suggestion-content addition-content';
-        this.contentDOM = contentContainer;  // Important! This tells Prosemirror where to put content
+        this.contentDOM = contentContainer;  
 
-        // Create controls container
+        
         const controlsContainer = document.createElement('div');
         controlsContainer.className = 'suggestion-controls';
 
-        // Create accept button
+        
         const acceptButton = document.createElement('button');
         acceptButton.className = 'suggestion-accept';
         acceptButton.title = 'Accept addition';
         acceptButton.textContent = 'Accept';
+
         acceptButton.addEventListener('click', () => {
-            const pos = getPos();
+            const pos = this.getPos();
             if (pos === undefined) return;
             
-            // When accepting an addition, we keep the content but remove the suggestion wrapper
-            if (node.content.size > 0) {
-                // Replace the entire suggestion node with just its content
+            // Get the current node from the document
+            const nodeAtPos = view.state.doc.nodeAt(pos);
+            if (!nodeAtPos) return;
+            
+            console.log("Node content on accept:", nodeAtPos.content);
+            
+            if (nodeAtPos.content.size > 0) {
                 const tr = view.state.tr.replaceWith(
                     pos,
-                    pos + node.nodeSize,
-                    node.content
+                    pos + nodeAtPos.nodeSize,
+                    nodeAtPos.content
                 );
                 view.dispatch(tr);
             } else {
-                // If there's no content, just remove the node
-                const tr = view.state.tr.delete(pos, pos + node.nodeSize);
+                console.warn("Empty content in addition suggestion node");
+                const tr = view.state.tr.delete(pos, pos + nodeAtPos.nodeSize);
                 view.dispatch(tr);
             }
         });
 
-        // Create reject button
+        
         const rejectButton = document.createElement('button');
         rejectButton.className = 'suggestion-reject';
         rejectButton.title = 'Reject addition';
         rejectButton.textContent = 'Reject';
+
         rejectButton.addEventListener('click', () => {
             const pos = getPos();
             if (pos === undefined) return;
             
-            // When rejecting an addition, we remove the entire node
+            
             const tr = view.state.tr.delete(pos, pos + node.nodeSize);
             view.dispatch(tr);
         });
 
-        // Build the DOM structure
+        
         controlsContainer.appendChild(acceptButton);
         controlsContainer.appendChild(rejectButton);
         
         this.dom.appendChild(contentContainer);
         this.dom.appendChild(controlsContainer);
+    }
+
+    update(node: Node) {
+        if (node.type.name !== 'addition_suggestion') return false;
+        this.node = node;
+        return true;
     }
 }

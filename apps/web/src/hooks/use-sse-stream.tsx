@@ -142,8 +142,8 @@ export const useSSEStream = () => {
                         // 5. Apply the transaction
                         editorView.current.dispatch(updatedTr);
 
-                        // const nextInsertionPos = updatedTr.mapping.map(nodePos + originalNode.nodeSize);
-                        // rendererRef.current.setInsertionPoint(nextInsertionPos);
+                        const nextInsertionPos = updatedTr.mapping.map(nodePos + originalNode.nodeSize);
+                        rendererRef.current.setInsertionPoint(nextInsertionPos);
                     }
                 }
             };
@@ -166,8 +166,9 @@ export const useSSEStream = () => {
 
             async function checkFingerprints(node: string){
                 fingerprintManagerRef.current.generateEditorNodesFingerprints(editorView.current)
-                const normalizedNode = node.toLowerCase().normalize()
-                console.log("NORMAZED LLM NODE IS: ", normalizedNode)
+                console.log("NOTTTT deletion node: ", node)
+                const normalizedNode = node.normalize().toLowerCase()
+                console.log("NORMAZED deletion node IS: ", normalizedNode)
                 const hash = fingerprintManagerRef.current.fastHash(normalizedNode)
                 const matchedNode = fingerprintManagerRef.current.matchFingerprint(hash)
                 console.log("FOUND IS: ", matchedNode)
@@ -205,21 +206,28 @@ export const useSSEStream = () => {
                     case "[DONE]":
                     case "END_STREAM":
                         getCurrentParser()?.current.stopStreaming();
-                        const totalGenerations = rendererRef.current.updateSuccessfulGenerations()
-                        if(totalGenerations > 0){
-                            rendererRef.current.setIsInitialGeneration(false)
-                        }
+                        rendererRef.current.updateSuccessfulGenerations()
                         setIsStreaming(false);
                         eventSourceRef.current?.close();
                         return;
                         
-                    case "START_STREAM":
-                        getCurrentParser()?.current.startStreaming();
-                        rendererRef.current.setMode(chatMode)
-                        // if(chatMode === "COMPOSER"){
-                        //     generateEditorNodesFingerprints(editorView.current)
-                        // }
-                        return;
+                        case "START_STREAM":
+                            getCurrentParser()?.current.startStreaming();
+                            
+                            // Check if editor is empty
+                            const docContent = editorView.current.state.doc;
+                            const isEmpty = docContent.textContent.trim().length === 0;
+                            
+                            console.log("EDITOR EMPTY STATUS:", isEmpty, "Text length:", docContent.textContent.length);
+                            
+                            if (isEmpty) {
+                                rendererRef.current.setIsInitialGeneration(true);
+                            } else {
+                                rendererRef.current.setIsInitialGeneration(false);
+                            }
+                            
+                            rendererRef.current.setMode(chatMode);
+                            return;
                         
                     default:
                         const decodedToken = token.replace(/\\n/g, "\n").replace(/\\r/g, "\r").replace(/\\t/g, "\t");

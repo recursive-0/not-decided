@@ -1,5 +1,6 @@
 import Groq from "groq-sdk";
-import { chatModePrompt, composerModePrompt } from "../prompts/markdown-instructions-prompt"; 
+import { chatModePrompt } from "../prompts/markdown-instructions-prompt"; 
+import { composerModePrompt } from "../prompts/composer-mode-prompt";
 
 
 const groq = new Groq({
@@ -10,12 +11,13 @@ const groq = new Groq({
 interface HandleGroqStreamProps {
   prompt: string;
   chatMode: "CHAT" | "COMPOSER"
+  contentNodes: any
 }
 
 export async function handleGroqStream(props: HandleGroqStreamProps) {
-  const { prompt, chatMode } = props;
+  const { prompt, chatMode, contentNodes } = props;
 
-  const systemPrompt = chatMode === "CHAT" ? chatModePrompt() : composerModePrompt()
+  const systemPrompt = chatMode === "CHAT" ? chatModePrompt() : composerModePrompt(prompt, contentNodes)
 
   const stream = new ReadableStream({
     async start(controller) {

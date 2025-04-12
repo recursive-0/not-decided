@@ -182,6 +182,12 @@ export class IncrementalProsemirrorRenderer {
       }
 
       this.nodeStack.pop();
+
+      if(this.nodeStack.length > 0){
+        // process the parent and update content pos of it
+        const parentNode = this.nodeStack[this.nodeStack.length - 1]
+        parentNode.contentPosition = lastNode.contentPosition + 1
+      }
     }
   }
 
@@ -329,7 +335,7 @@ export class IncrementalProsemirrorRenderer {
             // emptyParagraph
           );
   
-          const startPos = this.editorView.state.doc.content.size;
+          const startPos = this.insertionPoint
   
           const tr = state.tr.insert(startPos, suggestionNode);
           console.log(
@@ -346,6 +352,12 @@ export class IncrementalProsemirrorRenderer {
           this.insertionPoint = startPos + 1
   
           this.highlighterAdded = true;
+
+          this.nodeStack.push({
+            type: Tags.DELETION,
+            startPosition: startPos,
+            contentPosition: this.insertionPoint
+          })
         } catch (error) {
           console.error(
             "setInsertionPoint: Error during experimental setup:",

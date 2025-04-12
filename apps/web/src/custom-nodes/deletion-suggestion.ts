@@ -26,15 +26,23 @@ export class DeletionSuggestion implements NodeView {
         acceptButton.className = 'suggestion-accept';
         acceptButton.title = 'Accept deletion';
         acceptButton.textContent = 'Accept';
+
         acceptButton.addEventListener('click', () => {
             const pos = getPos();
             if (pos === undefined) return;
             
+            // Get the content of the highlighted node
+            const contentNode = node.content;
             
-            const tr = view.state.tr.delete(pos, pos + node.nodeSize);
+            // Replace the highlighted node with its content as normal nodes
+            const tr = view.state.tr.replaceWith(
+                pos, 
+                pos + node.nodeSize, 
+                contentNode
+            );
+            
             view.dispatch(tr);
         });
-
         
         const rejectButton = document.createElement('button');
         rejectButton.className = 'suggestion-reject';

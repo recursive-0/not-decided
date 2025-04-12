@@ -36,7 +36,7 @@ export class FingerprintManager{
             content: content
         }
 
-        const stringifiedNormalizedNode = JSON.stringify(normalizedNode).toLowerCase().normalize()
+        const stringifiedNormalizedNode = JSON.stringify(normalizedNode).normalize()
 
         console.log("stringified normalized node is: ", stringifiedNormalizedNode)
 
