@@ -30,6 +30,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { CornerDownLeft } from "lucide-react";
 import { DeletionSuggestion } from "@/custom-nodes/deletion-suggestion";
 import { AdditionSuggestion } from "@/custom-nodes/addition-suggestion";
+import { ensureTrailingParagraphPlugin } from "@/plugins/trailing-paragraph-plugin";
 
 function liftListItemOnlyAtStart(listItemType) {
   return function (state, dispatch, view) {
@@ -54,6 +55,7 @@ const listRelatedKeymap = keymap({
 });
 
 const plugins = [
+  ensureTrailingParagraphPlugin,
   history(),
   listRelatedKeymap,
   keymap(baseKeymap),
@@ -93,6 +95,8 @@ export const ProseMirrorEditor = () => {
     if (!editorView.current && editorRef.current) {
       editorView.current = new EditorView(editorRef.current, {
         state,
+          scrollThreshold: 0,
+          scrollMargin: 0,
         nodeViews: {
           deletion_suggestion: (node, view, getPos) => {
             return new DeletionSuggestion(node, view, getPos)
@@ -178,6 +182,15 @@ export const ProseMirrorEditor = () => {
     if (editorView.current && isEditorReady) {
       setTimeout(() => {
         editorView.current.focus();
+        const textNode = editorView.current.state.schema.text("hello")
+        // const placeholderPara = editorView.current.state.schema.nodes.paragraph.create()
+        // const tr = editorView.current.state.tr.insert(0, placeholderPara)
+        // editorView.current.dispatch(tr)
+        // const bulletList = editorView.current.state.schema.nodes.blockquote.create()
+        // const tr = editorView.current.state.tr.insert(0, bulletList)
+        // // const lN = editorView.current.state.schema.nodes.list_item.create();
+        // // tr.insert()
+        // editorView.current.dispatch(tr)
       }, 1000);
     }
   }, [isEditorReady]);
@@ -185,7 +198,7 @@ export const ProseMirrorEditor = () => {
   return (
     <div ref={containerRef} className="flex flex-col w-full h-full">
       <div
-        className="prosemirror-editor w-full max-h-[calc(100vh - 60px)] h-full overflow-scroll py-2 px-4 border-t border-neutral-400 outline-none"
+        className="prosemirror-editor w-full max-h-[calc(100vh - 60px)] h-full overflow-scroll bg-red-400 py-4 px-4 border-t border-neutral-400 outline-none"
         ref={editorRef}
       />
       {}

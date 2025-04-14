@@ -107,22 +107,17 @@ export const useSSEStream = () => {
             // }
 
             const deleteNode = (node: string) => {
-                console.log("Caught in delete node", node);
                 const hash = fingerprintManagerRef.current.fastHash(node);
                 const matchedNode = fingerprintManagerRef.current.matchFingerprint(hash);
-                console.log("DELETE NODEEEE : ", matchedNode);
                 
                 if (matchedNode && editorView.current) {
-                    // 1. Get the current editor state and transaction
                     const { state } = editorView.current;
                     const { tr } = state;
                     
-                    // 2. Find the node position and size in the document
                     const nodePos = matchedNode.startPos;
                     const originalNode = state.doc.nodeAt(nodePos);
                     
                     if (originalNode) {
-                        // 3. Create a deletion suggestion node with the original content
                         const deletionSuggestion = state.schema.nodes.deletion_suggestion.create(
                             {
                                 id: `deletion-${Date.now()}`, // Generate a unique ID
@@ -142,14 +137,13 @@ export const useSSEStream = () => {
                         // 5. Apply the transaction
                         editorView.current.dispatch(updatedTr);
 
-                        const nextInsertionPos = updatedTr.mapping.map(nodePos + originalNode.nodeSize);
+                        const nextInsertionPos = tr.mapping.map(nodePos + originalNode.nodeSize);
                         rendererRef.current.setInsertionPoint(nextInsertionPos);
                     }
                 }
             };
 
             const editorDocNodes = editorView.current.state.doc.toJSON()
-            console.log("Editor doc nodes: ", editorView.current.state.doc.content)
             const contentNodes = editorDocNodes.content.map((node: Node) => {
                 return {
                     type: node.type,
@@ -157,18 +151,11 @@ export const useSSEStream = () => {
                 }
             })
 
-            console.log("COntent nodes are: ", contentNodes)
-
-            // contentNodes.forEach(n => {
-            //     const print = generateNodeSignature(n)
-            //     console.log("Fingerprint is: ", print)
-            // })
-
             async function checkFingerprints(node: string){
                 fingerprintManagerRef.current.generateEditorNodesFingerprints(editorView.current)
-                console.log("NOTTTT deletion node: ", node)
+                console.log("LLM FINGERPRINT NODE: ", node)
                 const normalizedNode = node.normalize().toLowerCase()
-                console.log("NORMAZED deletion node IS: ", normalizedNode)
+                console.log("LLM noramlized fingerprint node: ", normalizedNode)
                 const hash = fingerprintManagerRef.current.fastHash(normalizedNode)
                 const matchedNode = fingerprintManagerRef.current.matchFingerprint(hash)
                 console.log("FOUND IS: ", matchedNode)
@@ -221,9 +208,9 @@ export const useSSEStream = () => {
                             console.log("EDITOR EMPTY STATUS:", isEmpty, "Text length:", docContent.textContent.length);
                             
                             if (isEmpty) {
-                                rendererRef.current.setIsInitialGeneration(true);
+                                rendererRef.current.setHighlight(false);
                             } else {
-                                rendererRef.current.setIsInitialGeneration(false);
+                                rendererRef.current.setHighlight(true);
                             }
                             
                             rendererRef.current.setMode(chatMode);
@@ -253,7 +240,7 @@ export const useSSEStream = () => {
 
     const stopStreaming = useCallback(() => {
         getCurrentParser().current?.stopStreaming();
-        
+        rendererRef.current.cleanupAfterStreamStop()
         if (eventSourceRef.current) {
             eventSourceRef.current.close();
             eventSourceRef.current = null;

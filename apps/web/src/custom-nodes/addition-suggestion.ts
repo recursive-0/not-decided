@@ -67,8 +67,7 @@ export class AdditionSuggestion implements NodeView {
         rejectButton.addEventListener('click', () => {
             const pos = getPos();
             if (pos === undefined) return;
-            
-            
+            console.log("POS IS: ", pos)
             const tr = view.state.tr.delete(pos, pos + node.nodeSize);
             view.dispatch(tr);
         });

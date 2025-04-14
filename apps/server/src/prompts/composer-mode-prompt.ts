@@ -2,14 +2,13 @@
 //    [key: string]: string
 // }
 
-
 // export function composerModePrompt(userQuery: string, contentNodes: any ) {
 //    console.log("CONTENT NODES are: ", contentNodes)
 
 //    const formattedNodes = contentNodes.map((node: any) => ({
 //       type: node.type,
-//       content: typeof node.content === 'string' 
-//           ? node.content 
+//       content: typeof node.content === 'string'
+//           ? node.content
 //           : JSON.stringify(node.content)
 //   }))
 
@@ -19,10 +18,10 @@
 
 //    ## USER QUERY
 //    ${userQuery}
-   
+
 //    ## EDITOR CONTENT NODES
 //    ${JSON.stringify(contentNodes, null, 2)}
-   
+
 //    # COMPOSER MODE - MASTER INSTRUCTION SET
 
 // ## CORE RESPONSE STRUCTURE
@@ -47,12 +46,10 @@
 // - Contain 1-3 specific nodes where content should be inserted/modified
 // - Format each node exactly as follows:
 
-
 // [TARGETS]
 // [NODE]{"type":"paragraph","content":"Existing node content...","id":"node-42"}[/NODE]
 // [NODE]{"type":"heading","content":"Another node...","id":"node-43"}[/NODE]
 // [/TARGETS]
-
 
 // ### TARGETING STRATEGIES
 // 1. **Direct Targeting**: When user explicitly mentions a section/topic
@@ -77,7 +74,6 @@
 // **Example 1: Explicit Section Reference**
 // User: "Add more details about performance optimization in the MongoDB section"
 
-
 // [THOUGHT]
 // You want to enhance the MongoDB section with performance optimization details. I'll locate the MongoDB section in your document and add relevant content there.
 // [/THOUGHT]
@@ -91,10 +87,8 @@
 // ...content here...
 // [/EDITOR_CONTENT]
 
-
 // **Example 2: Relative Positioning**
 // User: "Insert a conclusion paragraph after the last section"
-
 
 // [THOUGHT]
 // You want to add a conclusion to your document. I'll identify the last section and add a conclusion paragraph after it.
@@ -199,11 +193,9 @@
 // [LI]Item 2[/LI]
 // [/UL]
 
-
 // ### CORRECT LIST STRUCTURE (ALWAYS USE THIS):
 
 // [UL][LI]Item 1[/LI][LI]Item 2[/LI][/UL]
-
 
 // ### FOR CONTENT WITH TERM DEFINITIONS:
 
@@ -373,19 +365,17 @@
 // ## FINAL WARNING
 
 // ANY TAG FORMATTING ERRORS WILL CAUSE COMPLETE SYSTEM FAILURE AND CRASH THE SOFTWARE FOR USERS. THE INTEGRITY OF TAGS IS THE ABSOLUTE HIGHEST PRIORITY.
-   
+
 //    `
 //   }
-
-
 
 // export function composerModePrompt(userQuery: string, contentNodes: any) {
 //    console.log("CONTENT NODES are: ", contentNodes)
 
 //    const formattedNodes = contentNodes.map((node: any) => ({
 //       type: node.type,
-//       content: typeof node.content === 'string' 
-//           ? node.content 
+//       content: typeof node.content === 'string'
+//           ? node.content
 //           : JSON.stringify(node.content)
 //   }))
 
@@ -395,10 +385,10 @@
 
 //    ## USER QUERY
 //    ${userQuery}
-   
+
 //    ## EDITOR CONTENT NODES
 //    ${JSON.stringify(contentNodes, null, 2)}
-   
+
 //    # COMPOSER MODE - MASTER INSTRUCTION SET
 
 // ## HOW USERS INTERACT WITH THE EDITOR
@@ -451,12 +441,10 @@
 //   (These nodes should be adjacent or closely related to identify ONE specific area, not multiple scattered locations)
 // - Format each node exactly as follows:
 
-
 // [TARGETS]
 // [NODE]{"type":"paragraph","content":"Existing node content...","id":"node-42"}[/NODE]
 // [NODE]{"type":"heading","content":"Another node...","id":"node-43"}[/NODE]
 // [/TARGETS]
-
 
 // ### TARGETING STRATEGIES
 // 1. **Direct Targeting**: When user explicitly mentions a section/topic
@@ -481,7 +469,6 @@
 // **Example 1: Explicit Section Reference**
 // User: "Add more details about performance optimization in the MongoDB section"
 
-
 // [THOUGHT]
 // You want to enhance the MongoDB section with performance optimization details. I'll locate the MongoDB section in your document and add relevant content there.
 // [/THOUGHT]
@@ -495,10 +482,8 @@
 // ...content here...
 // [/EDITOR_CONTENT]
 
-
 // **Example 2: Relative Positioning**
 // User: "Insert a conclusion paragraph after the last section"
-
 
 // [THOUGHT]
 // You want to add a conclusion to your document. I'll identify the last section and add a conclusion paragraph after it.
@@ -611,7 +596,7 @@
 //    - **id**: Unique identifier for each node
 //    - **type**: The type of content (paragraph, heading, list, etc.)
 //    - **content**: The actual text/data of the node
-// 3. **Hierarchical Structure**: 
+// 3. **Hierarchical Structure**:
 //    - Documents have a clear hierarchical structure
 //    - Headings create sections that contain related content
 //    - Lists contain list items in order
@@ -720,11 +705,9 @@
 // [LI]Item 2[/LI]
 // [/UL]
 
-
 // ### CORRECT LIST STRUCTURE (ALWAYS USE THIS):
 
 // [UL][LI]Item 1[/LI][LI]Item 2[/LI][/UL]
-
 
 // ### FOR CONTENT WITH TERM DEFINITIONS:
 
@@ -1018,18 +1001,17 @@
 // ## FINAL WARNING
 
 // ANY TAG FORMATTING ERRORS WILL CAUSE COMPLETE SYSTEM FAILURE AND CRASH THE SOFTWARE FOR USERS. THE INTEGRITY OF TAGS IS THE ABSOLUTE HIGHEST PRIORITY.
-   
+
 //    `
 //   }
-
 
 // export function composerModePrompt(userQuery: string, contentNodes: any) {
 //    console.log("CONTENT NODES are: ", contentNodes)
 
 //    const formattedNodes = contentNodes.map((node: any) => ({
 //       type: node.type,
-//       content: typeof node.content === 'string' 
-//           ? node.content 
+//       content: typeof node.content === 'string'
+//           ? node.content
 //           : JSON.stringify(node.content)
 //   }))
 
@@ -1039,10 +1021,10 @@
 
 //    ## USER QUERY
 //    ${userQuery}
-   
+
 //    ## EDITOR CONTENT NODES
 //    ${JSON.stringify(contentNodes, null, 2)}
-   
+
 //    # COMPOSER MODE - MASTER INSTRUCTION SET
 
 // ## HOW USERS INTERACT WITH THE EDITOR
@@ -1095,12 +1077,10 @@
 //   (These nodes should be adjacent or closely related to identify ONE specific area, not multiple scattered locations)
 // - Format each node exactly as follows:
 
-
 // [TARGETS]
 // [NODE]{"type":"paragraph","content":"Existing node content...","id":"node-42"}[/NODE]
 // [NODE]{"type":"heading","content":"Another node...","id":"node-43"}[/NODE]
 // [/TARGETS]
-
 
 // ### TARGETING STRATEGIES
 // 1. **Direct Targeting**: When user explicitly mentions a section/topic
@@ -1125,7 +1105,6 @@
 // **Example 1: Explicit Section Reference**
 // User: "Add more details about performance optimization in the MongoDB section"
 
-
 // [THOUGHT]
 // You want to enhance the MongoDB section with performance optimization details. I'll locate the MongoDB section in your document and add relevant content there.
 // [/THOUGHT]
@@ -1139,10 +1118,8 @@
 // ...content here...
 // [/EDITOR_CONTENT]
 
-
 // **Example 2: Relative Positioning**
 // User: "Insert a conclusion paragraph after the last section"
-
 
 // [THOUGHT]
 // You want to add a conclusion to your document. I'll identify the last section and add a conclusion paragraph after it.
@@ -1278,7 +1255,7 @@
 //    - **id**: Unique identifier for each node
 //    - **type**: The type of content (paragraph, heading, list, etc.)
 //    - **content**: The actual text/data of the node
-// 3. **Hierarchical Structure**: 
+// 3. **Hierarchical Structure**:
 //    - Documents have a clear hierarchical structure
 //    - Headings create sections that contain related content
 //    - Lists contain list items in order
@@ -1387,11 +1364,9 @@
 // [LI]Item 2[/LI]
 // [/UL]
 
-
 // ### CORRECT LIST STRUCTURE (ALWAYS USE THIS):
 
 // [UL][LI]Item 1[/LI][LI]Item 2[/LI][/UL]
-
 
 // ### FOR CONTENT WITH TERM DEFINITIONS:
 
@@ -1676,7 +1651,7 @@
 // User: "Add more examples to the React hooks section"
 
 // [THOUGHT]
-// You want to add more examples to the React hooks section. I can see you have a paragraph explaining hooks followed by a simple list of common hooks. 
+// You want to add more examples to the React hooks section. I can see you have a paragraph explaining hooks followed by a simple list of common hooks.
 
 // To properly handle this in the editor, I need to:
 // 1. Mark the existing hooks list for deletion
@@ -1783,25 +1758,24 @@
 // ## FINAL WARNING
 
 // ANY TAG FORMATTING ERRORS WILL CAUSE COMPLETE SYSTEM FAILURE AND CRASH THE SOFTWARE FOR USERS. THE INTEGRITY OF TAGS IS THE ABSOLUTE HIGHEST PRIORITY.
-   
+
 //    `
 //   }
 
-
-
 export function composerModePrompt(userQuery: string, contentNodes: any) {
-   console.log("CONTENT NODES are: ", contentNodes)
+  console.log("CONTENT NODES are: ", contentNodes);
 
-   const formattedNodes = contentNodes.map((node: any) => ({
-      type: node.type,
-      content: typeof node.content === 'string' 
-          ? node.content 
-          : JSON.stringify(node.content)
-  }))
+  const formattedNodes = contentNodes.map((node: any) => ({
+    type: node.type,
+    content:
+      typeof node.content === "string"
+        ? node.content
+        : JSON.stringify(node.content),
+  }));
 
-  console.log("FORMATTED NODES ARE: ", formattedNodes)
+  console.log("FORMATTED NODES ARE: ", formattedNodes);
 
-   return `# COMPOSER MODE - MASTER INSTRUCTION SET
+  return `# COMPOSER MODE - MASTER INSTRUCTION SET
 
    ## USER QUERY
    ${userQuery}
@@ -1813,7 +1787,8 @@ export function composerModePrompt(userQuery: string, contentNodes: any) {
 
 ## HOW USERS INTERACT WITH THE EDITOR
 
-Our document editor is a rich text editor where users create, edit, and organize their content. Understanding typical user behavior will help you provide more relevant responses:
+Our document editor is a rich text editor built on top of prosemirror where users create, edit, and organize their content.
+Understanding typical user behavior will help you provide more relevant responses:
 
 ### TYPICAL USER ACTIONS
 1. **Document Creation & Editing**: Users write and structure documents ranging from simple notes to complex reports
@@ -1827,7 +1802,7 @@ Our document editor is a rich text editor where users create, edit, and organize
 9. **Transformation**: Users want to convert one format to another (e.g., paragraph to bullet points)
 10. **Document Analysis**: Users ask for analysis and insights about their document's structure and content
 
-### USER QUERY PATTERNS
+### USER QUERY PATTERNS EXAMPLES
 - **Direct Commands**: "Add a paragraph about X" or "Remove the section on Y"
 - **Questions**: "How can I make this introduction stronger?" or "What's missing from this explanation?"
 - **Requests for Enhancement**: "Make this more engaging" or "Simplify this technical section"
@@ -1836,14 +1811,14 @@ Our document editor is a rich text editor where users create, edit, and organize
 
 ## CORE RESPONSE STRUCTURE
 All responses MUST use exactly THREE types of content blocks:
-1. [THOUGHT] - Contains your reasoning and explanations (uses standard markdown)
+1. [THOUGHT] - Contains your reasoning and explanations (uses standard markdown since we are using react-markdown on frontend to parse this)
 2. [TARGETS] - Contains the specific nodes to target for insertion/modification
 3. [EDITOR_CONTENT] - Contains content to be inserted into the editor (uses custom tag format)
 
 ## NODE TARGETING SYSTEM
 
 ### NODE SELECTION PROCEDURE
-1. For every user query, analyze the editor context to identify the most appropriate nodes for modification
+1. For every user query, analyze the editor context (editor content nodes) to identify the most appropriate nodes for modification
 2. Select nodes based on:
    - Semantic relevance to the user's query
    - Logical document structure and flow
@@ -1853,6 +1828,7 @@ All responses MUST use exactly THREE types of content blocks:
    - All content must be generated for insertion at this single location
    - Even if the user's request implies multiple locations, consolidate your response to one area
    - When multiple locations would be ideal, choose the most strategic single location
+
 
 ### [TARGETS] SECTION FORMAT
 The [TARGETS] section MUST:
@@ -2553,6 +2529,8 @@ The system will automatically detect any tag exposure violations and immediately
 ## FINAL WARNING
 
 ANY TAG FORMATTING ERRORS OR INEXACT NODE COPYING WILL CAUSE COMPLETE SYSTEM FAILURE AND CRASH THE SOFTWARE FOR USERS. THE INTEGRITY OF TAGS AND EXACT NODE REPRODUCTION IS THE ABSOLUTE HIGHEST PRIORITY.
+
+NEVER EVER PRODUCE INVALID TAGS such as </LI> instead of [/LI]
    
-   `
-  }
+   `;
+}

@@ -24,6 +24,7 @@ export enum Tags {
   "QUOTE" = "QUOTE",
   "CHECKBOX" = "CHECKBOX",
   "DELETION" = "DELETION",
+  "ADDITION" = "ADDITION",
 }
 
 interface MarkContext {
@@ -39,8 +40,8 @@ export class IncrementalProsemirrorRenderer {
   private insertionPoint: number | null = null;
   private editorMode: "COMPOSER" | "CHAT" = "COMPOSER";
   private highlighterAdded: boolean = false;
-  private isInitialGeneration: boolean = true
-  private successfulGenerations: number = 0
+  private shouldHiglightGeneratedContent: boolean = false;
+  private successfulGenerations: number = 0;
 
   constructor(editorView: EditorView, extendedSchema: Schema) {
     this.editorView = editorView;
@@ -51,15 +52,26 @@ export class IncrementalProsemirrorRenderer {
     this.editorMode = mode;
   }
 
-  public updateSuccessfulGenerations(){
-    this.successfulGenerations++
-    return this.successfulGenerations
+  public updateSuccessfulGenerations() {
+    this.successfulGenerations++;
+    return this.successfulGenerations;
   }
 
-  public setIsInitialGeneration(flag: boolean){
-    this.isInitialGeneration = flag
+  public setHighlight(flag: boolean) {
+    this.shouldHiglightGeneratedContent = flag;
   }
 
+  public cleanupAfterStreamStop() {
+    if (
+      this.nodeStack.length > 0 &&
+      this.nodeStack[this.nodeStack.length - 1].type === Tags.ADDITION
+    ) {
+      this.nodeStack = [];
+      this.activeMarks = [];
+    }
+  }
+
+  //todo: need to improvise the method and make it robust
   public setInsertionPoint(targetedPos: number) {
     if (this.editorMode !== "COMPOSER" || !this.editorView || !this.schema) {
       console.warn(
@@ -75,134 +87,100 @@ export class IncrementalProsemirrorRenderer {
     return tag === Tags.B || tag === Tags.I || tag === Tags.ICODE;
   }
 
-  public updateInsertionPoint(insertAt: number) {
-    this.insertionPoint = insertAt;
-  }
-
   createListNode(type: "ul" | "ol") {
-    const zeroWidthSpace = this.schema.text("\u200B");
-    const parargaphNode = this.schema.nodes.paragraph.create(null, [
-      zeroWidthSpace,
-    ]);
-    const listItemNode = this.schema.nodes.list_item.create(null, [
-      parargaphNode,
-    ]);
     if (type === "ul") {
-      const bulletList = this.schema.nodes.bullet_list.create(null, [
-        listItemNode,
-      ]);
+      const bulletList = this.schema.nodes.bullet_list.create();
       return bulletList;
     }
 
     if (type === "ol") {
-      const orderedList = this.schema.nodes.ordered_list.create(null, [
-        listItemNode,
-      ]);
+      const orderedList = this.schema.nodes.ordered_list.create();
       return orderedList;
     }
   }
 
   onOpenTag(tag: Tags) {
-    console.log("OPEN TAGN IS: ", tag);
     if (this.isMarkTag(tag)) {
       const pos = this.getInsertPosition();
-      if (tag === "ICODE") {
-        console.log("PUSHING icode to active marks");
-      }
       this.activeMarks.push({
         type: tag as Tags.B | Tags.I | Tags.ICODE,
         startPosition: pos,
       });
     } else {
+      if (this.shouldHiglightGeneratedContent) {
+        const node = this.buildProsemirrorNode(Tags.ADDITION);
+        this.insertAdditionSuggestionContainer(node);
+      }
       const node = this.buildProsemirrorNode(tag);
-      console.log(`NODE for ${tag} is: ${node}`);
       this.insertAndUpdateNodeContext(node, tag);
     }
   }
 
   onCloseTag(tag: Tags) {
-    console.log("CLOSE TAGN IS: ", tag);
+    // handle marks and tags differently
     if (this.isMarkTag(tag)) {
       if (this.activeMarks.length === 0) return;
       const topTag = this.activeMarks[this.activeMarks.length - 1];
       if (topTag.type === tag) {
         this.activeMarks.pop();
       } else {
+        console.error(`Error: Couldn't find closing ${tag} in active marks stack`)
         throw new Error("Error: finding matching close mark tag");
       }
-    } else {
-      const lastNode = this.nodeStack[this.nodeStack.length - 1];
-      console.log(`LAst nnode  for ${tag} is: ", ${JSON.stringify(lastNode)}`);
+      return;
+    }
 
-      if (!lastNode || lastNode.type !== tag) {
-        const insertPos = this.getInsertPosition();
-        const tr = this.editorView.state.tr
-          .insertText(`[${tag}]`, insertPos)
-          .setMeta("isStreaming", true);
-        this.editorView.dispatch(tr);
-        console.warn(`Invalid closing tag: ${tag}`);
-        return;
-      }
 
-      if (tag === Tags.QUOTE) {
-        if (lastNode.type !== Tags.P) {
-          throw new Error(
-            `Invalid stack state on closing QUOTE: Expected P at top, found ${lastNode.type}`
-          );
-        }
-        this.nodeStack.pop();
+    const lastNode = this.nodeStack[this.nodeStack.length - 1];
 
-        const quoteNode = this.nodeStack[this.nodeStack.length - 1];
-        if (!quoteNode || quoteNode.type !== Tags.QUOTE) {
-          throw new Error(
-            `Invalid stack state on closing QUOTE: Expected QUOTE after P, found ${quoteNode?.type}`
-          );
-        }
-        this.nodeStack.pop();
-        console.log("Popped P and QUOTE contexts");
-        return;
-      }
+    // this case should never happen. It'll be stopped from the parser itself
+    // if (!lastNode || lastNode.type !== tag) {
+    //   const insertPos = this.getInsertPosition();
+    //   const tr = this.editorView.state.tr
+    //     .insertText(`[${tag}]`, insertPos)
+    //     .setMeta("isStreaming", true);
+    //   this.editorView.dispatch(tr);
+    //   console.warn(`Invalid closing tag: ${tag}`);
+    //   return;
+    // }
 
-      if (tag === Tags.LI) {
-        const parentListNode = this.nodeStack[this.nodeStack.length - 2];
-        if (
-          !parentListNode ||
-          (parentListNode.type !== Tags.UL && parentListNode.type !== Tags.OL)
-        ) {
-          throw new Error(
-            "Error updating UL position: UL node not found in node stack"
-          );
-        }
+    if (tag === Tags.QUOTE) {
+      this.closeQuote();
+      return;
+    }
 
-        const currentPos = lastNode.contentPosition;
+    if (tag === Tags.UL) {
+      this.closeUnorderedList();
+      return;
+    }
 
-        const nextLiInsertPos = currentPos + 2;
+    if (tag === Tags.OL) {
+      this.closeOrderedList();
+      return;
+    }
 
-        parentListNode.insertNextLiPos = nextLiInsertPos;
-      }
+    if (tag === Tags.LI) {
+      this.closeListItem();
+      return;
+    }
 
-      this.nodeStack.pop();
+    this.nodeStack.pop();
 
-      if(this.nodeStack.length > 0){
-        // process the parent and update content pos of it
-        const parentNode = this.nodeStack[this.nodeStack.length - 1]
-        parentNode.contentPosition = lastNode.contentPosition + 1
-      }
+    if (this.nodeStack.length > 0) {
+      const parentNode = this.nodeStack[this.nodeStack.length - 1];
+      const insertPos = lastNode.contentPosition + 1
+      parentNode.contentPosition = insertPos
     }
   }
 
   onTextContent(txt: string) {
     let textToInsert = txt;
     if (txt.length === 0) return;
-    console.log("TEXT IS: ", textToInsert);
-    console.log("TEXT LENGHT IS: ", textToInsert.length);
 
     let tr = this.editorView.state.tr;
 
     if (this.nodeStack.length === 0) {
-      console.warn(
-        "Can't insert text content when node stack is empty. You made a mistake"
-      );
+      console.warn("MESSED UP. Can't Insert text without a parent node!!!");
       textToInsert = textToInsert.replace(/\n+/g, "");
       const insertPos = this.getInsertPosition();
       tr.insertText(textToInsert, insertPos).setMeta("isStreaming", true);
@@ -213,8 +191,8 @@ export class IncrementalProsemirrorRenderer {
       if (textToInsert.length === 0) return;
 
       const insertPos = this.getInsertPosition();
-      const mappedInsertPos = tr.mapping.map(insertPos)
-      const endPos = mappedInsertPos+ textToInsert.length;
+      const mappedInsertPos = tr.mapping.map(insertPos);
+      const endPos = mappedInsertPos + textToInsert.length;
 
       tr.insertText(textToInsert, mappedInsertPos).setMeta("isStreaming", true);
 
@@ -266,6 +244,86 @@ export class IncrementalProsemirrorRenderer {
     this.editorView.dispatch(tr);
   }
 
+  closeListItem() {
+    const topNode = this.nodeStack[this.nodeStack.length - 1];
+    const parentNode = this.nodeStack[this.nodeStack.length - 2];
+
+    if(topNode.type === Tags.LI){
+      // simple list
+      const currentPos = topNode.contentPosition
+      const insertPos = currentPos + 1
+      parentNode.contentPosition = insertPos
+
+      this.nodeStack.pop()
+      return
+    }
+
+    if(topNode.type === Tags.P){
+      // complex nested listing
+      const currentPos = topNode.contentPosition
+      const insertPos = currentPos + 2
+
+      const grandParentNode = this.nodeStack[this.nodeStack.length - 3]
+      grandParentNode.contentPosition = insertPos
+
+      this.nodeStack.pop() // pop the paragrah
+      this.nodeStack.pop() // pop the LI
+
+      return
+    }
+  }
+
+  closeUnorderedList() {
+    const topNode = this.nodeStack[this.nodeStack.length - 1];
+
+    if (topNode.type === Tags.UL) {
+      const currentPos = topNode.contentPosition;
+      const insertPos = currentPos + 1;
+
+      this.nodeStack.pop();
+
+      if (this.nodeStack.length > 0) {
+        const containerNode = this.nodeStack[this.nodeStack.length - 1];
+        containerNode.contentPosition = insertPos;
+      }
+    } else {
+      console.warn("TAG MISMATCH: ", Tags.UL);
+    }
+  }
+
+  closeOrderedList() {
+    const topNode = this.nodeStack[this.nodeStack.length - 1];
+
+    if (topNode.type === Tags.OL) {
+      const currentPos = topNode.contentPosition;
+      const insertPos = currentPos + 1;
+
+      this.nodeStack.pop();
+
+      if (this.nodeStack.length > 0) {
+        const containerNode = this.nodeStack[this.nodeStack.length - 1];
+        containerNode.contentPosition = insertPos;
+      }
+    } else {
+      console.warn("TAG MISMATCH: ", Tags.OL);
+    }
+  }
+
+  closeQuote() {
+    const topNode = this.nodeStack[this.nodeStack.length - 1];
+    const insertPos = topNode.contentPosition + 1;
+
+    if (topNode.type === Tags.QUOTE) {
+      this.nodeStack.pop();
+      if (this.nodeStack.length > 0) {
+        const parentNode = this.nodeStack[this.nodeStack.length - 1];
+        parentNode.contentPosition = insertPos;
+      }
+    } else {
+      console.warn("TAG MISMATCH: ", Tags.OL);
+    }
+  }
+
   buildProsemirrorNode(tag: Tags) {
     switch (tag) {
       case Tags.H1:
@@ -290,85 +348,43 @@ export class IncrementalProsemirrorRenderer {
         return this.schema.nodes.blockquote.create();
       case Tags.CHECKBOX:
         return this.schema.nodes.checkbox_item.create();
+      case Tags.ADDITION:
+        const higlighterContainer = this.generateAdditionSuggestionContainer();
+        return higlighterContainer;
       default:
         break;
     }
   }
 
+  generateAdditionSuggestionContainer() {
+    const suggestionNode =
+      this.editorView.state.schema.nodes.addition_suggestion.create({
+        id: `exp-suggestion-${Date.now()}`,
+        originalNodeType: "EXPERIMENT_CONTAINER",
+        originalAttrs: "{}",
+      });
+
+    return suggestionNode;
+  }
+
+  insertAdditionSuggestionContainer(node: Node) {
+    const startPos = this.insertionPoint;
+    const insertPos = startPos + 1;
+
+    const tr = this.editorView.state.tr.insert(startPos, node);
+    this.editorView.dispatch(tr);
+
+    this.nodeStack.push({
+      type: Tags.ADDITION,
+      startPosition: startPos,
+      contentPosition: insertPos,
+    });
+
+    this.shouldHiglightGeneratedContent = false;
+    this.insertionPoint = null;
+  }
+
   insertAndUpdateNodeContext(node: Node, tag: Tags) {
-    console.log("INSERTING NODE ", tag);
-
-    if(!this.isInitialGeneration){
-      if (!this.highlighterAdded) {
-        console.log("HEYYYYYYYYYYYYYY");
-        console.log(
-          `setInsertionPoint: Received targetedPos: ${this.insertionPoint}`
-        );
-  
-        this.nodeStack = [];
-        this.activeMarks = [];
-  
-        try {
-          const { state } = this.editorView;
-  
-          const suggestionNodeType = this.schema.nodes.addition_suggestion;
-          if (!suggestionNodeType) {
-            console.error(
-              "setInsertionPoint: Node type 'deletion_suggestion' not found!"
-            );
-            return;
-          }
-          const paragraphNodeType = this.schema.nodes.paragraph;
-          if (!paragraphNodeType) {
-            console.error("setInsertionPoint: Node type 'paragraph' not found!");
-            return;
-          }
-  
-          const emptyParagraph = paragraphNodeType.create();
-  
-          const suggestionNode = suggestionNodeType.create(
-            {
-              id: `exp-suggestion-${Date.now()}`,
-              originalNodeType: "EXPERIMENT_CONTAINER",
-              originalAttrs: "{}",
-            },
-            // emptyParagraph
-          );
-  
-          const startPos = this.insertionPoint
-  
-          const tr = state.tr.insert(startPos, suggestionNode);
-          console.log(
-            `setInsertionPoint: Inserting suggestion node at ${this.insertionPoint}`
-          );
-          this.editorView.dispatch(tr);
-  
-          console.log(
-            `setInsertionPoint: Setting next insertionPoint inside container to: ${
-              startPos + 2
-            }`
-          );
-  
-          this.insertionPoint = startPos + 1
-  
-          this.highlighterAdded = true;
-
-          this.nodeStack.push({
-            type: Tags.DELETION,
-            startPosition: startPos,
-            contentPosition: this.insertionPoint
-          })
-        } catch (error) {
-          console.error(
-            "setInsertionPoint: Error during experimental setup:",
-            error
-          );
-  
-          this.insertionPoint = null;
-        }
-      }
-    }
-
     if (tag === Tags.UL) {
       this.handleUnorderedListInsertion(node);
       return;
@@ -412,72 +428,149 @@ export class IncrementalProsemirrorRenderer {
   }
 
   handleUnorderedListInsertion(node: Node) {
-    const insertPos = this.getInsertPosition();
-    const newCursorPos = insertPos + 4;
+    if (this.nodeStack.length > 0) {
+      const topNode = this.nodeStack[this.nodeStack.length - 1];
+      const invalidParents = [Tags.P, Tags.CODE, Tags.ICODE];
+      if (invalidParents.includes(topNode.type)) {
+        this.nodeStack.pop(); // pop the P node
+        const currentPos = topNode.contentPosition;
+        const startPos = currentPos + 1
+        const insertPos = currentPos + 2;
 
-    const tr = this.editorView.state.tr.insert(insertPos, node);
-    this.editorView.dispatch(tr);
+        const tr = this.editorView.state.tr.insert(startPos, node);
+        this.editorView.dispatch(tr);
 
-    this.nodeStack.push({
-      type: Tags.UL,
-      firstList: true,
-      startPosition: insertPos,
-      contentPosition: newCursorPos,
-    });
-  }
+        this.nodeStack.push({
+          type: Tags.UL,
+          startPosition: startPos,
+          contentPosition: insertPos,
+        });
+      } else {
 
-  handleOrderedListInsertion(node: Node) {
-    const insertPos = this.getInsertPosition();
-    const newCursorPos = insertPos + 4;
 
-    const tr = this.editorView.state.tr.insert(insertPos, node);
-    this.editorView.dispatch(tr);
+        const startPos = this.getInsertPosition()
 
-    this.nodeStack.push({
-      type: Tags.OL,
-      firstList: true,
-      startPosition: insertPos,
-      contentPosition: newCursorPos,
-    });
-  }
+        const tr = this.editorView.state.tr.insert(startPos, node);
+        this.editorView.dispatch(tr);
 
-  handleListItemInsertion(node: Node) {
-    if (this.isNodeStackEmpty()) {
-      throw new Error("Error inserting LI because node stack is empty");
-    }
-
-    const topNode = this.nodeStack[this.nodeStack.length - 1];
-    if (
-      (topNode.type === Tags.UL || topNode.type === Tags.OL) &&
-      topNode.firstList
-    ) {
-      topNode.firstList = false;
-      this.nodeStack.push({
-        type: Tags.LI,
-        startPosition: topNode.contentPosition,
-        contentPosition: topNode.contentPosition,
-      });
-    } else {
-      if (!topNode.insertNextLiPos) {
-        console.warn("TOP NODE IS: ", topNode);
-        throw new Error("Missing insertion position for next list item");
+        this.nodeStack.push({
+          type: Tags.UL,
+          startPosition: startPos,
+          contentPosition: startPos + 1
+        })
       }
-
-      const insertPos = topNode.insertNextLiPos;
+    } else {
+      const insertPos = this.getInsertPosition();
+      const newCursorPos = insertPos + 1;
 
       const tr = this.editorView.state.tr.insert(insertPos, node);
       this.editorView.dispatch(tr);
 
-      const liStartPos = insertPos;
-      const pStartPos = liStartPos + 1;
-      const contentPos = pStartPos + 1;
+      this.nodeStack.push({
+        type: Tags.UL,
+        startPosition: insertPos,
+        contentPosition: newCursorPos,
+      });
+    }
+  }
+
+  handleOrderedListInsertion(node: Node) {
+    if (this.nodeStack.length > 0) {
+      const topNode = this.nodeStack[this.nodeStack.length - 1];
+      const invalidParents = [Tags.P, Tags.CODE, Tags.ICODE];
+      if (invalidParents.includes(topNode.type)) {
+        this.nodeStack.pop(); // pop the P node
+        const currentPos = topNode.contentPosition;
+        const startPos = currentPos + 1
+        const insertPos = currentPos + 2;
+
+        const tr = this.editorView.state.tr.insert(startPos, node);
+        this.editorView.dispatch(tr);
+
+        this.nodeStack.push({
+          type: Tags.UL,
+          startPosition: startPos,
+          contentPosition: insertPos,
+        });
+      } else {
+
+
+        const startPos = this.getInsertPosition()
+
+        const tr = this.editorView.state.tr.insert(startPos, node);
+        this.editorView.dispatch(tr);
+
+        this.nodeStack.push({
+          type: Tags.UL,
+          startPosition: startPos,
+          contentPosition: startPos + 1
+        })
+      }
+    } else {
+      const insertPos = this.getInsertPosition();
+      const newCursorPos = insertPos + 1;
+
+      const tr = this.editorView.state.tr.insert(insertPos, node);
+      this.editorView.dispatch(tr);
+
+      this.nodeStack.push({
+        type: Tags.UL,
+        startPosition: insertPos,
+        contentPosition: newCursorPos,
+      });
+    }
+  }
+
+  handleListItemInsertion(node: Node) {
+    if (this.isNodeStackEmpty()) {
+      throw new Error("Error: LI must have a parent in node stack!!!");
+    }
+
+    const topNode = this.nodeStack[this.nodeStack.length - 1];
+
+    // if (topNode.type === Tags.UL || topNode.type === Tags.OL) {
+      const insertPos = this.getInsertPosition();
+      const listStartPos = insertPos
+      const afterListPos = listStartPos + 1
+      const paragraphStartPos = afterListPos
+      const afterParagraphPos = paragraphStartPos + 1
+
+      const tr = this.editorView.state.tr.insert(insertPos, node);
+      this.editorView.dispatch(tr);
 
       this.nodeStack.push({
         type: Tags.LI,
-        startPosition: liStartPos,
-        contentPosition: contentPos,
+        startPosition: insertPos,
+        contentPosition: insertPos + 1,
       });
-    }
+
+      this.nodeStack.push({
+        type: Tags.P,
+        startPosition: paragraphStartPos,
+        contentPosition: afterParagraphPos
+      })
+    // } else {
+    //   console.log("Tried to insert LI but parent is not UL or OL");
+    //   if (!topNode.insertNextLiPos) {
+    //     console.warn("TOP NODE IS: ", topNode);
+    //     throw new Error("Missing insertion position for next list item");
+    //   }
+
+    //   const insertPos = topNode.insertNextLiPos;
+
+    //   const tr = this.editorView.state.tr.insert(insertPos, node);
+    //   this.editorView.dispatch(tr);
+
+    //   const liStartPos = insertPos;
+    //   const pStartPos = liStartPos + 1;
+    //   const contentPos = pStartPos + 1;
+
+    //   this.nodeStack.push({
+    //     type: Tags.LI,
+    //     startPosition: liStartPos,
+    //     contentPosition: contentPos,
+    //   });
+    // }
   }
 
   handleQuoteInsertion(node: Node) {
@@ -487,28 +580,12 @@ export class IncrementalProsemirrorRenderer {
 
     tr.insert(insertPos, node);
 
-    const paragraphNode = this.schema.nodes.paragraph.createAndFill();
-    if (!paragraphNode) {
-      console.error("Failed to create paragraph node for blockquote");
-      return;
-    }
-
-    tr.insert(insertPos + 1, paragraphNode);
-
     this.editorView.dispatch(tr);
 
     this.nodeStack.push({
       type: Tags.QUOTE,
       startPosition: insertPos,
-
       contentPosition: insertPos + 1,
-    });
-
-    this.nodeStack.push({
-      type: Tags.P,
-      startPosition: insertPos + 1,
-
-      contentPosition: insertPos + 1 + 1,
     });
   }
 

@@ -31,7 +31,8 @@ export enum Tags {
   "QUOTE" = "QUOTE",
   "CHECKBOX" = "CHECKBOX",
   "NODE" = "NODE",
-  "CTRLD" = "CTRLD"
+  "CTRLD" = "CTRLD",
+  "LRTC" = "LRTC"
 }
 
 interface ParserCallbacks {
@@ -89,7 +90,8 @@ const ALLOWED_TAGS = [
   "EDITOR_CONTENT",
   "TARGETS",
   "NODE",
-  "CTRLD"
+  "CTRLD",
+  "LRTC"
 ];
 
 const isValidTag = (tag: string) => {
@@ -135,6 +137,7 @@ export class ComposerModeParser {
             this.deleteNode += this.textBuffer
           } else if(this.mode === "LRTC"){
             // do nothing here
+            console.log("Emitting the LRTC event when there's nothing")
           } else {
               console.warn("FLUSHING TEXT BUFFER BUT MODE IS NORMAL!!!")
               this.callbacks.sendTokensCallback(this.textBuffer)

@@ -18,6 +18,8 @@ export async function handleClaudeStream(props: HandleClaudeStreamProps) {
 
   const systemPrompt = chatMode === "CHAT" ? chatModePrompt() : composerModePrompt(prompt, contentNodes)
 
+  console.log("SYSTEM PROMPT IS: ", systemPrompt)
+
   const stream = new ReadableStream({
     async start(controller) {
       try {

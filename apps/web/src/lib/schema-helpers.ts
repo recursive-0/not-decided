@@ -161,7 +161,7 @@ export function createAdditionSuggestionSpec(): NodeSpec {
   return {
     content: "block*",
     group: "block",
-    draggable: false,
+    draggable: true,
     attrs: {
       id: { default: "" }, // Unique identifier for the suggestion
       originalNodeType: { default: "" },
