@@ -35,6 +35,9 @@ import { dragHandlePlugin } from "@/custom-nodes/drag-handle";
 import type { Node } from "prosemirror-model";
 import { AcceptAllRejectAllDialog } from "./accpet-all-reject-all-dialog";
 import { EditsSuggestionsManager } from "@/services/suggestion-manager";
+import { v4 as uuidv4 } from "uuid";
+import { useChatHandler } from "@/hooks/use-chat-handler";
+import { useChatStore } from "@/store/chat";
 
 declare global {
   interface Window {
@@ -84,6 +87,7 @@ export const ProseMirrorEditor = () => {
   const { isStreaming, userInteractedRef } = useSSEStream();
   const isDialogClosingRef = useRef(false);
   const suggestionsManagerRef = useRef<EditsSuggestionsManager | null>(null)
+  const [userSelectionFromEditor, setUserSelection] = useState<string>("")
   const [smartAiPopupPos, setSmartAiPopupPos] = useState<null | {
     x: Number;
     y: Number;
@@ -167,6 +171,8 @@ export const ProseMirrorEditor = () => {
     }, 100);
   };
 
+
+
   useEffect(() => {
     const editorElement = editorRef.current;
     if (!editorElement || !editorView) return;
@@ -178,11 +184,18 @@ export const ProseMirrorEditor = () => {
         if (!editorView.current) return;
         const { state } = editorView.current;
         const { selection } = state;
+        const { $from, $to } = selection.ranges[0]
+        const fromPos = $from.pos
+        const toPos = $to.pos
 
-        if (selection instanceof TextSelection && !selection.empty) {
-          setSmartAiPopupPos({ x: event.clientX, y: event.clientY });
+        if((toPos - fromPos) > 0){
+          const coordsAtPos = editorView.current.coordsAtPos(toPos)
+          const textContent = editorView.current.state.doc.textBetween(fromPos, toPos)
+          console.log("TETX content is: ", textContent)
+          setSmartAiPopupPos({x: coordsAtPos.left, y: coordsAtPos.top})
+          setUserSelection(textContent)
         }
-      }, 0);
+      }, 10);
     };
 
     editorElement.addEventListener("mouseup", handleSelectionCheck);
@@ -226,20 +239,28 @@ export const ProseMirrorEditor = () => {
           clientX={smartAiPopupPos.x}
           clientY={smartAiPopupPos.y}
           onClose={() => handleDialogClose()}
-          onSubmit={(text) => console.log(text)}
+          selectedText={userSelectionFromEditor}
         />
       )}
 
-      {isAcceptRejectDialogOpen && <AcceptAllRejectAllDialog onAcceptAll={() => suggestionsManagerRef.current.acceptAll()} onRejectAll={() => suggestionsManagerRef.current.rejectAll()} />}
+      {isAcceptRejectDialogOpen && <AcceptAllRejectAllDialog />}
 
     </div>
   );
 };
 
-const FloatingCommandDialog = ({ clientX, clientY, onClose, onSubmit }) => {
+const FloatingCommandDialog = ({ 
+  clientX, 
+  clientY, 
+  onClose, 
+  selectedText 
+}) => {
   const [input, setInput] = useState("");
   const dialogRef = useRef(null);
   const textareaRef = useRef(null);
+  const setChatMode = useChatStore(state => state.setCurrentChatMode)
+  // Use our custom hook
+  const { handleSelectionQuery, isStreaming } = useChatHandler();
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -262,19 +283,21 @@ const FloatingCommandDialog = ({ clientX, clientY, onClose, onSubmit }) => {
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      if (input.trim()) {
-        onSubmit(input);
-        setInput("");
+      if (input.trim() && !isStreaming) {
+        handleSubmit();
       }
     } else if (e.key === "Escape") {
       onClose();
     }
   };
 
-  const handleSendMessage = () => {
-    if (input.trim()) {
-      onSubmit(input);
+  const handleSubmit = () => {
+    if (input.trim() && !isStreaming) {
+      setChatMode("COMPOSER")
+      // Use the handleSelectionQuery function from our custom hook
+      handleSelectionQuery(selectedText, input.trim());
       setInput("");
+      onClose();
     }
   };
 
@@ -299,16 +322,17 @@ const FloatingCommandDialog = ({ clientX, clientY, onClose, onSubmit }) => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
+            disabled={isStreaming}
             rows={2}
           />
           <div
             className={`absolute right-2 top-2 flex items-center justify-center w-6 h-6 
               ${
-                !input.trim()
+                !input.trim() || isStreaming
                   ? "cursor-not-allowed opacity-50"
                   : "cursor-pointer hover:text-blue-500"
               }`}
-            onClick={input.trim() ? handleSendMessage : undefined}
+            onClick={input.trim() && !isStreaming ? handleSubmit : undefined}
             aria-label="Send command"
           >
             <CornerDownLeft className="h-4 w-4" />

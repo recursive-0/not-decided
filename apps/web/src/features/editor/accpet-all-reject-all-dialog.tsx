@@ -1,7 +1,30 @@
 import { Button } from "@/components/ui/button";
+import { useEditor } from "@/providers/editor-context-provider";
 
-export const AcceptAllRejectAllDialog = ({ onAcceptAll, onRejectAll }) => {
-  console.log("inside acceot all")
+export const AcceptAllRejectAllDialog = () => {
+
+  const {setAcceptRejectDialog } = useEditor()
+
+  const onAcceptAll = () => {
+    const suggestionsManagerInstance = window.suggestionsManager
+    suggestionsManagerInstance.acceptAll()
+    if(suggestionsManagerInstance.totalEdits() > 0){
+      setAcceptRejectDialog(true)
+    } else {
+      setAcceptRejectDialog(false)
+    }
+  }
+
+  const onRejectAll = () => {
+    const suggestionsManagerInstance = window.suggestionsManager
+    suggestionsManagerInstance.rejectAll()
+    if(suggestionsManagerInstance.totalEdits() > 0){
+      setAcceptRejectDialog(true)
+    } else {
+      setAcceptRejectDialog(false)
+    }
+  }
+
   return (
     <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex justify-center p-2 z-10">
       <div className="w-fit flex">

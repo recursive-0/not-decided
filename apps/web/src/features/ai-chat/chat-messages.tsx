@@ -30,7 +30,12 @@ const UserMessage = ({ content }: { content: string }) => {
 // Component for AI/LLM messages
 const AIMessage = ({ content }: { content: string }) => {
   return (
-    <div className="flex justify-start">
+    <div className="flex flex-col justify-start gap-2">
+      <div className="flex items-center px-2">
+        <div className="text-xs font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-sm">
+          Wrisor
+        </div>
+      </div>
       <div className="bg-[var(--color-palette-beige-3)] px-4 text-sm max-w-[95%] rounded-lg">
         <div className="markdown-content">
           <ReactMarkdown
@@ -55,8 +60,8 @@ const AIMessage = ({ content }: { content: string }) => {
                     </SyntaxHighlighter>
                   </div>
                 ) : (
-                  <code 
-                    className="bg-[var(--color-palette-beige-4)] px-1 py-0.5 rounded text-xs" 
+                  <code
+                    className="bg-[var(--color-palette-beige-4)] px-1 py-0.5 rounded text-xs"
                     {...props}
                   >
                     {children}
@@ -65,8 +70,8 @@ const AIMessage = ({ content }: { content: string }) => {
               },
               p({ children, ...props }) {
                 return (
-                  <p 
-                    className="mb-4 whitespace-pre-line overflow-wrap-break-word" 
+                  <p
+                    className="mb-4 whitespace-pre-line overflow-wrap-break-word"
                     {...props}
                   >
                     {children}
@@ -74,27 +79,51 @@ const AIMessage = ({ content }: { content: string }) => {
                 );
               },
               h1({ children, ...props }) {
-                return <h1 className="text-xl font-bold mt-6 mb-4" {...props}>{children}</h1>;
+                return (
+                  <h1 className="text-xl font-bold mt-6 mb-4" {...props}>
+                    {children}
+                  </h1>
+                );
               },
               h2({ children, ...props }) {
-                return <h2 className="text-lg font-bold mt-5 mb-3" {...props}>{children}</h2>;
+                return (
+                  <h2 className="text-lg font-bold mt-5 mb-3" {...props}>
+                    {children}
+                  </h2>
+                );
               },
               h3({ children, ...props }) {
-                return <h3 className="text-base font-bold mt-4 mb-2" {...props}>{children}</h3>;
+                return (
+                  <h3 className="text-base font-bold mt-4 mb-2" {...props}>
+                    {children}
+                  </h3>
+                );
               },
               ul({ children, ...props }) {
-                return <ul className="list-disc pl-6 mb-4 space-y-1" {...props}>{children}</ul>;
+                return (
+                  <ul className="list-disc pl-6 mb-4 space-y-1" {...props}>
+                    {children}
+                  </ul>
+                );
               },
               ol({ children, ...props }) {
-                return <ol className="list-decimal pl-6 mb-4 space-y-1" {...props}>{children}</ol>;
+                return (
+                  <ol className="list-decimal pl-6 mb-4 space-y-1" {...props}>
+                    {children}
+                  </ol>
+                );
               },
               li({ children, ...props }) {
-                return <li className="mb-1" {...props}>{children}</li>;
+                return (
+                  <li className="mb-1" {...props}>
+                    {children}
+                  </li>
+                );
               },
               blockquote({ children, ...props }) {
                 return (
-                  <blockquote 
-                    className="border-l-2 border-[var(--color-palette-gold-dark)] pl-4 my-4 italic" 
+                  <blockquote
+                    className="border-l-2 border-[var(--color-palette-gold-dark)] pl-4 my-4 italic"
                     {...props}
                   >
                     {children}
@@ -115,23 +144,41 @@ const AIMessage = ({ content }: { content: string }) => {
                 );
               },
               strong({ children, ...props }) {
-                return <strong className="font-bold" {...props}>{children}</strong>;
+                return (
+                  <strong className="font-bold" {...props}>
+                    {children}
+                  </strong>
+                );
               },
               em({ children, ...props }) {
-                return <em className="italic" {...props}>{children}</em>;
+                return (
+                  <em className="italic" {...props}>
+                    {children}
+                  </em>
+                );
               },
               table({ children, ...props }) {
                 return (
                   <div className="overflow-x-auto my-4">
-                    <table className="min-w-full divide-y divide-gray-300 border border-gray-300" {...props}>
+                    <table
+                      className="min-w-full divide-y divide-gray-300 border border-gray-300"
+                      {...props}
+                    >
                       {children}
                     </table>
                   </div>
                 );
               },
               pre({ children, ...props }) {
-                return <pre className="overflow-x-auto min-w-full w-[300px]" {...props}>{children}</pre>;
-              }
+                return (
+                  <pre
+                    className="overflow-x-auto min-w-full w-[300px]"
+                    {...props}
+                  >
+                    {children}
+                  </pre>
+                );
+              },
             }}
           >
             {content}
