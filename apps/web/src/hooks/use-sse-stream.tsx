@@ -7,6 +7,7 @@ import { ComposerModeParser } from "@/lib/composer-mode-parser";
 import { useChatStore } from "@/store/chat";
 import { FingerprintManager } from "@/lib/fingerprint-manager";
 import type { Node } from "prosemirror-model";
+import { EditsSuggestionsManager } from "@/services/suggestion-manager";
 
 export enum Tags {
     "H1" = "H1",
@@ -31,7 +32,7 @@ export const useSSEStream = () => {
     const [isStreaming, setIsStreaming] = useState<boolean>(false);
     const [error, setError] = useState<Error | null>(null);
     const [currentStreamId, setCurrentStreamId] = useState<string>("")
-    const { editorView } = useEditor();
+    const { editorView, setAcceptRejectDialog } = useEditor();
     
     const userInteractedRef = useRef<boolean>(false)
     const fingerprintManagerRef = useRef<FingerprintManager | null>(null)
@@ -143,13 +144,19 @@ export const useSSEStream = () => {
                 }
             };
 
-            const editorDocNodes = editorView.current.state.doc.toJSON()
-            const contentNodes = editorDocNodes.content.map((node: Node) => {
-                return {
-                    type: node.type,
-                    content: node.content
+            const editorDocNodes = editorView.current.state.doc.content
+            let validContentNodes = []
+            editorDocNodes.content.forEach((node: Node) => {
+                if (node.content.size > 0){
+                    const contentNode = {
+                        type: node.type.name,
+                        content: node.content
+                    }
+                    validContentNodes.push(contentNode)
                 }
             })
+
+            console.log("CONTENT NODESSSSSSSS: ", validContentNodes)
 
             async function checkFingerprints(node: string){
                 fingerprintManagerRef.current.generateEditorNodesFingerprints(editorView.current)
@@ -164,11 +171,12 @@ export const useSSEStream = () => {
                 }
             }
 
+            console.log("sending GENRATE API ")
             // Initialize stream
             const response = await fetch("http://localhost:4000/api/generate/init", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ prompt: prompt, chatMode: chatMode, contentNodes: contentNodes})
+                body: JSON.stringify({ prompt: prompt, chatMode: chatMode, contentNodes: validContentNodes})
             });
 
             if (!response.ok) {
@@ -196,6 +204,11 @@ export const useSSEStream = () => {
                         rendererRef.current.updateSuccessfulGenerations()
                         setIsStreaming(false);
                         eventSourceRef.current?.close();
+                        const editsLength = window.suggestionsManager.totalEdits()
+                        console.log("total EDITS are:", editsLength)
+                        if(editsLength > 0){
+                            setAcceptRejectDialog(true)
+                        }
                         return;
                         
                         case "START_STREAM":

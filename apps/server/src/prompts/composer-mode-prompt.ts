@@ -1927,6 +1927,15 @@ Use this exact format for marking nodes to be deleted:
 [CTRLD]{"type":"heading","content":"Another node to delete"}[/CTRLD]
 [/LRTC]
 
+### MORE CONTEXT TO UNDERSTAND WHY MULTIPLE DELETE NODES:
+
+Think about this. If a user query targets an entire section or multiple sections, then you would generate the new content of the entire section or sections that
+we will replace on client side. But now think how would the client know what nodes to delete. If you send all the nodes to be deleted in the said tag format, we would
+have to form each node and then update start and end pos. Instead you will always send 1 or 2 Delete nodes. The logic behind this is - we can always get the start and end pos
+from a single delete node because generally the user queries involves modifying a single node so this works for single nodes. For query that requires deleting multiple nodes,
+we can use the start position of the first delete node and the end pos of the 2nd node so we kind of have this boundary with us. And then we can easily, wrap this entire range in
+higlighter red block. 
+
 ### CRITICAL DELETION RULES
 1. **ALWAYS mark nodes for deletion when replacing or modifying content**
    - Even when only making small changes to existing content

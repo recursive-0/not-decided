@@ -1,12 +1,20 @@
+import { EditsSuggestionsManager } from "@/services/suggestion-manager";
 import type { Node } from "prosemirror-model";
 import type { Decoration, DecorationSource, EditorView, NodeView } from "prosemirror-view";
 
 export class DeletionSuggestion implements NodeView {
     dom: HTMLElement;
     contentDOM: HTMLElement;
+    private suggestionsManagerInstance: EditsSuggestionsManager | null = null
 
     constructor(node: Node, view: EditorView, getPos: () => number | undefined) {
         
+        window.suggestionsManager.addPositionCallback(node.attrs.id, getPos)
+        window.suggestionsManager.addPositionId(node.attrs.id)
+
+
+
+
         this.dom = document.createElement('div');
         this.dom.className = 'suggestion-container deletion-suggestion';
         this.dom.setAttribute('data-suggestion-type', 'deletion');

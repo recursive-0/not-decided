@@ -57,6 +57,9 @@
   --palette-light-cream: #eee8d5; 
   --palette-dark-2: #262626; 
 
+  --olive-green-1: #74704A;
+  --dark-forest-teal: #022F2E;
+
   
   --chart-1: #d9c589; 
   --chart-2: #d99982; 
@@ -128,6 +131,9 @@
   --chart-6: #f2eddc; 
   --chart-7: #eee8d5; 
 
+  --olive-green-1: #74704A;
+  --dark-forest-teal: #022F2E;
+
   
   --sidebar-background: #6c6c6c;
   --sidebar-foreground: #f2eddc;
@@ -194,6 +200,9 @@
   --color-ui-placeholder-text: var(--ui-placeholder-text);
   --color-ui-border: var(--ui-border);
   --color-ui-done-button: var(--ui-done-button);
+
+  --color-olive-green: var(--olive-green-1);
+  --color-forest-teal: var(--dark-forest-teal);
   
   --color-palette-gold-dark: var(--palette-gold-dark);
   --color-palette-gold: var(--palette-gold);

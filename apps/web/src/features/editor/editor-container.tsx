@@ -5,7 +5,7 @@ export const EditorContainer = () => {
   return (
     
     
-    <div className="w-full h-full overflow-hidden flex flex-col items-center bg-background">
+    <div className="w-full h-full overflow-hidden flex flex-col items-center bg-background relative">
       <Toolbar />
       <ProseMirrorEditor />
     </div>

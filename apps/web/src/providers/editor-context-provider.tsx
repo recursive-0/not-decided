@@ -24,6 +24,8 @@ interface EditorContextType {
   replaceText: (from: number, to: number, text: string) => void;
   getCurrentContent: () => string | null;
   customDispatchTransaction: (tr: any) => void
+  isAcceptRejectDialogOpen: boolean
+  setAcceptRejectDialog: (flag: boolean) => void
 }
 
 const EditorContext = createContext<EditorContextType | undefined>(undefined);
@@ -31,7 +33,7 @@ const EditorContext = createContext<EditorContextType | undefined>(undefined);
 export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const editorView = useRef<EditorView | null>(null);
   const [isEditorReady, setEditorReady] = useState(false);
-
+  const [isAcceptRejectDialogOpen, setAcceptRejectDialog] = useState(false)
 
   const insertTextAtCursor = (text: string) => {
     if (!editorView.current) return;
@@ -81,6 +83,8 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         replaceText,
         getCurrentContent,
         customDispatchTransaction,
+        isAcceptRejectDialogOpen,
+        setAcceptRejectDialog
       }}
     >
       {children}

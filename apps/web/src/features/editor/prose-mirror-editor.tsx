@@ -31,6 +31,16 @@ import { CornerDownLeft } from "lucide-react";
 import { DeletionSuggestion } from "@/custom-nodes/deletion-suggestion";
 import { AdditionSuggestion } from "@/custom-nodes/addition-suggestion";
 import { ensureTrailingParagraphPlugin } from "@/plugins/trailing-paragraph-plugin";
+import { dragHandlePlugin } from "@/custom-nodes/drag-handle";
+import type { Node } from "prosemirror-model";
+import { AcceptAllRejectAllDialog } from "./accpet-all-reject-all-dialog";
+import { EditsSuggestionsManager } from "@/services/suggestion-manager";
+
+declare global {
+  interface Window {
+    suggestionsManager: EditsSuggestionsManager | null;
+  }
+}
 
 function liftListItemOnlyAtStart(listItemType) {
   return function (state, dispatch, view) {
@@ -55,7 +65,8 @@ const listRelatedKeymap = keymap({
 });
 
 const plugins = [
-  ensureTrailingParagraphPlugin,
+  // dragHandlePlugin,
+  // ensureTrailingParagraphPlugin,
   history(),
   listRelatedKeymap,
   keymap(baseKeymap),
@@ -68,10 +79,11 @@ const plugins = [
 
 export const ProseMirrorEditor = () => {
   const editorRef = useRef<HTMLDivElement | null>(null);
-  const { editorView, setEditorReady, isEditorReady } = useEditor();
+  const { editorView, setEditorReady, isEditorReady, isAcceptRejectDialogOpen } = useEditor();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const { isStreaming, userInteractedRef } = useSSEStream();
   const isDialogClosingRef = useRef(false);
+  const suggestionsManagerRef = useRef<EditsSuggestionsManager | null>(null)
   const [smartAiPopupPos, setSmartAiPopupPos] = useState<null | {
     x: Number;
     y: Number;
@@ -112,6 +124,8 @@ export const ProseMirrorEditor = () => {
           const originalState = editorView.current.state;
           const newState = originalState.apply(tr);
           editorView.current.updateState(newState);
+          const editorDocNodes = editorView.current.state.doc.content
+          console.log("editor nodes are: ", editorDocNodes)
           console.log("EDITOR STATE IS: ", editorView.current.state.doc);
           console.log(
             "JSON EDITOR SCHEMA: ",
@@ -181,6 +195,8 @@ export const ProseMirrorEditor = () => {
   useEffect(() => {
     if (editorView.current && isEditorReady) {
       setTimeout(() => {
+        suggestionsManagerRef.current = new EditsSuggestionsManager(editorView.current)
+        window.suggestionsManager = suggestionsManagerRef.current;
         editorView.current.focus();
         const textNode = editorView.current.state.schema.text("hello")
         // const placeholderPara = editorView.current.state.schema.nodes.paragraph.create()
@@ -195,13 +211,16 @@ export const ProseMirrorEditor = () => {
     }
   }, [isEditorReady]);
 
+  useEffect(() => {
+    console.log("Changed dialog status: ", isAcceptRejectDialogOpen)
+  },[isAcceptRejectDialogOpen])
+
   return (
-    <div ref={containerRef} className="flex flex-col w-full h-full">
+    <div ref={containerRef} className="flex flex-col w-full h-full relative">
       <div
         className="prosemirror-editor w-full max-h-[calc(100vh - 60px)] h-full overflow-scroll bg-red-400 py-4 px-4 border-t border-neutral-400 outline-none"
         ref={editorRef}
       />
-      {}
       {smartAiPopupPos !== null && (
         <FloatingCommandDialog
           clientX={smartAiPopupPos.x}
@@ -210,6 +229,9 @@ export const ProseMirrorEditor = () => {
           onSubmit={(text) => console.log(text)}
         />
       )}
+
+      {isAcceptRejectDialogOpen && <AcceptAllRejectAllDialog onAcceptAll={() => suggestionsManagerRef.current.acceptAll()} onRejectAll={() => suggestionsManagerRef.current.rejectAll()} />}
+
     </div>
   );
 };
@@ -296,3 +318,4 @@ const FloatingCommandDialog = ({ clientX, clientY, onClose, onSubmit }) => {
     </div>
   );
 };
+

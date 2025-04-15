@@ -1,14 +1,22 @@
+import { EditsSuggestionsManager } from './../services/suggestion-manager';
 import type { Node } from "prosemirror-model";
 import type { Decoration, DecorationSource, EditorView, NodeView } from "prosemirror-view";
 
 export class AdditionSuggestion implements NodeView {
+
     dom: HTMLElement;
     contentDOM: HTMLElement;
     node: Node;
     view: EditorView;
     getPos: () => number | undefined;
+    private suggestionsManagerInstance: EditsSuggestionsManager | null = null
 
     constructor(node: Node, view: EditorView, getPos: () => number | undefined) {
+
+        // store the position callbacks along with id in suggestion manager service for "Accept All" | "Reject All" functionality
+
+        window.suggestionsManager.addPositionCallback(node.attrs.id, getPos)
+        window.suggestionsManager.addPositionId(node.attrs.id)
 
         this.node = node;
         this.view = view;
@@ -67,9 +75,15 @@ export class AdditionSuggestion implements NodeView {
         rejectButton.addEventListener('click', () => {
             const pos = getPos();
             if (pos === undefined) return;
-            console.log("POS IS: ", pos)
-            const tr = view.state.tr.delete(pos, pos + node.nodeSize);
-            view.dispatch(tr);
+            const nodeAtPos = view.state.doc.nodeAt(pos)
+            if(!nodeAtPos) return
+
+            if(nodeAtPos.content.size > 0){
+                const tr = view.state.tr.delete(pos, pos+nodeAtPos.nodeSize)
+                view.dispatch(tr)
+            } else {
+                console.log("There no content to reject")
+            }
         });
 
         
