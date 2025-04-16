@@ -170,7 +170,6 @@ const AIChat = () => {
           <CornerDownLeft className={`h-4 w-4 text-palette-dark`} />
         </div>
       </div>
-      <div className="absolute top-0 left-0 w-full h-full blur-2xl bg-red-300 -z-[10]" />
     </div>
   );
 

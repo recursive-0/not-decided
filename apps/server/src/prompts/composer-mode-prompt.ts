@@ -2111,6 +2111,11 @@ console.log(example);[/CODE]
 - INCORRECT: [H1]The [ICODE]main()[/ICODE] function[/H1]
 - INCORRECT: [LI][ICODE]forEach()[/ICODE] method[/LI]
 
+### [CHECKBOX] special requirements
+- [CHECKBOX] tags are standalone tags and should not be wrapped inside lists
+- [CHECKBOX]first checklist[/CHECKBOX]
+- do not wrap checkboxes inside another parent or node
+
 ### List Structure Rules
 - Lists MUST use this structure: [UL][LI]Item 1[/LI][LI]Item 2[/LI][/UL]
 - NEVER use [P] tags for list items

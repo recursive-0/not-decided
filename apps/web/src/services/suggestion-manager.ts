@@ -1,40 +1,65 @@
 import type { EditorView } from "prosemirror-view";
 
-interface PositionCallbacks {
-  [id: string]: () => number | undefined;
-}
-
 type PositionCallback = () => number | undefined;
 
 export class EditsSuggestionsManager {
   public editSuggestionIds: string[] = [];
-  private positionCallbacks: PositionCallbacks = {}
+  private positionCallbacks: Map<string, PositionCallback> = new Map();
   private editorView: EditorView | null = null;
+  private additionCount: number = 0;
+  private deletionCount: number = 0;
 
-  constructor(view: EditorView){
-    this.editorView = view
+  constructor(view: EditorView) {
+    this.editorView = view;
   }
 
   public addPositionCallback(id: string, cb: PositionCallback) {
-    this.positionCallbacks[id] = cb;
+    this.positionCallbacks.set(id, cb);
   }
 
-  public totalEdits(): number{
-    const length = this.editSuggestionIds.length
-    return length
+  public totalEdits(): number {
+    return this.editSuggestionIds.length;
   }
 
-  public addPositionId(id: string) {
+  public totalAdditions(): number {
+    return this.additionCount;
+  }
+
+  public totalDeletions(): number {
+    return this.deletionCount;
+  }
+
+  public addPositionId(id: string, nodeType?: string) {
     this.editSuggestionIds.push(id);
+    
+    // Update the counts based on the node type
+    if (nodeType === "addition_suggestion") {
+      this.additionCount++;
+    } else if (nodeType === "deletion_suggestion") {
+      this.deletionCount++;
+    }
+  }
+
+  public removeEdit(id: string, nodeType?: string) {
+    this.positionCallbacks.delete(id);
+    const updatedSuggestionIds = this.editSuggestionIds.filter(editId => editId !== id);
+    this.editSuggestionIds = updatedSuggestionIds;
+    
+    // Update the counts based on the node type
+    if (nodeType === "addition_suggestion") {
+      this.additionCount = Math.max(0, this.additionCount - 1);
+    } else if (nodeType === "deletion_suggestion") {
+      this.deletionCount = Math.max(0, this.deletionCount - 1);
+    }
   }
 
   public acceptAll() {
-    if (!this.editorView || !this.positionCallbacks) return;
+    if (!this.editorView) return;
 
     const positionsToProcess = [];
 
     for (const id of this.editSuggestionIds) {
-      const getPos = this.positionCallbacks[id];
+      const getPos = this.positionCallbacks.get(id);
       if (!getPos) continue;
 
       const pos = getPos();
@@ -48,6 +73,7 @@ export class EditsSuggestionsManager {
         pos,
         nodeSize: node.nodeSize,
         content: node.content,
+        type: node.type.name
       });
     }
 
@@ -55,33 +81,34 @@ export class EditsSuggestionsManager {
 
     let tr = this.editorView.state.tr;
 
-    for (const { pos, nodeSize, content } of positionsToProcess) {
-      const nodeType = this.editorView.state.doc.nodeAt(pos)?.type.name;
-
-      if (nodeType === "addition_suggestion") {
+    for (const { pos, nodeSize, content, type } of positionsToProcess) {
+      if (type === "addition_suggestion") {
         if (content.size > 0) {
           tr = tr.replaceWith(pos, pos + nodeSize, content);
         } else {
           tr = tr.delete(pos, pos + nodeSize);
         }
-      } else if (nodeType === "deletion_suggestion") {
+      } else if (type === "deletion_suggestion") {
         tr = tr.delete(pos, pos + nodeSize);
       }
     }
 
     this.editorView.dispatch(tr);
 
+    // Reset tracking counts
     this.editSuggestionIds = [];
-    this.positionCallbacks = {};
+    this.positionCallbacks.clear();
+    this.additionCount = 0;
+    this.deletionCount = 0;
   }
 
   public rejectAll() {
-    if (!this.editorView || !this.positionCallbacks) return;
+    if (!this.editorView) return;
 
     const positionsToProcess = [];
 
     for (const id of this.editSuggestionIds) {
-      const getPos = this.positionCallbacks[id];
+      const getPos = this.positionCallbacks.get(id);
       if (!getPos) continue;
 
       const pos = getPos();
@@ -117,8 +144,10 @@ export class EditsSuggestionsManager {
 
     this.editorView.dispatch(tr);
 
+    // Reset tracking counts
     this.editSuggestionIds = [];
-    this.positionCallbacks = {};
+    this.positionCallbacks.clear();
+    this.additionCount = 0;
+    this.deletionCount = 0;
   }
-
 }

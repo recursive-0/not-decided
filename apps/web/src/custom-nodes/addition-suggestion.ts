@@ -3,39 +3,34 @@ import type { Node } from "prosemirror-model";
 import type { Decoration, DecorationSource, EditorView, NodeView } from "prosemirror-view";
 
 export class AdditionSuggestion implements NodeView {
-
     dom: HTMLElement;
     contentDOM: HTMLElement;
     node: Node;
     view: EditorView;
     getPos: () => number | undefined;
-    private suggestionsManagerInstance: EditsSuggestionsManager | null = null
+    private nodeId: string;
 
     constructor(node: Node, view: EditorView, getPos: () => number | undefined) {
-
-        // store the position callbacks along with id in suggestion manager service for "Accept All" | "Reject All" functionality
-
-        window.suggestionsManager.addPositionCallback(node.attrs.id, getPos)
-        window.suggestionsManager.addPositionId(node.attrs.id)
-
         this.node = node;
         this.view = view;
         this.getPos = getPos;
+        this.nodeId = node.attrs.id;
         
+        // Store the position callbacks along with id in suggestion manager service
+        window.suggestionsManager.addPositionCallback(this.nodeId, getPos);
+        window.suggestionsManager.addPositionId(this.nodeId, "addition_suggestion");
+
         this.dom = document.createElement('div');
         this.dom.className = 'suggestion-container addition-suggestion';
         this.dom.setAttribute('data-suggestion-type', 'addition');
-        this.dom.setAttribute('data-suggestion-id', node.attrs.id);
-
+        this.dom.setAttribute('data-suggestion-id', this.nodeId);
         
         const contentContainer = document.createElement('div');
         contentContainer.className = 'suggestion-content addition-content';
         this.contentDOM = contentContainer;  
-
         
         const controlsContainer = document.createElement('div');
         controlsContainer.className = 'suggestion-controls';
-
         
         const acceptButton = document.createElement('button');
         acceptButton.className = 'suggestion-accept';
@@ -64,8 +59,10 @@ export class AdditionSuggestion implements NodeView {
                 const tr = view.state.tr.delete(pos, pos + nodeAtPos.nodeSize);
                 view.dispatch(tr);
             }
+            
+            // Remove the edit from the manager after accepting
+            window.suggestionsManager.removeEdit(this.nodeId, "addition_suggestion");
         });
-
         
         const rejectButton = document.createElement('button');
         rejectButton.className = 'suggestion-reject';
@@ -75,17 +72,20 @@ export class AdditionSuggestion implements NodeView {
         rejectButton.addEventListener('click', () => {
             const pos = getPos();
             if (pos === undefined) return;
-            const nodeAtPos = view.state.doc.nodeAt(pos)
-            if(!nodeAtPos) return
+            
+            const nodeAtPos = view.state.doc.nodeAt(pos);
+            if (!nodeAtPos) return;
 
-            if(nodeAtPos.content.size > 0){
-                const tr = view.state.tr.delete(pos, pos+nodeAtPos.nodeSize)
-                view.dispatch(tr)
+            if (nodeAtPos.content.size > 0) {
+                const tr = view.state.tr.delete(pos, pos + nodeAtPos.nodeSize);
+                view.dispatch(tr);
             } else {
-                console.log("There no content to reject")
+                console.log("There's no content to reject");
             }
+            
+            // Remove the edit from the manager after rejecting
+            window.suggestionsManager.removeEdit(this.nodeId, "addition_suggestion");
         });
-
         
         controlsContainer.appendChild(acceptButton);
         controlsContainer.appendChild(rejectButton);
@@ -98,5 +98,10 @@ export class AdditionSuggestion implements NodeView {
         if (node.type.name !== 'addition_suggestion') return false;
         this.node = node;
         return true;
+    }
+    
+    destroy() {
+        // Clean up when the node view is removed from the document
+        window.suggestionsManager.removeEdit(this.nodeId, "addition_suggestion");
     }
 }
