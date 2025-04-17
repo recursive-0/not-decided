@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,11 +10,16 @@ import {
   Bot,
   BrainCircuit,
   CornerDownLeft,
+  Square,
+  AlertTriangle,
+  X,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { ChatMessages } from "./chat-messages";
 import { useChatHandler } from "@/hooks/use-chat-handler";
+import { useSSEStream } from "@/hooks/use-sse-stream";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 // Thinking loader component
 const ThinkingLoader = () => {
@@ -79,19 +84,58 @@ const ThinkingLoader = () => {
 };
 
 const AIChat = () => {
+  
   const {
-    input,
-    setInput,
     isThinking,
     isStreaming,
+    stopStreaming,
     chatMessages,
     currentChatMode,
-    textareaRef,
+    setCurrentChatMode,
     scrollAreaRef,
     handleSendMessage,
-    handleKeyDown,
-    handleTabChange,
   } = useChatHandler();
+
+  const [input, setInput] = useState<string>("")
+  const [showStreamingWarning, setShowStreamWarning] = useState<boolean>(false)
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null)
+
+  const onStopStreaming = () => {
+    console.log("Stop the stream")
+    stopStreaming()
+  }
+
+  const onSendMessage = () => {
+    if(isStreaming){
+      setShowStreamWarning(true)
+      return
+    }
+
+    handleSendMessage(input)
+    setInput("")
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // If streaming is active, show warning and prevent default behavior
+    if (isStreaming) {
+      e.preventDefault();
+      setShowStreamWarning(true);
+      return;
+    }
+    
+    // If key combination is shift + enter, allow normal behavior (newline)
+    if (e.key === 'Enter' && e.shiftKey) {
+      return; // Default behavior will insert a newline
+    }
+    
+    // If just Enter/Return without shift, send the message and prevent newline
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (input.trim() && !isThinking) {
+        onSendMessage();
+      }
+    }
+  }
 
   const renderHeader = () => (
     <div className="border-b border-border bg-[var(--color-palette-beige-2)] flex-shrink-0">
@@ -149,35 +193,50 @@ const AIChat = () => {
             pr-8 py-2 min-h-[38px] max-h-[150px]"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          disabled={isStreaming || isThinking}
+          onKeyDown={(e) => handleKeyDown(e)}
           rows={1}
         />
-        <div
-          className={cn(
-            "absolute right-2 top-2 flex items-center justify-center w-6 h-6",
-            isStreaming || isThinking || !input.trim()
-              ? "cursor-not-allowed opacity-50"
-              : "cursor-pointer hover:text-destructive"
-          )}
-          onClick={() => {
-            if (!isStreaming && !isThinking && input.trim()) {
-              handleSendMessage();
-            }
-          }}
-          aria-label="Send message"
-        >
-          <CornerDownLeft className={`h-4 w-4 text-palette-dark`} />
-        </div>
+        {isStreaming ? (
+          <StreamingIndicator isStreaming={isStreaming} onStopStreaming={onStopStreaming} />
+        ) : (
+          <div
+            className={cn(
+              "absolute right-2 top-2 flex items-center justify-center w-6 h-6",
+              isStreaming || isThinking || !input.trim()
+                ? "cursor-not-allowed opacity-50"
+                : "cursor-pointer hover:text-destructive"
+            )}
+            onClick={() => {
+              if (!isStreaming && !isThinking && input.trim()) {
+                onSendMessage();
+              }
+            }}
+            aria-label="Send message"
+          >
+            <CornerDownLeft className={`h-4 w-4 text-palette-dark`} />
+          </div>
+        )}
+        
+        {/* The warning message element */}
+        <StreamingWarning 
+          visible={showStreamingWarning} 
+          onClose={() => setShowStreamWarning(false)} 
+        />
       </div>
     </div>
   );
+
+  useEffect(() => {
+    if(!isStreaming){
+      setShowStreamWarning(false)
+    } 
+  },[isStreaming])
 
   return (
     <div className="w-full flex flex-col h-full bg-[var(--color-palette-beige-2)] text-[#073642]">
       <Tabs
         value={currentChatMode}
-        onValueChange={handleTabChange}
+        onValueChange={() => setCurrentChatMode(currentChatMode)}
         className="flex flex-col h-full"
       >
         {renderHeader()}
@@ -245,3 +304,75 @@ const AIChat = () => {
 };
 
 export default AIChat;
+
+
+
+const StreamingIndicator = ({ isStreaming = true, onStopStreaming = () => {} }) => {
+  const [isPulsing, setIsPulsing] = useState(false);
+  
+  // useEffect(() => {
+  //   if (!isStreaming) return;
+    
+  //   const interval = setInterval(() => {
+  //     setIsPulsing(prev => !prev);
+  //   }, 1500);
+    
+  //   return () => clearInterval(interval);
+  // }, [isStreaming]);
+  
+  if (!isStreaming) return null;
+  
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            onClick={onStopStreaming}
+            className={cn(
+              "absolute right-4 top-1/2 -translate-y-1/2 flex items-center justify-center cursor-pointer",
+            )}
+            aria-label="Stop streaming"
+          >
+            <span className="relative flex size-3">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-[3px] bg-red-500 opacity-75"></span>
+            <span className="relative inline-flex size-3 rounded-[3px] bg-red-900"></span>
+</span>
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Stop streaming</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+};
+
+const StreamingWarning = ({ 
+  visible, 
+  onClose 
+}: { 
+  visible: boolean; 
+  onClose: () => void;
+}) => {
+  if (!visible) return null;
+  
+  return (
+    <div className="absolute bottom-full left-0 right-0 mb-2 px-2">
+      <div className="bg-amber-50 border border-amber-200 rounded-md p-3 shadow-md text-sm flex items-start">
+        <AlertTriangle className="text-amber-500 h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+        <div className="flex-1">
+          <p className="text-amber-800 font-medium">Please wait for the current response to finish</p>
+          <p className="text-amber-700 text-xs mt-1">
+            Wrisor is currently responding. You can wait for it to finish or click the red square to stop the current response.
+          </p>
+        </div>
+        <button 
+          onClick={onClose}
+          className="text-amber-500 hover:text-amber-700 ml-2"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+}

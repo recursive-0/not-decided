@@ -110,6 +110,17 @@ export class IncrementalProsemirrorRenderer {
         const node = this.buildProsemirrorNode(Tags.ADDITION);
         this.insertAdditionSuggestionContainer(node);
       }
+
+      // weird edge case from deepseek streaming where it was generating [p] insetad of [/p]
+      if(this.nodeStack.length > 0){
+        const topNode = this.nodeStack[this.nodeStack.length - 1]
+        if(topNode.type === tag){
+          console.warn("This should have been the close tag instead it's an open tag so definitely a mess up")
+          this.onCloseTag(tag)
+          return
+        }
+      }
+
       const node = this.buildProsemirrorNode(tag);
       this.insertAndUpdateNodeContext(node, tag);
     }
@@ -521,11 +532,11 @@ export class IncrementalProsemirrorRenderer {
   }
 
   handleListItemInsertion(node: Node) {
-    if (this.isNodeStackEmpty()) {
-      throw new Error("Error: LI must have a parent in node stack!!!");
-    }
 
     const topNode = this.nodeStack[this.nodeStack.length - 1];
+    if (topNode.type !== Tags.UL && topNode.type !== Tags.OL) {
+      throw new Error("Error: LI must have a UL or OL parent in node stack!");
+    }
 
     // if (topNode.type === Tags.UL || topNode.type === Tags.OL) {
       const insertPos = this.getInsertPosition();

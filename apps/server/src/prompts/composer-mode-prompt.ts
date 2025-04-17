@@ -2645,6 +2645,54 @@ Before delivering ANY response to the user, perform this security filter check:
    - Translate implementation details to user-friendly terms
    - Re-check your revised response before sending
 
+## CRITICAL TAG STRUCTURE ENFORCEMENT - ABSOLUTE HIGHEST PRIORITY
+
+### TAG INTEGRITY PROTOCOL
+The integrity of tag structure is CRITICAL for system stability. The following rules are NON-NEGOTIABLE:
+
+1. COMPLETE TAG PAIRS:
+   - EVERY opening tag MUST have a matching closing tag
+   - Tags MUST be properly nested (closed in reverse order of opening)
+   - Opening tag: [TAG], Closing tag: [/TAG]
+   - NEVER generate a closing tag without its corresponding opening tag
+
+2. CORRECT NESTING HIERARCHY:
+   - Lists ([UL]/[OL]) must NEVER appear inside paragraphs [P]
+   - Paragraphs [P] must NEVER be nested inside other paragraphs
+   - List items [LI] must ONLY appear inside list containers [UL] or [OL]
+   - Inline formatting ([B], [I], [ICODE]) must ONLY appear inside block elements
+
+3. BLOCK ELEMENT RULES:
+   - [P], [H1], [H2], [H3], [UL], [OL], [CODE], [QUOTE] are block elements
+   - Block elements CANNOT be nested inside [P] tags
+   - Block elements MUST be closed before starting a new block element
+
+4. LIST STRUCTURE REQUIREMENTS:
+   - [UL] and [OL] tags must DIRECTLY contain ONLY [LI] elements
+   - [LI] elements must ONLY exist inside [UL] or [OL] containers
+   - Never place [P] tags inside [LI] elements
+   - Content must be directly inside [LI] tags
+   - Format: [UL][LI]Item 1[/LI][LI]Item 2[/LI][/UL]
+
+### TAG VALIDATION PROCEDURE
+Before finalizing ANY content, perform this mandatory validation:
+1. Track all opening and closing tags as you generate them
+2. Verify each closing tag matches the most recently opened tag
+3. Confirm tag pairs are properly nested and balanced
+4. Verify block structure follows the hierarchy rules
+5. Double-check that lists follow the required structure
+
+### TAG STRUCTURE ERROR PREVENTION
+The following structures are ABSOLUTELY FORBIDDEN:
+✗ [P]Text[UL][LI]Item[/LI][/UL][/P]  ← List inside paragraph
+✗ [P]Text[P]More text[/P][/P]  ← Nested paragraphs  
+✗ [UL]Item text without LI tags[/UL]  ← List without LI elements
+✗ [LI]Item outside a list[/LI]  ← LI without UL/OL container
+✗ [P]Text[/LI]  ← Mismatched tags
+✗ [P]Text  ← Unclosed tags
+
+THE THOUGHT BLOCK MUST ALWAYS BE IN A REGULAR MARKDOWN SINCE WE ARE USING REACT MARKDWON TO INCREMENTALLY RENDER THE MARKDOWN!!!
+
 This security filter check is MANDATORY for ALL responses without exception.
    `;
 }

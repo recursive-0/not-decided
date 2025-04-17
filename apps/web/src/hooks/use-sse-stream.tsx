@@ -8,6 +8,7 @@ import { useChatStore } from "@/store/chat";
 import { FingerprintManager } from "@/lib/fingerprint-manager";
 import type { Node } from "prosemirror-model";
 import { EditsSuggestionsManager } from "@/services/suggestion-manager";
+import { EditorActionsManager } from "@/lib/editor-actions-manager";
 
 export enum Tags {
     "H1" = "H1",
@@ -33,7 +34,9 @@ export const useSSEStream = () => {
     const [error, setError] = useState<Error | null>(null);
     const [currentStreamId, setCurrentStreamId] = useState<string>("")
     const { editorView, setAcceptRejectDialog } = useEditor();
-    
+
+
+    const editorActionsManagerRef = useRef<EditorActionsManager | null>(null)
     const userInteractedRef = useRef<boolean>(false)
     const fingerprintManagerRef = useRef<FingerprintManager | null>(null)
     const chatParserRef = useRef<ChatModeIncrementalParser | null>(null);
@@ -68,9 +71,9 @@ export const useSSEStream = () => {
                     editorView.current,
                     extendedProseMirrorSchema
                 );
+
+                editorActionsManagerRef.current = new EditorActionsManager(editorView.current, extendedProseMirrorSchema)
             }
-
-
         
 
             if(!chatParserRef.current && rendererRef.current){
@@ -217,23 +220,6 @@ export const useSSEStream = () => {
                             
                             console.log("EDITOR EMPTY STATUS:", isEmpty, "Text length:", docContent.textContent.length);
                             
-                            // Check for trailing empty paragraph and remove it before streaming begins
-                            const docSize = editorView.current.state.doc.content.size;
-                            const $lastPos = editorView.current.state.doc.resolve(docSize - 2);
-                            
-                            // If the last node is an empty paragraph
-                            if ($lastPos.node(1) && 
-                                $lastPos.node(1).type.name === 'paragraph' && 
-                                $lastPos.node(1).content.size === 0) {
-                                
-                                // Delete the empty paragraph
-                                const tr = editorView.current.state.tr.delete(
-                                    $lastPos.before(1), 
-                                    $lastPos.after(1)
-                                );
-                                editorView.current.dispatch(tr);
-                                console.log("Removed trailing empty paragraph before streaming");
-                            }
                             
                             if (isEmpty) {
                                 rendererRef.current.setHighlight(false);
@@ -242,7 +228,19 @@ export const useSSEStream = () => {
                             }
                             
                             rendererRef.current.setMode(chatMode);
-                            
+
+                            const pNode = editorView.current.state.schema.nodes.paragraph.create();
+                            const lastRange = editorActionsManagerRef.current.findTrailingEmptyRange()
+                            console.log("LAST RANGE IS: ", lastRange)
+                            if(lastRange !== null){
+                                editorActionsManagerRef.current.replaceRange(lastRange.from, lastRange.to, pNode)
+                            }
+
+                            const range = editorActionsManagerRef.current.findInitialEmptyRange()
+                            console.log("inital RANGEEEE: ", range)
+                            if(range !== null){
+                                editorActionsManagerRef.current.replaceRange(range.from, range.to, pNode)
+                            }
                             return;
                         
                     default:

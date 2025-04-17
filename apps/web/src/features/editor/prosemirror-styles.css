@@ -98,7 +98,7 @@
 .prosemirror-editor li {
   position: relative;
   padding-left: 1.5rem;
-  margin-bottom: 0.5rem;  /* More space between list items */
+  /* margin-bottom: 0.5rem;  More space between list items */
   line-height: 1.6;
 }
 
@@ -319,8 +319,8 @@
   position: relative;
   display: flex;
   cursor: pointer;
-  padding: 4px 0;       /* Increased vertical padding for better spacing */
-  margin-bottom: 0.5rem; /* Space between checkbox items */
+  padding: 1px 0;       /* Increased vertical padding for better spacing */
+  /* margin-bottom: 0.5rem; Space between checkbox items */
 }
 
 .ProseMirror .checkbox-box {
@@ -458,8 +458,8 @@ pre code.inline-code {
 .prosemirror-editor ul,
 .prosemirror-editor ol {
   padding-left: 0;
-  margin-top: 0.75rem;   /* Increased space before lists */
-  margin-bottom: 1.5rem;  /* Increased space after lists */
+  /* margin-top: 0.75rem;   Increased space before lists */
+  /* margin-bottom: 1.5rem;  Increased space after lists */
   list-style-position: inside;
 }
 
@@ -474,7 +474,7 @@ pre code.inline-code {
 .prosemirror-editor li {
   position: relative;
   padding-left: 1.5rem;
-  margin-bottom: 0.5rem;  /* More space between list items */
+  /* margin-bottom: 0.5rem;  More space between list items */
   line-height: 1.6;
 }
 
@@ -511,3 +511,33 @@ pre code.inline-code {
 .prosemirror-editor li li ul > li::before {
   content: "▪";
 }
+
+
+
+/* Ensure the parent has relative positioning if using absolute for ::before */
+.ProseMirror p {
+  position: relative;
+}
+
+/* Style the ::before pseudo-element for empty paragraphs */
+.ProseMirror p.is-empty::before {
+  /* --- The Placeholder Text --- */
+  content: 'Start typing or press / to see more options';
+
+  /* --- Styling & Positioning --- */
+  position: absolute;
+  left: 0;
+  top: 0; /* Adjust if your paragraphs have padding */
+  color: #aaa; /* Or your preferred placeholder color */
+  pointer-events: none; /* IMPORTANT: Allows clicks/cursor to go "through" */
+  cursor: text;
+  /* Optional: font-style, etc. */
+  /* font-style: italic; */
+}
+
+/* Optional: Hide the default browser focus outline on the editor */
+.ProseMirror:focus {
+  outline: none;
+}
+
+

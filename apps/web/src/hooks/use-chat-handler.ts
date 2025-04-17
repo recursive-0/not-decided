@@ -16,26 +16,13 @@ export const useChatHandler = () => {
 
   const { insertTextAtCursor, isEditorReady } = useEditor();
 
-  const [input, setInput] = useState("");
   const [isThinking, setIsThinking] = useState(false);
-  const textareaRef = useRef(null);
   const streamingMessageId = useRef(null);
+
   const scrollAreaRef = useRef(null);
 
   const { startStreaming, stopStreaming, isStreaming, currentStreamId } =
     useSSEStream();
-
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-
-      const newHeight = Math.max(
-        38,
-        Math.min(150, textareaRef.current.scrollHeight)
-      );
-      textareaRef.current.style.height = `${newHeight}px`;
-    }
-  }, [input]);
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -56,23 +43,13 @@ export const useChatHandler = () => {
     }
   };
 
-  const handleSendMessage = (messageText?: string) => {
-    const textToSend = messageText || input.trim();
-
-    if (textToSend && !isStreaming) {
-      if (!messageText) {
-        setInput("");
-
-        if (textareaRef.current) {
-          textareaRef.current.style.height = "38px";
-        }
-      }
+  const handleSendMessage = (messageText: string) => {
 
       const userMessageId = uuidv4();
       addChatMessage({
         id: userMessageId,
         role: "user",
-        content: textToSend,
+        content: messageText,
       });
 
       setIsThinking(true);
@@ -87,18 +64,11 @@ export const useChatHandler = () => {
         });
 
         streamingMessageId.current = llmMessageId;
-        startStreaming(currentChatMode, textToSend, handleTokenReceived);
+        startStreaming(currentChatMode, messageText, handleTokenReceived);
         setIsThinking(false);
       }, 1000);
     }
-  };
 
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
 
   const handleTabChange = (value: ChatMode) => {
     setCurrentChatMode(value);
@@ -110,21 +80,14 @@ export const useChatHandler = () => {
   };
 
   return {
-    input,
-    setInput,
     isThinking,
     isStreaming,
+    stopStreaming,
     chatMessages,
     currentChatMode,
-
-    textareaRef,
     scrollAreaRef,
-
     handleSendMessage,
-    handleKeyDown,
-    handleTabChange,
-    handleSelectionQuery,
-
     setCurrentChatMode,
+    handleSelectionQuery,
   };
 };

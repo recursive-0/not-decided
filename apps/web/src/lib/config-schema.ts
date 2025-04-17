@@ -25,6 +25,17 @@ const createAlignedToDOM = (tag: string) => {
 };
 
 
+const createParaAlignedToDom = (tag: string) => {
+  return (node) => {
+    const { align } = node.attrs;
+    
+    const style = align && align !== 'left' ? `text-align: ${align};` : null;
+    
+    return [tag, { style }, 0] as const; 
+  };
+};
+
+
 let nodesMap = basicSchema.spec.nodes;
 
 
@@ -33,9 +44,9 @@ const updatedParagraphSpec: NodeSpec = {
   ...originalParagraphSpec,
   attrs: {
     ...originalParagraphSpec.attrs, 
-    ...alignmentAttrs, 
+    ...alignmentAttrs,
   },
-  toDOM: createAlignedToDOM('p'), 
+  toDOM: createParaAlignedToDom('p'), 
 };
 nodesMap = nodesMap.update("paragraph", updatedParagraphSpec);
 

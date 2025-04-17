@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { EditorView } from "prosemirror-view";
-import { EditorState, TextSelection } from "prosemirror-state";
+import { EditorState, Selection, TextSelection } from "prosemirror-state";
 import {
   extendedProseMirrorSchema,
   useEditor,
@@ -38,6 +38,8 @@ import { EditsSuggestionsManager } from "@/services/suggestion-manager";
 import { v4 as uuidv4 } from "uuid";
 import { useChatHandler } from "@/hooks/use-chat-handler";
 import { useChatStore } from "@/store/chat";
+import { useEditorStore } from "@/store/editor";
+import { placeholderPlugin } from "@/custom-nodes/placeholder-plugin";
 
 declare global {
   interface Window {
@@ -70,6 +72,7 @@ const listRelatedKeymap = keymap({
 const plugins = [
   // dragHandlePlugin,
   // ensureTrailingParagraphPlugin,
+  placeholderPlugin,
   history(),
   listRelatedKeymap,
   keymap(baseKeymap),
@@ -85,6 +88,7 @@ export const ProseMirrorEditor = () => {
   const { editorView, setEditorReady, isEditorReady, isAcceptRejectDialogOpen } = useEditor();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const { isStreaming, userInteractedRef } = useSSEStream();
+  const {totalCurrentEdits} = useEditorStore()
   const isDialogClosingRef = useRef(false);
   const suggestionsManagerRef = useRef<EditsSuggestionsManager | null>(null)
   const [userSelectionFromEditor, setUserSelection] = useState<string>("")
@@ -208,18 +212,27 @@ export const ProseMirrorEditor = () => {
     if (editorView.current && isEditorReady) {
       setTimeout(() => {
         suggestionsManagerRef.current = new EditsSuggestionsManager(editorView.current)
+
         window.suggestionsManager = suggestionsManagerRef.current;
-        editorView.current.focus();
-        // const textNode = editorView.current.state.schema.text("Ask wrisor to write something...")
-        // const placeholderPara = editorView.current.state.schema.nodes.paragraph.create(null, textNode)
-        // const tr = editorView.current.state.tr.insert(0, placeholderPara)
-        // editorView.current.dispatch(tr)
-        // const bulletList = editorView.current.state.schema.nodes.blockquote.create()
-        // const tr = editorView.current.state.tr.insert(0, bulletList)
-        // // const lN = editorView.current.state.schema.nodes.list_item.create();
-        // // tr.insert()
-        // editorView.current.dispatch(tr)
-      }, 1000);
+        const view = editorView.current;
+        const state = view.state;
+        const tr = state.tr; // Start one transaction
+      
+        // const text = state.schema.text("Start typing here...");
+        // const pNode = state.schema.nodes.paragraph.create(null, text);
+        // tr.insert(0, pNode);
+      
+        // Set selection using tr.doc (doc state *after* insert within this transaction)
+        const selectionPos = 1;
+        const selection = Selection.atEnd(tr.doc);
+        tr.setSelection(selection);
+      
+        tr.scrollIntoView();
+        view.dispatch(tr); // Dispatch single transaction
+      
+        // Focus afterwards
+        view.focus();
+      }, 100);
     }
   }, [isEditorReady]);
 
@@ -242,7 +255,7 @@ export const ProseMirrorEditor = () => {
         />
       )}
 
-      {isAcceptRejectDialogOpen && <AcceptAllRejectAllDialog />}
+      {totalCurrentEdits > 0 && <AcceptAllRejectAllDialog />}
 
     </div>
   );

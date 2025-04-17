@@ -1,3 +1,4 @@
+import { useEditorStore } from "@/store/editor";
 import type { EditorView } from "prosemirror-view";
 
 type PositionCallback = () => number | undefined;
@@ -38,6 +39,11 @@ export class EditsSuggestionsManager {
     } else if (nodeType === "deletion_suggestion") {
       this.deletionCount++;
     }
+
+    const totalNewEdits = this.editSuggestionIds.length
+    const { setTotalCurrentEdits } = useEditorStore.getState()
+    setTotalCurrentEdits(totalNewEdits)
+
   }
 
   public removeEdit(id: string, nodeType?: string) {
@@ -51,6 +57,10 @@ export class EditsSuggestionsManager {
     } else if (nodeType === "deletion_suggestion") {
       this.deletionCount = Math.max(0, this.deletionCount - 1);
     }
+
+    const totalNewEdits = this.editSuggestionIds.length
+    const { setTotalCurrentEdits } = useEditorStore.getState()
+    setTotalCurrentEdits(totalNewEdits)
   }
 
   public acceptAll() {
@@ -100,6 +110,9 @@ export class EditsSuggestionsManager {
     this.positionCallbacks.clear();
     this.additionCount = 0;
     this.deletionCount = 0;
+
+    const { setTotalCurrentEdits } = useEditorStore.getState()
+    setTotalCurrentEdits(0)
   }
 
   public rejectAll() {
@@ -149,5 +162,8 @@ export class EditsSuggestionsManager {
     this.positionCallbacks.clear();
     this.additionCount = 0;
     this.deletionCount = 0;
+
+    const { setTotalCurrentEdits } = useEditorStore.getState()
+    setTotalCurrentEdits(0)
   }
 }

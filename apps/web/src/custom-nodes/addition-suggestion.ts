@@ -16,9 +16,6 @@ export class AdditionSuggestion implements NodeView {
         this.getPos = getPos;
         this.nodeId = node.attrs.id;
         
-        // Store the position callbacks along with id in suggestion manager service
-        window.suggestionsManager.addPositionCallback(this.nodeId, getPos);
-        window.suggestionsManager.addPositionId(this.nodeId, "addition_suggestion");
 
         this.dom = document.createElement('div');
         this.dom.className = 'suggestion-container addition-suggestion';
@@ -92,6 +89,10 @@ export class AdditionSuggestion implements NodeView {
         
         this.dom.appendChild(contentContainer);
         this.dom.appendChild(controlsContainer);
+
+         // Store the position callbacks along with id in suggestion manager service
+         window.suggestionsManager.addPositionCallback(this.nodeId, getPos);
+         window.suggestionsManager.addPositionId(this.nodeId, "addition_suggestion");
     }
 
     update(node: Node) {
