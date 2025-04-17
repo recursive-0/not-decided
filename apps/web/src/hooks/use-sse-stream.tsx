@@ -107,10 +107,9 @@ export const useSSEStream = () => {
             //     });
             // }
 
-            const deleteNode = (node: string) => {
-                const hash = fingerprintManagerRef.current.fastHash(node);
-                const matchedNode = fingerprintManagerRef.current.matchFingerprint(hash);
-                
+            const deleteNode = (nodeHash: string) => {
+                const matchedNode = fingerprintManagerRef.current.matchFingerprint(nodeHash);
+                console.log("DELETION NODE MTCHED: ", matchedNode)
                 if (matchedNode && editorView.current) {
                     const { state } = editorView.current;
                     const { tr } = state;
@@ -148,23 +147,21 @@ export const useSSEStream = () => {
             let validContentNodes = []
             editorDocNodes.content.forEach((node: Node) => {
                 if (node.content.size > 0){
+                    const content = fingerprintManagerRef.current.normalizeNodeTextContent(node)
+                    const hash = fingerprintManagerRef.current.fastHash(content)
                     const contentNode = {
                         type: node.type.name,
                         content: node.content
                     }
-                    validContentNodes.push(contentNode)
+                    validContentNodes.push({id: hash, content: contentNode})
                 }
             })
 
             console.log("CONTENT NODESSSSSSSS: ", validContentNodes)
 
-            async function checkFingerprints(node: string){
+            async function checkFingerprints(nodeHash: string){
                 fingerprintManagerRef.current.generateEditorNodesFingerprints(editorView.current)
-                console.log("LLM FINGERPRINT NODE: ", node)
-                const normalizedNode = node.normalize().toLowerCase()
-                console.log("LLM noramlized fingerprint node: ", normalizedNode)
-                const hash = fingerprintManagerRef.current.fastHash(normalizedNode)
-                const matchedNode = fingerprintManagerRef.current.matchFingerprint(hash)
+                const matchedNode = fingerprintManagerRef.current.matchFingerprint(nodeHash)
                 console.log("FOUND IS: ", matchedNode)
                 if(matchedNode){
                     rendererRef.current.setInsertionPoint(matchedNode.position)
@@ -220,6 +217,24 @@ export const useSSEStream = () => {
                             
                             console.log("EDITOR EMPTY STATUS:", isEmpty, "Text length:", docContent.textContent.length);
                             
+                            // Check for trailing empty paragraph and remove it before streaming begins
+                            const docSize = editorView.current.state.doc.content.size;
+                            const $lastPos = editorView.current.state.doc.resolve(docSize - 2);
+                            
+                            // If the last node is an empty paragraph
+                            if ($lastPos.node(1) && 
+                                $lastPos.node(1).type.name === 'paragraph' && 
+                                $lastPos.node(1).content.size === 0) {
+                                
+                                // Delete the empty paragraph
+                                const tr = editorView.current.state.tr.delete(
+                                    $lastPos.before(1), 
+                                    $lastPos.after(1)
+                                );
+                                editorView.current.dispatch(tr);
+                                console.log("Removed trailing empty paragraph before streaming");
+                            }
+                            
                             if (isEmpty) {
                                 rendererRef.current.setHighlight(false);
                             } else {
@@ -227,6 +242,7 @@ export const useSSEStream = () => {
                             }
                             
                             rendererRef.current.setMode(chatMode);
+                            
                             return;
                         
                     default:

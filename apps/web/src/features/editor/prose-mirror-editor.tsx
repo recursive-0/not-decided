@@ -111,8 +111,6 @@ export const ProseMirrorEditor = () => {
     if (!editorView.current && editorRef.current) {
       editorView.current = new EditorView(editorRef.current, {
         state,
-          scrollThreshold: 0,
-          scrollMargin: 0,
         nodeViews: {
           deletion_suggestion: (node, view, getPos) => {
             return new DeletionSuggestion(node, view, getPos)
@@ -135,6 +133,7 @@ export const ProseMirrorEditor = () => {
             "JSON EDITOR SCHEMA: ",
             editorView.current.state.doc.toJSON()
           );
+          console.log("STATEEEEE IS: ", originalState)
 
           const isStreamingChange = tr.getMeta("isStreaming");
 
@@ -211,8 +210,8 @@ export const ProseMirrorEditor = () => {
         suggestionsManagerRef.current = new EditsSuggestionsManager(editorView.current)
         window.suggestionsManager = suggestionsManagerRef.current;
         editorView.current.focus();
-        const textNode = editorView.current.state.schema.text("hello")
-        // const placeholderPara = editorView.current.state.schema.nodes.paragraph.create()
+        // const textNode = editorView.current.state.schema.text("Ask wrisor to write something...")
+        // const placeholderPara = editorView.current.state.schema.nodes.paragraph.create(null, textNode)
         // const tr = editorView.current.state.tr.insert(0, placeholderPara)
         // editorView.current.dispatch(tr)
         // const bulletList = editorView.current.state.schema.nodes.blockquote.create()

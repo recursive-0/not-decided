@@ -23,24 +23,12 @@ export class FingerprintManager{
         return hash.toString(16);
     }
 
-    normalizeProsemirrorNode(node: Node){
-        const normalizedJsonNode = node.toJSON()
+    normalizeNodeTextContent(node: Node){
 
-        console.log("Normalized node is: ", normalizedJsonNode)
+        const textContent = node.textContent
+        const normalizedTexContent = textContent.trim().toLowerCase().normalize()
 
-        const content = normalizedJsonNode.content
-        const type = normalizedJsonNode.type
-
-        const normalizedNode = {
-            type: type,
-            content: content
-        }
-
-        const stringifiedNormalizedNode = JSON.stringify(normalizedNode).normalize()
-
-        console.log("stringified normalized node is: ", stringifiedNormalizedNode)
-
-        return stringifiedNormalizedNode
+        return normalizedTexContent
 
     }
 
@@ -48,8 +36,7 @@ export class FingerprintManager{
         const editorNodes = editor.state.doc.content
 
         editorNodes.forEach((node: Node) => {
-            const stringifiedNode = this.normalizeProsemirrorNode(node)
-            const hash = this.fastHash(stringifiedNode)
+            const hash = this.fastHash(this.normalizeNodeTextContent(node))
             console.log("HASH IS: ", hash)
             this.nodeFingerprints.set(hash, node)
 

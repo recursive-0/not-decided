@@ -53,8 +53,8 @@
   font-weight: 700;
   line-height: 1.3;
   color: #073642; 
-  margin-top: 2rem;      /* Clear separation between sections */
-  margin-bottom: 0.75rem; /* Space before content */
+  margin-top: 0.5rem;      /* Clear separation between sections */
+  margin-bottom: 0.5rem; /* Space before content */
 }
 
 .prosemirror-editor h3 {
@@ -69,15 +69,11 @@
 
 /* Paragraph spacing */
 .prosemirror-editor p {
-  margin-top: 0;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
   min-height: 1.6em;
   line-height: 1.6;
   color: var(--color--sidebar-background);
-}
-
-
-.prosemirror-editor p:last-child {
-  margin-bottom: 0;
 }
 
 
@@ -514,25 +510,4 @@ pre code.inline-code {
 
 .prosemirror-editor li li ul > li::before {
   content: "▪";
-}
-
-/* Drag handle positioning */
-.ProseMirror {
-  position: relative;
-}
-
-.drag-handle {
-  position: absolute;
-  left: -24px;           /* Slightly more space from content */
-  top: 0;
-  text-align: center;
-  color: #aaa;
-  cursor: grab;
-  user-select: none;
-  -webkit-user-select: none;
-  -ms-user-select: none;
-}
-
-.drag-handle:hover {
-  color: #333;
 }

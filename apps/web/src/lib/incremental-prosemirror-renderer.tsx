@@ -39,7 +39,6 @@ export class IncrementalProsemirrorRenderer {
   private schema: Schema | null = null;
   private insertionPoint: number | null = null;
   private editorMode: "COMPOSER" | "CHAT" = "COMPOSER";
-  private highlighterAdded: boolean = false;
   private shouldHiglightGeneratedContent: boolean = false;
   private successfulGenerations: number = 0;
 
