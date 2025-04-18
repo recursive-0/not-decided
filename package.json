@@ -1,7 +1,12 @@
 {
   "name": "echo-ai",
   "module": "index.ts",
-  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
   "private": true,
   "scripts": {
     "dev": "bun run dev:server & bun run dev:web",
@@ -13,11 +18,6 @@
     "i:server": "bun --cwd apps/server",
     "i:web": "bun --cwd apps/web add"
   },
-  "workspaces": ["apps/*", "packages/*"],
-  "devDependencies": {
-    "@types/bun": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
-  }
+  "type": "module",
+  "workspaces": ["apps/*", "packages/*"]
 }

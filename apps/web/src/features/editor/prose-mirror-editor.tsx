@@ -40,6 +40,7 @@ import { useChatHandler } from "@/hooks/use-chat-handler";
 import { useChatStore } from "@/store/chat";
 import { useEditorStore } from "@/store/editor";
 import { placeholderPlugin } from "@/custom-nodes/placeholder-plugin";
+import { slashCommandTriggerKey, slashOpenCommandDialog } from "@/editor-input-rules/slash-command-dialog";
 
 declare global {
   interface Window {
@@ -71,7 +72,8 @@ const listRelatedKeymap = keymap({
 
 const plugins = [
   // dragHandlePlugin,
-  // ensureTrailingParagraphPlugin,
+  ensureTrailingParagraphPlugin,
+  slashOpenCommandDialog,
   placeholderPlugin,
   history(),
   listRelatedKeymap,
@@ -140,6 +142,23 @@ export const ProseMirrorEditor = () => {
           console.log("STATEEEEE IS: ", originalState)
 
           const isStreamingChange = tr.getMeta("isStreaming");
+          const slashCommandMeta = tr.getMeta(slashCommandTriggerKey)
+
+          console.log("sladhc ommands meta is: ", slashCommandMeta)
+
+          if(slashCommandMeta && slashCommandMeta.isSlashCommandDialogOpen){
+            const { endPos } = slashCommandMeta
+            console.log("end pos is: ", endPos)
+            const coordsAtPos = editorView.current.coordsAtPos(endPos)
+            console.log("coords slash areL ", coordsAtPos)
+            setSmartAiPopupPos({
+              x: coordsAtPos.left,
+              y: coordsAtPos.top
+            })
+          } else {
+            setSmartAiPopupPos(null)
+          }
+
 
           if (
             tr.docChanged &&
@@ -168,7 +187,7 @@ export const ProseMirrorEditor = () => {
   const handleDialogClose = () => {
     isDialogClosingRef.current = true;
     setSmartAiPopupPos(null);
-
+    editorView.current.focus()
     setTimeout(() => {
       isDialogClosingRef.current = false;
     }, 100);
@@ -215,6 +234,7 @@ export const ProseMirrorEditor = () => {
 
         window.suggestionsManager = suggestionsManagerRef.current;
         const view = editorView.current;
+        view.focus();
         const state = view.state;
         const tr = state.tr; // Start one transaction
       
@@ -229,10 +249,7 @@ export const ProseMirrorEditor = () => {
       
         tr.scrollIntoView();
         view.dispatch(tr); // Dispatch single transaction
-      
-        // Focus afterwards
-        view.focus();
-      }, 100);
+      }, 10);
     }
   }, [isEditorReady]);
 
@@ -280,7 +297,7 @@ const FloatingCommandDialog = ({
     }
 
     const handleClickOutside = (event: MouseEvent) => {
-      event.stopPropagation();
+      // event.stopPropagation();
       if (dialogRef.current && !dialogRef.current.contains(event.target)) {
         onClose();
       }
