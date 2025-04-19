@@ -3,6 +3,7 @@ import { ResizablePanel, ResizablePanelGroup, ResizableHandle } from "@/componen
 import { EditorContainer } from "./features/editor/editor-container";
 import AIChat from "./features/ai-chat/ai-chat";
 import { EditorProvider } from "@/providers/editor-context-provider"
+import { Toaster } from "./components/ui/sonner";
 
 export function App() {
   return (
@@ -12,12 +13,13 @@ export function App() {
           <ResizablePanel defaultSize={65}>
             <EditorContainer />
           </ResizablePanel>
-          <ResizableHandle withHandle className="before:w-[1px]" />
+          <ResizableHandle  withHandle className="before:w-[1px]" />
           <ResizablePanel defaultSize={35} className="min-w-1/4">
             <AIChat />
           </ResizablePanel>
         </ResizablePanelGroup>
       </EditorProvider>
+      <Toaster />
     </div>
   );
 }

@@ -8,6 +8,7 @@ import {
   useEditor,
 } from "@/providers/editor-context-provider";
 import "./prosemirror-styles.css";
+import "./external-dialogs.css";
 import {
   baseKeymap,
   chainCommands,
@@ -40,7 +41,19 @@ import { useChatHandler } from "@/hooks/use-chat-handler";
 import { useChatStore } from "@/store/chat";
 import { useEditorStore } from "@/store/editor";
 import { placeholderPlugin } from "@/custom-nodes/placeholder-plugin";
-import { slashCommandTriggerKey, slashOpenCommandDialog } from "@/editor-input-rules/slash-command-dialog";
+import {
+  slashCommandTriggerKey,
+  slashOpenCommandDialog,
+} from "@/editor-input-rules/slash-command-dialog";
+import { toast } from "@/components/ui/custom-toasts";
+
+const debounce = (func, delay) => {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => func.apply(this, args), delay);
+  };
+};
 
 declare global {
   interface Window {
@@ -71,8 +84,6 @@ const listRelatedKeymap = keymap({
 });
 
 const plugins = [
-  // dragHandlePlugin,
-  ensureTrailingParagraphPlugin,
   slashOpenCommandDialog,
   placeholderPlugin,
   history(),
@@ -85,19 +96,65 @@ const plugins = [
   }),
 ];
 
+const normalizeCommandDialogPos = (selectionCoords, containerBounds) => {
+  const { x: selectionX, y: selectionY } = selectionCoords;
+
+  const {
+    left: containerLeft,
+    right: containerRight,
+    top: containerTop,
+    bottom: containerBottom,
+  } = containerBounds;
+
+  const popupWidth = 300;
+  const popupHeight = 150;
+
+  let left = selectionX;
+  let top = selectionY;
+
+  if (left + popupWidth > containerRight) {
+    left = containerRight - popupWidth - 10;
+  }
+
+  if (left < containerLeft) {
+    left = containerLeft + 10;
+  }
+
+  if (top + popupHeight > containerBottom) {
+    top = selectionY - popupHeight - 5;
+
+    if (top < containerTop) {
+      top = containerTop + 10;
+    }
+  }
+
+  return { left, top };
+};
+
 export const ProseMirrorEditor = () => {
   const editorRef = useRef<HTMLDivElement | null>(null);
-  const { editorView, setEditorReady, isEditorReady, isAcceptRejectDialogOpen } = useEditor();
+  const {
+    editorContainerRef,
+    editorView,
+    setEditorReady,
+    isEditorReady,
+    isAcceptRejectDialogOpen,
+  } = useEditor();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const { isStreaming, userInteractedRef } = useSSEStream();
-  const {totalCurrentEdits} = useEditorStore()
+  const { totalCurrentEdits } = useEditorStore();
   const isDialogClosingRef = useRef(false);
-  const suggestionsManagerRef = useRef<EditsSuggestionsManager | null>(null)
-  const [userSelectionFromEditor, setUserSelection] = useState<string>("")
+  const suggestionsManagerRef = useRef<EditsSuggestionsManager | null>(null);
+  const [userSelectionFromEditor, setUserSelection] = useState<string>("");
+  const [dialogPosition, setDialogPosition] = useState<{
+    left: number;
+    bottom: number;
+  } | null>(null);
   const [smartAiPopupPos, setSmartAiPopupPos] = useState<null | {
     x: Number;
     y: Number;
   }>(null);
+
 
   const scrollToBottom = () => {
     if (!editorRef.current || userInteractedRef.current) return;
@@ -105,9 +162,29 @@ export const ProseMirrorEditor = () => {
     const container = editorRef.current;
     container.scrollTop = container.scrollHeight - container.clientHeight + 50;
   };
+  const calculateDialogPosition = useCallback(() => {
+    if (!editorRef.current) {
+      setDialogPosition(null);
+      return;
+    }
+
+    const editorRect = editorRef.current.getBoundingClientRect();
+
+    const editorCenterLeft = editorRect.left + editorRect.width / 2;
+
+    const desiredBottom = 40; // Adjust as needed
+
+    setDialogPosition({
+      left: editorCenterLeft,
+      bottom: desiredBottom,
+    });
+  }, [editorRef]); // Add editorRef as a dependency
+
+  const debouncedCalculatePosition = useRef(debounce(calculateDialogPosition, 10)).current; // 150ms delay
 
   useEffect(() => {
     if (!editorRef.current) return;
+    editorContainerRef.current = editorRef.current;
 
     const state = EditorState.create({
       schema: extendedProseMirrorSchema,
@@ -119,10 +196,10 @@ export const ProseMirrorEditor = () => {
         state,
         nodeViews: {
           deletion_suggestion: (node, view, getPos) => {
-            return new DeletionSuggestion(node, view, getPos)
+            return new DeletionSuggestion(node, view, getPos);
           },
           addition_suggestion: (node, view, getPos) => {
-            return new AdditionSuggestion(node, view, getPos)
+            return new AdditionSuggestion(node, view, getPos);
           },
           code_block: (node, view, getPos) => {
             return new CodeBlock(node, view, getPos);
@@ -132,33 +209,41 @@ export const ProseMirrorEditor = () => {
           const originalState = editorView.current.state;
           const newState = originalState.apply(tr);
           editorView.current.updateState(newState);
-          const editorDocNodes = editorView.current.state.doc.content
-          console.log("editor nodes are: ", editorDocNodes)
+          const editorDocNodes = editorView.current.state.doc.content;
+          console.log("editor nodes are: ", editorDocNodes);
           console.log("EDITOR STATE IS: ", editorView.current.state.doc);
           console.log(
             "JSON EDITOR SCHEMA: ",
             editorView.current.state.doc.toJSON()
           );
-          console.log("STATEEEEE IS: ", originalState)
+          console.log("STATEEEEE IS: ", originalState);
 
           const isStreamingChange = tr.getMeta("isStreaming");
-          const slashCommandMeta = tr.getMeta(slashCommandTriggerKey)
+          const slashCommandMeta = tr.getMeta(slashCommandTriggerKey);
 
-          console.log("sladhc ommands meta is: ", slashCommandMeta)
+          console.log("sladhc ommands meta is: ", slashCommandMeta);
 
-          if(slashCommandMeta && slashCommandMeta.isSlashCommandDialogOpen){
-            const { endPos } = slashCommandMeta
-            console.log("end pos is: ", endPos)
-            const coordsAtPos = editorView.current.coordsAtPos(endPos)
-            console.log("coords slash areL ", coordsAtPos)
+          if (slashCommandMeta && slashCommandMeta.isSlashCommandDialogOpen) {
+            const { endPos } = slashCommandMeta;
+            console.log("end pos is: ", endPos);
+
+            const coordsAtPos = editorView.current.coordsAtPos(endPos);
+
+            const editorContainerPos =
+              editorRef.current.getBoundingClientRect();
+
+            const { left, top } = normalizeCommandDialogPos(
+              coordsAtPos,
+              editorContainerPos
+            );
+
             setSmartAiPopupPos({
-              x: coordsAtPos.left,
-              y: coordsAtPos.top
-            })
+              x: left,
+              y: top,
+            });
           } else {
-            setSmartAiPopupPos(null)
+            setSmartAiPopupPos(null);
           }
-
 
           if (
             tr.docChanged &&
@@ -173,7 +258,35 @@ export const ProseMirrorEditor = () => {
       });
 
       setEditorReady(true);
+      calculateDialogPosition();
+
+      // Set up resize listener to recalculate position
+      window.addEventListener("resize", calculateDialogPosition);
     }
+
+    if (editorRef.current) {
+      const observer = new ResizeObserver((entries) => {
+        // The callback gets an array of entries, one for each observed element that changed size.
+        // Since we only observe one element (editorRef.current), we can usually
+        // just call our debounced calculation function.
+        for (const entry of entries) {
+           if (entry.target === editorRef.current) {
+              // The editor div's size changed! Recalculate the button position.
+              debouncedCalculatePosition();
+              break; // We only care about the editor, exit loop
+           }
+        }
+      });
+
+      // Start observing the editor div
+      observer.observe(editorRef.current);
+
+      // --- Initial calculation ---
+      // Also perform an initial calculation when the component mounts and observer is set up
+      // Use a slight delay or requestAnimationFrame to ensure layout is settled after Prosemirror init
+      requestAnimationFrame(() => {
+         calculateDialogPosition(); // Call the non-debounced one for initial render
+      });
 
     return () => {
       if (editorView.current) {
@@ -181,19 +294,20 @@ export const ProseMirrorEditor = () => {
         editorView.current = null;
         setEditorReady(false);
       }
-    };
-  }, [editorView, setEditorReady]);
+
+      observer.disconnect();
+      window.removeEventListener("resize", calculateDialogPosition);
+    }
+  }}, [editorView, setEditorReady]);
 
   const handleDialogClose = () => {
     isDialogClosingRef.current = true;
     setSmartAiPopupPos(null);
-    editorView.current.focus()
+    editorView.current.focus();
     setTimeout(() => {
       isDialogClosingRef.current = false;
     }, 100);
   };
-
-
 
   useEffect(() => {
     const editorElement = editorRef.current;
@@ -206,16 +320,30 @@ export const ProseMirrorEditor = () => {
         if (!editorView.current) return;
         const { state } = editorView.current;
         const { selection } = state;
-        const { $from, $to } = selection.ranges[0]
-        const fromPos = $from.pos
-        const toPos = $to.pos
+        const { $from, $to } = selection.ranges[0];
+        const fromPos = $from.pos;
+        const toPos = $to.pos;
 
-        if((toPos - fromPos) > 0){
-          const coordsAtPos = editorView.current.coordsAtPos(toPos)
-          const textContent = editorView.current.state.doc.textBetween(fromPos, toPos)
-          console.log("TETX content is: ", textContent)
-          setSmartAiPopupPos({x: coordsAtPos.left, y: coordsAtPos.top})
-          setUserSelection(textContent)
+        if (toPos - fromPos > 0) {
+          const coordsAtPos = editorView.current.coordsAtPos(toPos);
+
+          const editorContainerPos = editorRef.current.getBoundingClientRect();
+
+          const { left, top } = normalizeCommandDialogPos(
+            coordsAtPos,
+            editorContainerPos
+          );
+
+          const textContent = editorView.current.state.doc.textBetween(
+            fromPos,
+            toPos
+          );
+          console.log("TETX content is: ", textContent);
+          setSmartAiPopupPos({
+            x: left,
+            y: top,
+          });
+          setUserSelection(textContent);
         }
       }, 10);
     };
@@ -230,37 +358,37 @@ export const ProseMirrorEditor = () => {
   useEffect(() => {
     if (editorView.current && isEditorReady) {
       setTimeout(() => {
-        suggestionsManagerRef.current = new EditsSuggestionsManager(editorView.current)
+        suggestionsManagerRef.current = new EditsSuggestionsManager(
+          editorView.current
+        );
 
         window.suggestionsManager = suggestionsManagerRef.current;
         const view = editorView.current;
         view.focus();
         const state = view.state;
-        const tr = state.tr; // Start one transaction
-      
-        // const text = state.schema.text("Start typing here...");
-        // const pNode = state.schema.nodes.paragraph.create(null, text);
-        // tr.insert(0, pNode);
-      
-        // Set selection using tr.doc (doc state *after* insert within this transaction)
+        const tr = state.tr;
+
         const selectionPos = 1;
         const selection = Selection.atEnd(tr.doc);
         tr.setSelection(selection);
-      
+
         tr.scrollIntoView();
-        view.dispatch(tr); // Dispatch single transaction
+        view.dispatch(tr);
       }, 10);
     }
   }, [isEditorReady]);
 
   useEffect(() => {
-    console.log("Changed dialog status: ", isAcceptRejectDialogOpen)
-  },[isAcceptRejectDialogOpen])
+    console.log("Changed dialog status: ", isAcceptRejectDialogOpen);
+  }, [isAcceptRejectDialogOpen]);
 
   return (
-    <div ref={containerRef} className="flex flex-col w-full h-full relative">
+    <div
+      ref={containerRef}
+      className="flex flex-col w-full h-full relative max-h-[calc(100vh - 60px)] overflow-scroll"
+    >
       <div
-        className="prosemirror-editor w-full max-h-[calc(100vh - 60px)] h-full overflow-scroll bg-red-400 py-4 px-4 border-t border-neutral-400 outline-none"
+        className="prosemirror-editor w-full h-full bg-red-400 py-4 px-4 outline-none"
         ref={editorRef}
       />
       {smartAiPopupPos !== null && (
@@ -272,24 +400,21 @@ export const ProseMirrorEditor = () => {
         />
       )}
 
-      {totalCurrentEdits > 0 && <AcceptAllRejectAllDialog />}
-
+      {totalCurrentEdits > 0 && dialogPosition && (
+        <AcceptAllRejectAllDialog position={dialogPosition} />
+      )}
     </div>
   );
 };
 
-const FloatingCommandDialog = ({ 
-  clientX, 
-  clientY, 
-  onClose, 
-  selectedText 
-}) => {
+const FloatingCommandDialog = ({ clientX, clientY, onClose, selectedText }) => {
   const [input, setInput] = useState("");
   const dialogRef = useRef(null);
   const textareaRef = useRef(null);
-  const setChatMode = useChatStore(state => state.setCurrentChatMode)
-  // Use our custom hook
+  const setChatMode = useChatStore((state) => state.setCurrentChatMode);
+
   const { handleSelectionQuery, isStreaming } = useChatHandler();
+  const { totalCurrentEdits } = useEditorStore();
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -297,7 +422,6 @@ const FloatingCommandDialog = ({
     }
 
     const handleClickOutside = (event: MouseEvent) => {
-      // event.stopPropagation();
       if (dialogRef.current && !dialogRef.current.contains(event.target)) {
         onClose();
       }
@@ -312,6 +436,15 @@ const FloatingCommandDialog = ({
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
+      if (totalCurrentEdits > 0) {
+        toast({
+          title: "You have pending changes!",
+          description:
+            "Please apply or discard your changes before generating a new response.",
+          variant: "warning",
+        });
+        return;
+      }
       if (input.trim() && !isStreaming) {
         handleSubmit();
       }
@@ -322,8 +455,8 @@ const FloatingCommandDialog = ({
 
   const handleSubmit = () => {
     if (input.trim() && !isStreaming) {
-      setChatMode("COMPOSER")
-      // Use the handleSelectionQuery function from our custom hook
+      setChatMode("COMPOSER");
+
       handleSelectionQuery(selectedText, input.trim());
       setInput("");
       onClose();
@@ -371,4 +504,3 @@ const FloatingCommandDialog = ({
     </div>
   );
 };
-

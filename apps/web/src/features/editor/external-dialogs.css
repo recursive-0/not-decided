@@ -1,0 +1,13 @@
+.fixed-container {
+    position: absolute;
+    bottom: 10px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    pointer-events: none; /* Let scrolling pass through */
+  }
+  
+  .fixed-container > * {
+    pointer-events: auto; /* Re-enable events for dialog */
+  }

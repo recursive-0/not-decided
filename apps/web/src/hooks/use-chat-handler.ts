@@ -1,39 +1,42 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useSSEStream } from "@/hooks/use-sse-stream";
 import { useChatStore } from "@/store/chat";
 import { useEditor } from "@/providers/editor-context-provider";
-import type { ChatMode } from "@/types/messages";
+import { useEditorStore } from "@/store/editor";
 
 export const useChatHandler = () => {
   const chatMessages = useChatStore((state) => state.chatMessages);
   const addChatMessage = useChatStore((state) => state.addChatMessage);
   const currentChatMode = useChatStore((state) => state.currentChatMode);
   const setCurrentChatMode = useChatStore((state) => state.setCurrentChatMode);
+  const { totalCurrentEdits } = useEditorStore();
   const appendTokenToMessage = useChatStore(
     (state) => state.appendTokenToLastMessage
   );
 
-  const { insertTextAtCursor, isEditorReady } = useEditor();
+  const { isEditorReady } = useEditor();
 
   const [isThinking, setIsThinking] = useState(false);
-  const streamingMessageId = useRef(null);
+  const [isPendingChangesPopupOpen, setPendingChangesPopup] =
+    useState<boolean>(false);
+  const [autoScroll, setAutoScroll] = useState<boolean>(true);
+  const streamingMessageId = useRef<string | null>(null);
 
-  const scrollAreaRef = useRef(null);
+  const scrollAreaRef = useRef<HTMLDivElement | null>(null);
 
   const { startStreaming, stopStreaming, isStreaming, currentStreamId } =
     useSSEStream();
 
-  useEffect(() => {
-    if (scrollAreaRef.current) {
-      const scrollViewport = scrollAreaRef.current.querySelector(
-        "[data-radix-scroll-area-viewport]"
-      );
-      if (scrollViewport) {
-        scrollViewport.scrollTop = scrollViewport.scrollHeight;
-      }
+  const scrollToBottom = useCallback(() => {
+    const scrollViewport = scrollAreaRef.current?.querySelector(
+      "[data-radix-scroll-area-viewport]"
+    ) as HTMLDivElement | null;
+
+    if (scrollViewport && autoScroll) {
+      scrollViewport.scrollTop = scrollViewport.scrollHeight;
     }
-  }, [chatMessages, isThinking]);
+  }, [autoScroll, scrollAreaRef]);
 
   const handleTokenReceived = (token: string) => {
     if (currentChatMode === "COMPOSER" && isEditorReady) {
@@ -41,43 +44,90 @@ export const useChatHandler = () => {
     } else if (currentChatMode === "CHAT" && streamingMessageId.current) {
       appendTokenToMessage(token);
     }
+
+    scrollToBottom();
   };
 
   const handleSendMessage = (messageText: string) => {
-
-      const userMessageId = uuidv4();
-      addChatMessage({
-        id: userMessageId,
-        role: "user",
-        content: messageText,
-      });
-
-      setIsThinking(true);
-
-      const llmMessageId = uuidv4();
-
-      setTimeout(() => {
-        addChatMessage({
-          id: llmMessageId,
-          role: "echo",
-          content: "",
-        });
-
-        streamingMessageId.current = llmMessageId;
-        startStreaming(currentChatMode, messageText, handleTokenReceived);
-        setIsThinking(false);
-      }, 1000);
+    if (totalCurrentEdits > 0) {
+      setPendingChangesPopup(true);
+      return;
     }
 
+    const userMessageId = uuidv4();
+    addChatMessage({
+      id: userMessageId,
+      role: "user",
+      content: messageText,
+    });
 
-  const handleTabChange = (value: ChatMode) => {
-    setCurrentChatMode(value);
+    setIsThinking(true);
+
+    const llmMessageId = uuidv4();
+
+    setTimeout(() => {
+      addChatMessage({
+        id: llmMessageId,
+        role: "echo",
+        content: "",
+      });
+
+      streamingMessageId.current = llmMessageId;
+
+      const scrollViewport = scrollAreaRef.current?.querySelector(
+        "[data-radix-scroll-area-viewport]"
+      ) as HTMLDivElement | null;
+
+      if (scrollViewport) {
+        const scrollBottom = scrollViewport.scrollHeight - scrollViewport.scrollTop - scrollViewport.clientHeight;
+        if (scrollBottom < 30) {
+          setAutoScroll(true);
+        }
+      }
+
+      startStreaming(currentChatMode, messageText, handleTokenReceived);
+
+      setIsThinking(false);
+    }, 100);
   };
 
   const handleSelectionQuery = (selectedText: string, prompt: string) => {
-    const contextualPrompt = `${prompt} for the following text: "${selectedText}"`;
+    if (totalCurrentEdits > 0) {
+      setPendingChangesPopup(true);
+      return;
+    }
+    const contextualPrompt =
+      selectedText.length > 0
+        ? `${prompt} for the following text: "${selectedText}"`
+        : `${prompt}`;
     handleSendMessage(contextualPrompt);
   };
+
+  useEffect(() => {
+    const scrollViewport = scrollAreaRef.current?.querySelector(
+      "[data-radix-scroll-area-viewport]"
+    ) as HTMLDivElement | null;
+
+    if (scrollViewport) {
+      const handleScroll = () => {
+        const scrollBottom = scrollViewport.scrollHeight - scrollViewport.scrollTop - scrollViewport.clientHeight;
+        
+        if (scrollBottom > 30) {
+          setAutoScroll(false);
+        } else if (scrollBottom < 5) {
+          setAutoScroll(true);
+        }
+      };
+
+      scrollViewport.addEventListener("scroll", handleScroll);
+
+      return () => {
+        scrollViewport.removeEventListener("scroll", handleScroll);
+      };
+    }
+
+    return () => {};
+  }, [scrollAreaRef, setAutoScroll]);
 
   return {
     isThinking,
@@ -89,5 +139,9 @@ export const useChatHandler = () => {
     handleSendMessage,
     setCurrentChatMode,
     handleSelectionQuery,
+    isPendingChangesPopupOpen,
+    setPendingChangesPopup,
+    setAutoScroll,
+    autoScroll,
   };
 };

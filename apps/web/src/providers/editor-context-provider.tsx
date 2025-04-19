@@ -17,6 +17,7 @@ export const extendedProseMirrorSchema = new Schema({
 console.log("PROSEMIRROR EXTENDED: ", extendedProseMirrorSchema)
 
 interface EditorContextType {
+  editorContainerRef: React.RefObject<HTMLDivElement | null>;
   editorView: React.MutableRefObject<EditorView | null>;
   isEditorReady: boolean;
   setEditorReady: (ready: boolean) => void;
@@ -32,6 +33,7 @@ const EditorContext = createContext<EditorContextType | undefined>(undefined);
 
 export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const editorView = useRef<EditorView | null>(null);
+  const editorContainerRef = useRef<HTMLDivElement | null>(null);
   const [isEditorReady, setEditorReady] = useState(false);
   const [isAcceptRejectDialogOpen, setAcceptRejectDialog] = useState(false)
 
@@ -76,6 +78,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   return (
     <EditorContext.Provider
       value={{
+        editorContainerRef,
         editorView,
         isEditorReady,
         setEditorReady,

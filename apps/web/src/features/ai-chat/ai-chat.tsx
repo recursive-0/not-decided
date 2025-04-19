@@ -20,6 +20,8 @@ import { ChatMessages } from "./chat-messages";
 import { useChatHandler } from "@/hooks/use-chat-handler";
 import { useSSEStream } from "@/hooks/use-sse-stream";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import PendingChangesWarning from "./pending-changes-warning-popup";
+import { useEditorStore } from "@/store/editor";
 
 // Thinking loader component
 const ThinkingLoader = () => {
@@ -94,7 +96,11 @@ const AIChat = () => {
     setCurrentChatMode,
     scrollAreaRef,
     handleSendMessage,
+    isPendingChangesPopupOpen,
+    setPendingChangesPopup,
   } = useChatHandler();
+
+  const { totalCurrentEdits } = useEditorStore()
 
   const [input, setInput] = useState<string>("")
   const [showStreamingWarning, setShowStreamWarning] = useState<boolean>(false)
@@ -111,6 +117,11 @@ const AIChat = () => {
       return
     }
 
+    if(totalCurrentEdits > 0){
+      setPendingChangesPopup(true)
+      return
+    }
+
     handleSendMessage(input)
     setInput("")
   }
@@ -122,17 +133,26 @@ const AIChat = () => {
       setShowStreamWarning(true);
       return;
     }
+
+    if(isPendingChangesPopupOpen){
+
+    }
     
-    // If key combination is shift + enter, allow normal behavior (newline)
-    if (e.key === 'Enter' && e.shiftKey) {
+    // If key is enter, allow normal behavior (newline)
+    if (e.key === 'Enter' && !e.shiftKey) {
       return; // Default behavior will insert a newline
     }
     
-    // If just Enter/Return without shift, send the message and prevent newline
-    if (e.key === 'Enter' && !e.shiftKey) {
+    // If key combination is Enter + Return, send the message and prevent newline
+    if (e.key === 'Enter' && e.shiftKey) {
       e.preventDefault();
       if (input.trim() && !isThinking) {
-        onSendMessage();
+        if(totalCurrentEdits > 0){
+          setPendingChangesPopup(true)
+          return
+        }
+        handleSendMessage(input)
+        setInput("")
       }
     }
   }
@@ -196,6 +216,7 @@ const AIChat = () => {
           onKeyDown={(e) => handleKeyDown(e)}
           rows={1}
         />
+
         {isStreaming ? (
           <StreamingIndicator isStreaming={isStreaming} onStopStreaming={onStopStreaming} />
         ) : (
@@ -222,9 +243,16 @@ const AIChat = () => {
           visible={showStreamingWarning} 
           onClose={() => setShowStreamWarning(false)} 
         />
+
+        <PendingChangesWarning
+        visible={isPendingChangesPopupOpen}
+        onClose={() => setPendingChangesPopup(false)}
+        />
+
       </div>
     </div>
   );
+  
 
   useEffect(() => {
     if(!isStreaming){

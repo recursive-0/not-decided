@@ -24,7 +24,15 @@ export async function handleClaudeStream(props: HandleClaudeStreamProps) {
     async start(controller) {
       try {
         controller.enqueue(`data: START_STREAM \n\n`);
+
+        const tokens = await client.messages.countTokens({
+          messages: [{ role: "user", content: prompt }],
+          system: systemPrompt,
+          model: "claude-3-7-sonnet-20250219",
+        })
         
+        console.log("INPUT TOKENS ARE: ", tokens)
+
         const messageStream = await client.messages.stream({
           messages: [{ role: "user", content: prompt }],
           system: systemPrompt,

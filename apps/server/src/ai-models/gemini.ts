@@ -5,6 +5,7 @@ import {
 } from "@google/generative-ai";
 import { chatModePrompt } from "../prompts/markdown-instructions-prompt";
 import { composerModePrompt } from "../prompts/composer-mode-prompt";
+import { wrisorSystemPrompt } from "../prompts/wrisor-system-prompt";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
@@ -20,7 +21,7 @@ export async function handleGeminiStream(props: HandleGeminiStreamProps) {
 
   console.log("CHATMODE IS: ", chatMode)
 
-  const systemInstructionContent = chatMode === "CHAT" ? chatModePrompt() : composerModePrompt(prompt, contentNodes)
+  const systemInstructionContent = chatMode === "CHAT" ? chatModePrompt() : wrisorSystemPrompt(prompt, contentNodes)
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -28,7 +29,7 @@ export async function handleGeminiStream(props: HandleGeminiStreamProps) {
         controller.enqueue(`data: START_STREAM \n\n`);
 
         const model = genAI.getGenerativeModel({
-          model: "gemini-2.5-pro-exp-03-25",
+          model: "gemini-2.5-flash-preview-04-17",
 
           systemInstruction: {
             role: "system",
