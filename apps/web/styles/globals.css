@@ -59,6 +59,7 @@
 
   --olive-green-1: #74704A;
   --dark-forest-teal: #022F2E;
+  --light-mushroom: #A89F8D;
 
   
   --chart-1: #d9c589; 
@@ -133,6 +134,7 @@
 
   --olive-green-1: #74704A;
   --dark-forest-teal: #022F2E;
+  --light-mushroom: #A89F8D;
 
   
   --sidebar-background: #6c6c6c;
@@ -203,6 +205,7 @@
 
   --color-olive-green: var(--olive-green-1);
   --color-forest-teal: var(--dark-forest-teal);
+  --color-light-mushroom: var(--light-mushroom);
   
   --color-palette-gold-dark: var(--palette-gold-dark);
   --color-palette-gold: var(--palette-gold);

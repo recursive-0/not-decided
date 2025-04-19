@@ -1,6 +1,7 @@
 import { Separator } from "@/components/ui/separator";
 import Toolbar from "../toolbar";
 import { ProseMirrorEditor } from "./prose-mirror-editor";
+import { LockFeedbackOverlay } from "./lock-feedback-overlay";
 
 export const EditorContainer = () => {
   return (
@@ -10,6 +11,7 @@ export const EditorContainer = () => {
       <Toolbar />
       <Separator />
       <ProseMirrorEditor />
+      <LockFeedbackOverlay />
     </div>
   );
 };

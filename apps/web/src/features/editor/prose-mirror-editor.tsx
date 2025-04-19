@@ -47,6 +47,7 @@ import {
 } from "@/editor-input-rules/slash-command-dialog";
 import { toast } from "@/components/ui/custom-toasts";
 import { persistentHighlightPlugin } from "@/custom-nodes/persistent-highlight-plugin";
+import { LockFeedbackOverlay } from "./lock-feedback-overlay";
 
 const debounce = (func, delay) => {
   let timer;
@@ -394,7 +395,7 @@ export const ProseMirrorEditor = () => {
       className="flex flex-col w-full h-full relative max-h-[calc(100vh - 60px)] overflow-scroll"
     >
       <div
-        className="prosemirror-editor w-full h-full bg-red-400 mb-4 px-4 outline-none"
+        className="prosemirror-editor w-full h-full mb-4 px-4 outline-none bg-red-400"
         ref={editorRef}
       />
       {smartAiPopupPos !== null && (
@@ -409,6 +410,8 @@ export const ProseMirrorEditor = () => {
       {totalCurrentEdits > 0 && dialogPosition && (
         <AcceptAllRejectAllDialog position={dialogPosition} />
       )}
+
+      {/* <LockFeedbackOverlay /> */}
     </div>
   );
 };
