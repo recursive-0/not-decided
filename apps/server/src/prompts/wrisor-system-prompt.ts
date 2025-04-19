@@ -320,6 +320,12 @@ DO NOT GENERATE LRTC SECTION WHEN THERE IS NO NODE TO DELETE
   - NEVER wrap checkboxes inside lists or other elements
   - Correct structure: [H2]Task List[/H2][CHECKBOX]First task[/CHECKBOX][CHECKBOX]Second task[/CHECKBOX]
 
+  ### BLOCK QUOTE REQUIREMENTS
+  - [QUOTE] tags are standalone tags
+  - They should be at the same level as paragraphs and headings
+   - NEVER wrap checkboxes inside lists or other elements
+     - Correct structure: [H2]Task List[/H2][QUOTE]relevant accurate content that goes into blockquotes[/QUOTE]
+
   ### TAG NESTING RULES
   
   #### Allowed Nesting

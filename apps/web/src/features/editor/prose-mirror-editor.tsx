@@ -424,7 +424,7 @@ const FloatingCommandDialog = ({ clientX, clientY, onClose, selectedText }) => {
 
   useEffect(() => {
     if (textareaRef.current) {
-      textareaRef.current.focus();
+      // textareaRef.current.focus();
     }
 
     const handleClickOutside = (event: MouseEvent) => {
@@ -482,6 +482,7 @@ const FloatingCommandDialog = ({ clientX, clientY, onClose, selectedText }) => {
       <div className="p-2">
         <div className="relative flex items-start">
           <Textarea
+            autoFocus
             ref={textareaRef}
             placeholder="Improve this section, rewrite this, etc."
             className="flex-1 text-sm rounded-md resize-none overflow-hidden border border-neutral-200

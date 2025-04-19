@@ -358,7 +358,8 @@ export class IncrementalProsemirrorRenderer {
       case Tags.CODE:
         return this.schema.nodes.code_block.create({ language: "bash" });
       case Tags.QUOTE:
-        return this.schema.nodes.blockquote.create();
+        const emptyPara = this.schema.nodes.paragraph.create();
+        return this.schema.nodes.blockquote.create(null, emptyPara);
       case Tags.CHECKBOX:
         return this.schema.nodes.checkbox_item.create();
       case Tags.ADDITION:
@@ -606,7 +607,7 @@ export class IncrementalProsemirrorRenderer {
     this.nodeStack.push({
       type: Tags.QUOTE,
       startPosition: insertPos,
-      contentPosition: insertPos + 1,
+      contentPosition: insertPos + 2,
     });
   }
 

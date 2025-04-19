@@ -94,11 +94,14 @@ const AIChat = () => {
     chatMessages,
     currentChatMode,
     setCurrentChatMode,
-    scrollAreaRef,
+    // scrollAreaRef, <-- REMOVE this from destructuring
+    registerScrollAreaRef, // <-- GET the registration function
     handleSendMessage,
     isPendingChangesPopupOpen,
     setPendingChangesPopup,
   } = useChatHandler();
+
+  const localScrollAreaRef = useRef<HTMLDivElement | null>(null);
 
   const { totalCurrentEdits } = useEditorStore()
 
@@ -156,6 +159,16 @@ const AIChat = () => {
       }
     }
   }
+
+  useEffect(() => {
+    if (localScrollAreaRef.current) {
+      registerScrollAreaRef(localScrollAreaRef.current);
+    }
+    // Optional: Cleanup function to unregister if the component unmounts
+    // return () => {
+    //   registerScrollAreaRef(null);
+    // };
+  }, [registerScrollAreaRef]);
 
   const renderHeader = () => (
     <div className="border-b border-border bg-[var(--color-palette-beige-2)] flex-shrink-0">
@@ -263,6 +276,7 @@ const AIChat = () => {
   return (
     <div className="w-full flex flex-col h-full bg-[var(--color-palette-beige-2)] text-[#073642]">
       <Tabs
+        autoFocus
         value={currentChatMode}
         onValueChange={() => setCurrentChatMode(currentChatMode)}
         className="flex flex-col h-full"
@@ -274,7 +288,7 @@ const AIChat = () => {
             value="CHAT"
             className="flex-1 flex flex-col p-0 m-0 overflow-hidden h-full"
           >
-            <ScrollArea className="w-full flex-1 h-0" ref={scrollAreaRef}>
+            <ScrollArea className="w-full flex-1 h-0" ref={localScrollAreaRef}>
               <div className="px-2 min-w-0">
                 <ChatMessages messages={chatMessages} />
                 {isThinking && <ThinkingLoader />}
@@ -287,7 +301,7 @@ const AIChat = () => {
             value="COMPOSER"
             className="flex-1 flex flex-col p-0 m-0 overflow-hidden h-full"
           >
-            <ScrollArea className="flex-1 h-0" ref={scrollAreaRef}>
+            <ScrollArea className="flex-1 h-0" ref={localScrollAreaRef}>
               {chatMessages.length ? (
                 <div className="px-2 min-w-0">
                   <ChatMessages messages={chatMessages} />

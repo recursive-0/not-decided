@@ -708,23 +708,41 @@ const threeDeepNesting = [
 
 // Test Case 4: Multiple nested lists at same level
 const chunks = [
-  "[", "E", "D", "I", "T", "O", "R", "_", "C", "O", "N", "T", "E", "N", "T", "]",
-  "[", "U", "L", "]",
-  "[", "L", "I", "]", 
-    "Item with first nested list", 
-    "[", "U", "L", "]",
-      "[", "L", "I", "]", "Nested item A", "[", "/", "L", "I", "]",
-    "[", "/", "U", "L", "]",
-  "[", "/", "L", "I", "]",
-  "[", "L", "I", "]", 
-    "Item with second nested list", 
-    "[", "U", "L", "]",
-      "[", "L", "I", "]", "Nested item B", "[", "/", "L", "I", "]",
-    "[", "/", "U", "L", "]",
-  "[", "/", "L", "I", "]",
-  "[", "/", "U", "L", "]",
-  "[", "/", "E", "D", "I", "T", "O", "R", "_", "C", "O", "N", "T", "E", "N", "T", "]"
+  "[EDITOR_CONTENT]",
+  "[UL]",              // Stack: [EC, UL]
+    "[LI]",            // Stack: [EC, UL, LI]
+      "[B]", "Level 1 Bold", "[/B]", // Handle B/ /B -> Stack should be [EC, UL, LI] after /B?
+      "[UL]",          // Stack: [EC, UL, LI, UL]
+        "[LI]",        // Stack: [EC, UL, LI, UL, LI]
+          "Level 2 Item with ",
+          "[ICODE]", "inline_code", "[/ICODE]", // Handle ICODE -> Stack should be [EC, UL, LI, UL, LI] after /ICODE?
+            "[UL]",      // Stack: [EC, UL, LI, UL, LI, UL]
+              "[LI]", "Level 3 Item A", "[/LI]", // Stack: [EC, UL, LI, UL, LI, UL]
+              "[LI]",    // Stack: [EC, UL, LI, UL, LI, UL, LI]
+                 "Level 3 Item B",
+                 "[UL]", // Stack: [EC, UL, LI, UL, LI, UL, LI, UL]
+                    "[LI]", // Stack: [EC, UL, LI, UL, LI, UL, LI, UL, LI]
+                       "Deepest ", "[B]", "Level 4", "[/B]", " Item", // Handle B -> Stack: [EC, UL, LI, UL, LI, UL, LI, UL, LI] after /B?
+                    "[/LI]", // Stack: [EC, UL, LI, UL, LI, UL, LI, UL]
+                 "[/UL]",    // Stack: [EC, UL, LI, UL, LI, UL, LI]
+              "[/LI]",       // Stack: [EC, UL, LI, UL, LI, UL]
+            "[/UL]",         // Stack: [EC, UL, LI, UL, LI]
+        "[/LI]",           // Stack: [EC, UL, LI, UL]
+      "[/UL]",             // Stack: [EC, UL, LI]
+    "[/LI]",               // Stack: [EC, UL]
+    "[LI]", "Another Level 1 Item", "[/LI]", // Stack: [EC, UL]
+  "[/UL]",                 // Stack: [EC]
+  "[/EDITOR_CONTENT]"      // Stack: []
 ];
+
+// NOTE: You'll need to break the strings containing tags AND text into smaller pieces
+// like your original chunks, e.g., "[", "L", "I", "]", "L", "e", "v", "e", "l", ... etc.
+// Also add explicit [/B] and [/ICODE] if your parser requires them (it seems it might not
+// based on the original stream log, but maybe that's part of the bug?).
+// If your parser *implicitly* handles closing B/ICODE when a block tag like UL/LI starts/ends,
+// ensure that logic is correctly managing the stack.
+// You might need to break the strings further if your original chunks were char-by-char
+// e.g., "[", "E", "D", "I", "T", "O", "R", ... etc.
 
       // First send a "START_STREAM" event to initialize
       controller.enqueue(`data: START_STREAM\n\n`);

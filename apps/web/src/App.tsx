@@ -4,11 +4,13 @@ import { EditorContainer } from "./features/editor/editor-container";
 import AIChat from "./features/ai-chat/ai-chat";
 import { EditorProvider } from "@/providers/editor-context-provider"
 import { Toaster } from "./components/ui/sonner";
+import { ChatHandlerProvider } from "./hooks/use-chat-handler";
 
 export function App() {
   return (
     <div className="h-screen w-screen bg-background">
       <EditorProvider>
+      <ChatHandlerProvider>  
         <ResizablePanelGroup direction="horizontal" className="h-[calc(100vh-60px)]">
           <ResizablePanel defaultSize={65}>
             <EditorContainer />
@@ -18,6 +20,7 @@ export function App() {
             <AIChat />
           </ResizablePanel>
         </ResizablePanelGroup>
+            </ChatHandlerProvider>
       </EditorProvider>
       <Toaster />
     </div>
