@@ -46,6 +46,7 @@ import {
   slashOpenCommandDialog,
 } from "@/editor-input-rules/slash-command-dialog";
 import { toast } from "@/components/ui/custom-toasts";
+import { persistentHighlightPlugin } from "@/custom-nodes/persistent-highlight-plugin";
 
 const debounce = (func, delay) => {
   let timer;
@@ -84,6 +85,7 @@ const listRelatedKeymap = keymap({
 });
 
 const plugins = [
+  persistentHighlightPlugin,
   slashOpenCommandDialog,
   placeholderPlugin,
   history(),
@@ -97,7 +99,7 @@ const plugins = [
 ];
 
 const normalizeCommandDialogPos = (selectionCoords, containerBounds) => {
-  const { x: selectionX, y: selectionY } = selectionCoords;
+  const { left: selectionX, top: selectionY } = selectionCoords;
 
   const {
     left: containerLeft,
@@ -192,8 +194,14 @@ export const ProseMirrorEditor = () => {
     });
 
     if (!editorView.current && editorRef.current) {
-      editorView.current = new EditorView(editorRef.current, {
+      editorView.current = new EditorView(editorRef.current, 
+        {
         state,
+        // handleDrop(view, event, slice, moved) {
+        //   console.log("view is: ", view)
+        //   console.log("event is: ", event)
+        //   setSmartAiPopupPos(null)
+        // },
         nodeViews: {
           deletion_suggestion: (node, view, getPos) => {
             return new DeletionSuggestion(node, view, getPos);
@@ -315,40 +323,52 @@ export const ProseMirrorEditor = () => {
 
     const handleSelectionCheck = (event) => {
       if (isDialogClosingRef.current) return;
+      let isMouseDown = true
 
-      setTimeout(() => {
-        if (!editorView.current) return;
-        const { state } = editorView.current;
-        const { selection } = state;
-        const { $from, $to } = selection.ranges[0];
-        const fromPos = $from.pos;
-        const toPos = $to.pos;
-
-        if (toPos - fromPos > 0) {
-          const coordsAtPos = editorView.current.coordsAtPos(toPos);
-
-          const editorContainerPos = editorRef.current.getBoundingClientRect();
-
-          const { left, top } = normalizeCommandDialogPos(
-            coordsAtPos,
-            editorContainerPos
-          );
-
-          const textContent = editorView.current.state.doc.textBetween(
-            fromPos,
-            toPos
-          );
-          console.log("TETX content is: ", textContent);
-          setSmartAiPopupPos({
-            x: left,
-            y: top,
-          });
-          setUserSelection(textContent);
+      const handleMouseUp = () => {
+        if(isMouseDown){
+          // valid selection 
+          setTimeout(() => {
+            if (!editorView.current) return;
+            const { state } = editorView.current;
+            const { selection } = state;
+            const { $from, $to } = selection.ranges[0];
+            const fromPos = $from.pos;
+            const toPos = $to.pos;
+    
+            if (toPos - fromPos > 0) {
+              const coordsAtPos = editorView.current.coordsAtPos(toPos);
+    
+              const editorContainerPos = editorRef.current.getBoundingClientRect();
+    
+              const { left, top } = normalizeCommandDialogPos(
+                coordsAtPos,
+                editorContainerPos
+              );
+    
+              const textContent = editorView.current.state.doc.textBetween(
+                fromPos,
+                toPos
+              );
+              console.log("TETX content is: ", textContent);
+              console.log("POSSSSSS are: ", left, top)
+              setSmartAiPopupPos({
+                x: left,
+                y: top,
+              });
+              setUserSelection(textContent);
+            }
+          }, 10);
+          isMouseDown = false
         }
-      }, 10);
+
+        editorElement.removeEventListener("mouseup", handleMouseUp)
+      }
+
+      editorElement.addEventListener("mouseup", handleMouseUp);
     };
 
-    editorElement.addEventListener("mouseup", handleSelectionCheck);
+    editorElement.addEventListener("selectstart", handleSelectionCheck)
 
     return () => {
       editorElement.removeEventListener("mouseup", handleSelectionCheck);
@@ -412,6 +432,7 @@ const FloatingCommandDialog = ({ clientX, clientY, onClose, selectedText }) => {
   const dialogRef = useRef(null);
   const textareaRef = useRef(null);
   const setChatMode = useChatStore((state) => state.setCurrentChatMode);
+  const { editorView }  = useEditor()
 
   const { handleSelectionQuery, isStreaming } = useChatHandler();
   const { totalCurrentEdits } = useEditorStore();

@@ -541,3 +541,6 @@ pre code.inline-code {
 }
 
 
+.persistent-selection-highlight {
+  background-color: var(--color-palette-gold-dark)
+}

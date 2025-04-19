@@ -24,7 +24,7 @@ export async function generateStream(req: Request): Promise<Response> {
     console.log("Content nodes are: ", contentNodes)
 
     try {
-        return await handleGeminiStream({prompt, chatMode: chatMode as "CHAT" | "COMPOSER", contentNodes: contentNodes});
+        return await handleClaudeStream({prompt, chatMode: chatMode as "CHAT" | "COMPOSER", contentNodes: contentNodes});
         // return await simpleStaticStream()
     } catch (error) {
         return new Response(
