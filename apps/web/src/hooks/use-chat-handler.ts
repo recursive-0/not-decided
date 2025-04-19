@@ -20,7 +20,7 @@ export const useChatHandler = () => {
   const [isThinking, setIsThinking] = useState(false);
   const [isPendingChangesPopupOpen, setPendingChangesPopup] =
     useState<boolean>(false);
-  const [autoScroll, setAutoScroll] = useState<boolean>(true);
+  const autoScrollRef = useRef<boolean>(true)
   const streamingMessageId = useRef<string | null>(null);
 
   const scrollAreaRef = useRef<HTMLDivElement | null>(null);
@@ -33,10 +33,10 @@ export const useChatHandler = () => {
       "[data-radix-scroll-area-viewport]"
     ) as HTMLDivElement | null;
 
-    if (scrollViewport && autoScroll) {
+    if (scrollViewport && autoScrollRef.current) {
       scrollViewport.scrollTop = scrollViewport.scrollHeight;
     }
-  }, [autoScroll, scrollAreaRef]);
+  }, [scrollAreaRef]);
 
   const handleTokenReceived = (token: string) => {
     if (currentChatMode === "COMPOSER" && isEditorReady) {
@@ -62,6 +62,7 @@ export const useChatHandler = () => {
     });
 
     setIsThinking(true);
+    autoScrollRef.current = true
 
     const llmMessageId = uuidv4();
 
@@ -71,24 +72,24 @@ export const useChatHandler = () => {
         role: "echo",
         content: "",
       });
-
+      scrollToBottom()
       streamingMessageId.current = llmMessageId;
 
-      const scrollViewport = scrollAreaRef.current?.querySelector(
-        "[data-radix-scroll-area-viewport]"
-      ) as HTMLDivElement | null;
+      // const scrollViewport = scrollAreaRef.current?.querySelector(
+      //   "[data-radix-scroll-area-viewport]"
+      // ) as HTMLDivElement | null;
 
-      if (scrollViewport) {
-        const scrollBottom = scrollViewport.scrollHeight - scrollViewport.scrollTop - scrollViewport.clientHeight;
-        if (scrollBottom < 30) {
-          setAutoScroll(true);
-        }
-      }
+      // if (scrollViewport) {
+      //   const scrollBottom = scrollViewport.scrollHeight - scrollViewport.scrollTop - scrollViewport.clientHeight;
+      //   if (scrollBottom < 30) {
+      //     setAutoScroll(true);
+      //   }
+      // }
 
       startStreaming(currentChatMode, messageText, handleTokenReceived);
 
       setIsThinking(false);
-    }, 100);
+    }, 10);
   };
 
   const handleSelectionQuery = (selectedText: string, prompt: string) => {
@@ -110,24 +111,21 @@ export const useChatHandler = () => {
 
     if (scrollViewport) {
       const handleScroll = () => {
-        const scrollBottom = scrollViewport.scrollHeight - scrollViewport.scrollTop - scrollViewport.clientHeight;
-        
-        if (scrollBottom > 30) {
-          setAutoScroll(false);
-        } else if (scrollBottom < 5) {
-          setAutoScroll(true);
-        }
+        console.log("MANUAL SCROLL DETECTED!!!")
+        autoScrollRef.current = false
       };
 
-      scrollViewport.addEventListener("scroll", handleScroll);
+      scrollViewport.addEventListener("touchstart", handleScroll);
+      scrollViewport.addEventListener("wheel", handleScroll);
 
       return () => {
-        scrollViewport.removeEventListener("scroll", handleScroll);
+        scrollViewport.removeEventListener("touchstart", handleScroll);
+      scrollViewport.removeEventListener("wheel", handleScroll);
       };
     }
 
     return () => {};
-  }, [scrollAreaRef, setAutoScroll]);
+  }, [scrollAreaRef]);
 
   return {
     isThinking,
@@ -141,7 +139,5 @@ export const useChatHandler = () => {
     handleSelectionQuery,
     isPendingChangesPopupOpen,
     setPendingChangesPopup,
-    setAutoScroll,
-    autoScroll,
   };
 };

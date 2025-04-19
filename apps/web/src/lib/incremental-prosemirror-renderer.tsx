@@ -1,4 +1,5 @@
 import { MarkType, Node, type Mark, type Schema } from "prosemirror-model";
+import { TextSelection, type Transaction } from "prosemirror-state";
 import type { EditorView } from "prosemirror-view";
 
 interface NodeContextType {
@@ -193,7 +194,8 @@ export class IncrementalProsemirrorRenderer {
       console.warn("MESSED UP. Can't Insert text without a parent node!!!");
       textToInsert = textToInsert.replace(/\n+/g, "");
       const insertPos = this.getInsertPosition();
-      tr.insertText(textToInsert, insertPos).setMeta("isStreaming", true);
+      // tr.insertText(textToInsert, insertPos)
+      this.insertTextInEditor(textToInsert, insertPos, tr)
     } else {
       if (this.nodeStack[this.nodeStack.length - 1].type !== Tags.CODE) {
         textToInsert = textToInsert.replace(/\n+/g, "");
@@ -204,7 +206,8 @@ export class IncrementalProsemirrorRenderer {
       const mappedInsertPos = tr.mapping.map(insertPos);
       const endPos = mappedInsertPos + textToInsert.length;
 
-      tr.insertText(textToInsert, mappedInsertPos).setMeta("isStreaming", true);
+      // tr.insertText(textToInsert, mappedInsertPos).setMeta("isStreaming", true);
+      this.insertTextInEditor(textToInsert, mappedInsertPos, tr)
 
       const currentRendererActiveMarkTypes = new Set(
         this.activeMarks.map((m) => m.type)
@@ -381,7 +384,8 @@ export class IncrementalProsemirrorRenderer {
     const startPos = this.insertionPoint;
     const insertPos = startPos + 1;
 
-    const tr = this.editorView.state.tr.insert(startPos, node);
+    const tr = this.editorView.state.tr
+    this.insertNodeInEditor(startPos, node, tr)
     this.editorView.dispatch(tr);
 
     this.nodeStack.push({
@@ -427,7 +431,8 @@ export class IncrementalProsemirrorRenderer {
 
     const pos = this.getInsertPosition();
 
-    const tr = this.editorView.state.tr.insert(pos, node);
+    const tr = this.editorView.state.tr
+    this.insertNodeInEditor(pos, node, tr)
     this.editorView.dispatch(tr);
 
     this.nodeStack.push({
@@ -447,7 +452,8 @@ export class IncrementalProsemirrorRenderer {
         const startPos = currentPos + 1
         const insertPos = currentPos + 2;
 
-        const tr = this.editorView.state.tr.insert(startPos, node);
+        const tr = this.editorView.state.tr
+        this.insertNodeInEditor(startPos, node, tr)
         this.editorView.dispatch(tr);
 
         this.nodeStack.push({
@@ -460,7 +466,8 @@ export class IncrementalProsemirrorRenderer {
 
         const startPos = this.getInsertPosition()
 
-        const tr = this.editorView.state.tr.insert(startPos, node);
+        const tr = this.editorView.state.tr
+        this.insertNodeInEditor(startPos, node, tr)
         this.editorView.dispatch(tr);
 
         this.nodeStack.push({
@@ -473,7 +480,8 @@ export class IncrementalProsemirrorRenderer {
       const insertPos = this.getInsertPosition();
       const newCursorPos = insertPos + 1;
 
-      const tr = this.editorView.state.tr.insert(insertPos, node);
+      const tr = this.editorView.state.tr
+      this.insertNodeInEditor(insertPos, node, tr)
       this.editorView.dispatch(tr);
 
       this.nodeStack.push({
@@ -494,7 +502,8 @@ export class IncrementalProsemirrorRenderer {
         const startPos = currentPos + 1
         const insertPos = currentPos + 2;
 
-        const tr = this.editorView.state.tr.insert(startPos, node);
+        const tr = this.editorView.state.tr
+        this.insertNodeInEditor(startPos, node, tr)
         this.editorView.dispatch(tr);
 
         this.nodeStack.push({
@@ -507,7 +516,8 @@ export class IncrementalProsemirrorRenderer {
 
         const startPos = this.getInsertPosition()
 
-        const tr = this.editorView.state.tr.insert(startPos, node);
+        const tr = this.editorView.state.tr
+        this.insertNodeInEditor(startPos, node, tr)
         this.editorView.dispatch(tr);
 
         this.nodeStack.push({
@@ -520,7 +530,8 @@ export class IncrementalProsemirrorRenderer {
       const insertPos = this.getInsertPosition();
       const newCursorPos = insertPos + 1;
 
-      const tr = this.editorView.state.tr.insert(insertPos, node);
+      const tr = this.editorView.state.tr
+      this.insertNodeInEditor(insertPos, node, tr)
       this.editorView.dispatch(tr);
 
       this.nodeStack.push({
@@ -545,7 +556,8 @@ export class IncrementalProsemirrorRenderer {
       const paragraphStartPos = afterListPos
       const afterParagraphPos = paragraphStartPos + 1
 
-      const tr = this.editorView.state.tr.insert(insertPos, node);
+      const tr = this.editorView.state.tr
+      this.insertNodeInEditor(insertPos, node, tr)
       this.editorView.dispatch(tr);
 
       this.nodeStack.push({
@@ -587,8 +599,7 @@ export class IncrementalProsemirrorRenderer {
     const insertPos = this.getInsertPosition();
 
     const tr = this.editorView.state.tr;
-
-    tr.insert(insertPos, node);
+    this.insertNodeInEditor(insertPos, node, tr)
 
     this.editorView.dispatch(tr);
 
@@ -603,7 +614,8 @@ export class IncrementalProsemirrorRenderer {
     const insertPos = this.getInsertPosition();
     const cursorPos = insertPos + 1;
 
-    const tr = this.editorView.state.tr.insert(insertPos, node);
+    const tr = this.editorView.state.tr
+    this.insertNodeInEditor(insertPos, node, tr)
     this.editorView.dispatch(tr);
 
     this.nodeStack.push({
@@ -616,7 +628,8 @@ export class IncrementalProsemirrorRenderer {
   handleInlineCodeInsertion(node: Node) {
     const insertPos = this.getInsertPosition();
 
-    const tr = this.editorView.state.tr.insert(insertPos, node);
+    const tr = this.editorView.state.tr
+    this.insertNodeInEditor(insertPos, node, tr)
     this.editorView.dispatch(tr);
 
     this.nodeStack.push({
@@ -629,6 +642,26 @@ export class IncrementalProsemirrorRenderer {
   isNodeStackEmpty() {
     return this.nodeStack.length > 0 ? false : true;
   }
+
+  insertNodeInEditor(insertPos: number, node: Node, tr: Transaction) {
+    // 1. Insert the node
+    tr.insert(insertPos, node);
+
+    //toDo: make smart selection to bring the node into view
+
+    // const $insertPosPlusOne = tr.doc.resolve(insertPos + 1);
+    // const selection = TextSelection.near($insertPosPlusOne, 1); // Find nearest valid selection forward
+
+    // tr.setSelection(selection);
+    // tr.scrollIntoView();
+}
+
+insertTextInEditor(textContent: string, insertPos: number, tr: Transaction) {
+  tr.insertText(textContent, insertPos);
+  const selectionPos = insertPos + textContent.length;
+  tr.setSelection(TextSelection.create(tr.doc, selectionPos));
+  tr.scrollIntoView();
+}
 
   private getInsertPosition(): number {
     if (this.insertionPoint !== null) {

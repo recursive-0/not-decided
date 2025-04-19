@@ -158,12 +158,13 @@ export const ProseMirrorEditor = () => {
   }>(null);
 
 
-  const scrollToBottom = () => {
-    if (!editorRef.current || userInteractedRef.current) return;
+  // const scrollToBottom = () => {
+  //   if (!editorRef.current || !containerRef.current) return;
 
-    const container = editorRef.current;
-    container.scrollTop = container.scrollHeight - container.clientHeight + 50;
-  };
+  //   const container = containerRef.current;
+  //   container.scrollTop = container.scrollHeight - container.clientHeight + 50;
+  // };
+
   const calculateDialogPosition = useCallback(() => {
     if (!editorRef.current) {
       setDialogPosition(null);
@@ -226,7 +227,6 @@ export const ProseMirrorEditor = () => {
           );
           console.log("STATEEEEE IS: ", originalState);
 
-          const isStreamingChange = tr.getMeta("isStreaming");
           const slashCommandMeta = tr.getMeta(slashCommandTriggerKey);
 
           console.log("sladhc ommands meta is: ", slashCommandMeta);
@@ -238,7 +238,7 @@ export const ProseMirrorEditor = () => {
             const coordsAtPos = editorView.current.coordsAtPos(endPos);
 
             const editorContainerPos =
-              editorRef.current.getBoundingClientRect();
+              containerRef.current.getBoundingClientRect();
 
             const { left, top } = normalizeCommandDialogPos(
               coordsAtPos,
@@ -250,17 +250,13 @@ export const ProseMirrorEditor = () => {
               y: top,
             });
           } else {
-            setSmartAiPopupPos(null);
+            // setSmartAiPopupPos(null);
           }
 
           if (
-            tr.docChanged &&
-            isStreamingChange &&
-            !userInteractedRef.current
+            tr.docChanged
           ) {
-            requestAnimationFrame(() => {
-              scrollToBottom();
-            });
+              // scrollToBottom();
           }
         },
       });
@@ -268,15 +264,11 @@ export const ProseMirrorEditor = () => {
       setEditorReady(true);
       calculateDialogPosition();
 
-      // Set up resize listener to recalculate position
       window.addEventListener("resize", calculateDialogPosition);
     }
 
     if (editorRef.current) {
       const observer = new ResizeObserver((entries) => {
-        // The callback gets an array of entries, one for each observed element that changed size.
-        // Since we only observe one element (editorRef.current), we can usually
-        // just call our debounced calculation function.
         for (const entry of entries) {
            if (entry.target === editorRef.current) {
               // The editor div's size changed! Recalculate the button position.
@@ -286,14 +278,9 @@ export const ProseMirrorEditor = () => {
         }
       });
 
-      // Start observing the editor div
       observer.observe(editorRef.current);
-
-      // --- Initial calculation ---
-      // Also perform an initial calculation when the component mounts and observer is set up
-      // Use a slight delay or requestAnimationFrame to ensure layout is settled after Prosemirror init
       requestAnimationFrame(() => {
-         calculateDialogPosition(); // Call the non-debounced one for initial render
+         calculateDialogPosition();
       });
 
     return () => {
@@ -338,8 +325,10 @@ export const ProseMirrorEditor = () => {
     
             if (toPos - fromPos > 0) {
               const coordsAtPos = editorView.current.coordsAtPos(toPos);
+              console.log("COOOOORDS ARE: ", coordsAtPos)
     
-              const editorContainerPos = editorRef.current.getBoundingClientRect();
+              const editorContainerPos = containerRef.current.getBoundingClientRect();
+              console.log("EDITOR CONTAINER POSSSS: ", editorContainerPos)
     
               const { left, top } = normalizeCommandDialogPos(
                 coordsAtPos,
@@ -358,7 +347,7 @@ export const ProseMirrorEditor = () => {
               });
               setUserSelection(textContent);
             }
-          }, 10);
+          }, 100);
           isMouseDown = false
         }
 
@@ -371,7 +360,7 @@ export const ProseMirrorEditor = () => {
     editorElement.addEventListener("selectstart", handleSelectionCheck)
 
     return () => {
-      editorElement.removeEventListener("mouseup", handleSelectionCheck);
+      editorElement.removeEventListener("selectstart", handleSelectionCheck);
     };
   }, [editorRef, editorView]);
 
@@ -392,15 +381,12 @@ export const ProseMirrorEditor = () => {
         const selection = Selection.atEnd(tr.doc);
         tr.setSelection(selection);
 
-        tr.scrollIntoView();
+        // tr.scrollIntoView();
         view.dispatch(tr);
       }, 10);
     }
   }, [isEditorReady]);
 
-  useEffect(() => {
-    console.log("Changed dialog status: ", isAcceptRejectDialogOpen);
-  }, [isAcceptRejectDialogOpen]);
 
   return (
     <div
@@ -408,7 +394,7 @@ export const ProseMirrorEditor = () => {
       className="flex flex-col w-full h-full relative max-h-[calc(100vh - 60px)] overflow-scroll"
     >
       <div
-        className="prosemirror-editor w-full h-full bg-red-400 py-4 px-4 outline-none"
+        className="prosemirror-editor w-full h-full bg-red-400 mb-4 px-4 outline-none"
         ref={editorRef}
       />
       {smartAiPopupPos !== null && (
@@ -432,7 +418,6 @@ const FloatingCommandDialog = ({ clientX, clientY, onClose, selectedText }) => {
   const dialogRef = useRef(null);
   const textareaRef = useRef(null);
   const setChatMode = useChatStore((state) => state.setCurrentChatMode);
-  const { editorView }  = useEditor()
 
   const { handleSelectionQuery, isStreaming } = useChatHandler();
   const { totalCurrentEdits } = useEditorStore();
@@ -487,7 +472,7 @@ const FloatingCommandDialog = ({ clientX, clientY, onClose, selectedText }) => {
   return (
     <div
       ref={dialogRef}
-      className="absolute z-50 bg-white rounded-md shadow-lg border border-neutral-200"
+      className="fixed z-50 bg-white rounded-md shadow-lg border border-neutral-200"
       style={{
         left: `${clientX}px`,
         top: `${clientY}px`,
