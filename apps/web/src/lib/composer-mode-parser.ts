@@ -45,31 +45,31 @@ interface ParserCallbacks {
 }
 
 const all_tags = [
-    "[H1]",
-    "[H2]",
-    "[H3]",
-    "[B]",
-    "[I]",
-    "[P]",
-    "[CODE]",
-    "[ICODE]",
-    "[UL]",
-    "[LI]",
-    "[QUOTE]",
-    "[OL]",
-    "[CHECKBOX]",
-  "[THOUGHT]",
-  "[/THOUGHT]",
-  "[EDITOR_CONTENT]",
-  "[/EDITOR_CONTENT]",
-  "[TARGETS]",
-  "[/TARGETS]",
-  "[NODE]",
-  "[/NODE]",
-  "[LRTC]",
-  "[/LRTC]",
-  "[CTRLD]",
-  "[/CTRLD]"
+    "<H1>",
+    "<H2>",
+    "<H3>",
+    "<B>",
+    "<I>",
+    "<P>",
+    "<CODE>",
+    "<ICODE>",
+    "<UL>",
+    "<LI>",
+    "<QUOTE>",
+    "<OL>",
+    "<CHECKBOX>",
+  "<THOUGHT>",
+  "</THOUGHT>",
+  "<EDITOR_CONTENT>",
+  "</EDITOR_CONTENT>",
+  "<TARGETS>",
+  "</TARGETS>",
+  "<NODE>",
+  "</NODE>",
+  "<LRTC>",
+  "</LRTC>",
+  "<CTRLD>",
+  "</CTRLD>"
 ];
 
 const ALLOWED_TAGS = [
@@ -418,7 +418,7 @@ export class ComposerModeParser {
   processEachCharacter(char: string) {
     switch (this.state) {
       case ParserState.normal:
-        if (char === "[") {
+        if (char === "<") {
           this.flushTextBuffer();
           this.textBuffer += char;
           this.state = ParserState.tag_start;
@@ -441,7 +441,7 @@ export class ComposerModeParser {
         }
         break;
       case ParserState.tag_name:
-        if (char === "]") {
+        if (char === ">") {
           this.textBuffer += char;
           this.openTag();
         } else {
@@ -450,7 +450,7 @@ export class ComposerModeParser {
         }
         break;
       case ParserState.closing_tag_start:
-        if (char === "]") {
+        if (char === ">") {
           console.log("CLOSING TAG IS: ", this.currentTagName);
           this.textBuffer += char;
           this.closeTag();
