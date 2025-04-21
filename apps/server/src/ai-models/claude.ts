@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { chatModePrompt } from "../prompts/markdown-instructions-prompt";
 import { composerModePrompt } from "../prompts/composer-mode-prompt";
 import { wrisorSystemPrompt } from "../prompts/wrisor-system-prompt";
+import { wrisorSystemPromptV1 } from "../prompts/wrisor-system-prompt-1";
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
@@ -17,7 +18,7 @@ interface HandleClaudeStreamProps {
 export async function handleClaudeStream(props: HandleClaudeStreamProps) {
   const { prompt, chatMode, contentNodes } = props;
 
-  const systemPrompt = chatMode === "CHAT" ? chatModePrompt() : wrisorSystemPrompt(prompt, contentNodes)
+  const systemPrompt = chatMode === "CHAT" ? chatModePrompt() : wrisorSystemPromptV1(prompt, contentNodes)
 
   console.log("SYSTEM PROMPT IS: ", systemPrompt)
 

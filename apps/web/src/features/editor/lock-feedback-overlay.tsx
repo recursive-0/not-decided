@@ -5,8 +5,8 @@ import { cn } from "@/lib/utils";
 import "./lock-feedback.css";
 
 export const LockFeedbackOverlay = () => {
-  const { isStreaming } = useChatHandler();
-
+//   const { isStreaming } = useChatHandler();
+    const isStreaming = false
   const [showLockFeedback, setShowLockFeedback] = useState(false);
   const feedbackTimeoutRef = useRef<Timer | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);

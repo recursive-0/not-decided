@@ -330,7 +330,7 @@ export class IncrementalProsemirrorRenderer {
       this.nodeStack.pop();
       if (this.nodeStack.length > 0) {
         const parentNode = this.nodeStack[this.nodeStack.length - 1];
-        parentNode.contentPosition = insertPos;
+        parentNode.contentPosition = insertPos + 1
       }
     } else {
       console.warn("TAG MISMATCH: ", Tags.OL);
@@ -431,6 +431,8 @@ export class IncrementalProsemirrorRenderer {
     }
 
     const pos = this.getInsertPosition();
+
+    console.log("POSITION TO INSERTTTT IS: ", pos)
 
     const tr = this.editorView.state.tr
     this.insertNodeInEditor(pos, node, tr)

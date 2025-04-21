@@ -708,31 +708,15 @@ const threeDeepNesting = [
 
 // Test Case 4: Multiple nested lists at same level
 const chunks = [
-  "[EDITOR_CONTENT]",
-  "[UL]",              // Stack: [EC, UL]
-    "[LI]",            // Stack: [EC, UL, LI]
-      "[B]", "Level 1 Bold", "[/B]", // Handle B/ /B -> Stack should be [EC, UL, LI] after /B?
-      "[UL]",          // Stack: [EC, UL, LI, UL]
-        "[LI]",        // Stack: [EC, UL, LI, UL, LI]
-          "Level 2 Item with ",
-          "[ICODE]", "inline_code", "[/ICODE]", // Handle ICODE -> Stack should be [EC, UL, LI, UL, LI] after /ICODE?
-            "[UL]",      // Stack: [EC, UL, LI, UL, LI, UL]
-              "[LI]", "Level 3 Item A", "[/LI]", // Stack: [EC, UL, LI, UL, LI, UL]
-              "[LI]",    // Stack: [EC, UL, LI, UL, LI, UL, LI]
-                 "Level 3 Item B",
-                 "[UL]", // Stack: [EC, UL, LI, UL, LI, UL, LI, UL]
-                    "[LI]", // Stack: [EC, UL, LI, UL, LI, UL, LI, UL, LI]
-                       "Deepest ", "[B]", "Level 4", "[/B]", " Item", // Handle B -> Stack: [EC, UL, LI, UL, LI, UL, LI, UL, LI] after /B?
-                    "[/LI]", // Stack: [EC, UL, LI, UL, LI, UL, LI, UL]
-                 "[/UL]",    // Stack: [EC, UL, LI, UL, LI, UL, LI]
-              "[/LI]",       // Stack: [EC, UL, LI, UL, LI, UL]
-            "[/UL]",         // Stack: [EC, UL, LI, UL, LI]
-        "[/LI]",           // Stack: [EC, UL, LI, UL]
-      "[/UL]",             // Stack: [EC, UL, LI]
-    "[/LI]",               // Stack: [EC, UL]
-    "[LI]", "Another Level 1 Item", "[/LI]", // Stack: [EC, UL]
-  "[/UL]",                 // Stack: [EC]
-  "[/EDITOR_CONTENT]"      // Stack: []
+  "<EDITOR_CONTENT>",
+  "<QUO",
+  "TE>",
+  "lol",
+  "</",
+  "QUO",
+  "TE",
+  ">",
+  "</EDITOR_CONTENT>"
 ];
 
 // NOTE: You'll need to break the strings containing tags AND text into smaller pieces
