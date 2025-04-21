@@ -10,6 +10,14 @@ export class FingerprintManager {
     this.editorView = editor;
   }
 
+  public clearNodeFingerprints(){
+    this.nodeFingerprints = new Map()
+  }
+
+  public clearHashCollisionCounter(){
+    this.hashCollisionCounter = new Map()
+  }
+
   public fastHash(stringifiedNode: string): string {
     let hash = 0;
     for (let i = 0; i < stringifiedNode.length; i++) {
@@ -51,7 +59,7 @@ export class FingerprintManager {
 
     const editorNodes = editor.state.doc.content;
 
-    editorNodes.forEach((node: Node, index) => {
+    editorNodes.content.forEach((node: Node, index) => {
       const normalizedContent = this.normalizeNodeTextContent(node);
       const uniqueHash = this.getUniqueHash(normalizedContent);
       console.log("HASH IS: ", uniqueHash);

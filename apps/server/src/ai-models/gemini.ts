@@ -26,6 +26,7 @@ export async function handleGeminiStream(props: HandleGeminiStreamProps) {
 
   const stream = new ReadableStream({
     async start(controller) {
+      console.log("INSIDE GEMINI CONTROLLER")
       try {
         controller.enqueue(`data: START_STREAM \n\n`);
 
@@ -41,6 +42,8 @@ export async function handleGeminiStream(props: HandleGeminiStreamProps) {
         const generationConfig = {
           temperature: 0.7,
         };
+
+        console.log("INSIDE GEMOINI TEMP SETTTTT")
 
         const streamResult = await model.generateContentStream({
           contents: [{ role: "user", parts: [{ text: prompt }] }],

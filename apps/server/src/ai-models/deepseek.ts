@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { chatModePrompt } from "../prompts/chat-mode-prompt";
 import { composerModePrompt } from "../prompts/composer-mode-prompt";
+import { wrisorSystemPromptV1 } from "../prompts/wrisor-system-prompt-1";
 
 const openai = new OpenAI({
   baseURL: "https://api.deepseek.com",
@@ -37,7 +38,7 @@ interface HandleDeepseekStreamProps {
 export async function handleDeepseekStream(props: HandleDeepseekStreamProps) {
   const { prompt, chatMode, contentNodes } = props;
 
-  const systemPrompt = chatMode === "CHAT" ? chatModePrompt() : composerModePrompt(prompt, contentNodes)
+  const systemPrompt = chatMode === "CHAT" ? chatModePrompt() : wrisorSystemPromptV1(prompt, contentNodes)
 
   const stream = new ReadableStream({
     async start(controller) {

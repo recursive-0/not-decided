@@ -12,6 +12,7 @@ import { FingerprintManager } from "@/lib/fingerprint-manager";
 import type { Node } from "prosemirror-model";
 import { EditsSuggestionsManager } from "@/services/suggestion-manager";
 import { EditorActionsManager } from "@/lib/editor-actions-manager";
+import { TextSelection } from "prosemirror-state";
 
 export enum Tags {
   "H1" = "H1",
@@ -94,7 +95,7 @@ export const useSSEStream = () => {
           );
 
           composerParserRef.current = new ComposerModeParser({
-            sendJsonNode: async (node: string) => await checkFingerprints(node),
+            sendJsonNode: async (node: string) => await insertAfterThisNode(node),
             sendNodeToDelete: (node: string) => deleteNode(node),
             sendTokensCallback: (tokens: string) => sendTokensCallback(tokens),
             onOpenTag: (tag: Tags) => rendererRef.current?.onOpenTag(tag),
@@ -146,6 +147,8 @@ export const useSSEStream = () => {
                 );
 
               // 4. Replace the original node with the deletion suggestion
+              tr.setSelection(TextSelection.create(editorView.current.state.doc, nodePos))
+              tr.scrollIntoView()
               const updatedTr = tr.replaceWith(
                 nodePos,
                 nodePos + originalNode.nodeSize,
@@ -168,7 +171,7 @@ export const useSSEStream = () => {
         editorDocNodes.content.forEach((node: Node) => {
           if (node.content.size > 0) {
             const content = fingerprintManagerRef.current.normalizeNodeTextContent(node);
-            const hash = fingerprintManagerRef.current.getUniqueHash(content);
+            const hash = fingerprintManagerRef.current.fastHash(content);
             const contentNode = {
               type: node.type.name,
               content: node.content,
@@ -179,7 +182,7 @@ export const useSSEStream = () => {
 
         console.log("CONTENT NODESSSSSSSS: ", validContentNodes);
 
-        async function checkFingerprints(nodeHash: string) {
+        async function insertAfterThisNode(nodeHash: string) {
         //   const pNode =
         //     editorView.current.state.schema.nodes.paragraph.create();
         //   const lastRange =
@@ -210,10 +213,15 @@ export const useSSEStream = () => {
           console.log("ADDITION NODE FOUND IS: ", matchedNode);
           if (matchedNode) {
             rendererRef.current.setInsertionPoint(matchedNode.insertPosition);
+          } else {
+            // todo: need smart and intelligent fallback method to partial match the node
+            // fallback to document size
+            const insertPos = editorView.current.state.doc.content.size
+            rendererRef.current.setInsertionPoint(insertPos)
           }
         }
 
-        console.log("sending GENRATE API ");
+
         // Initialize stream
         const response = await fetch(
           "http://localhost:4000/api/generate/init",
@@ -331,5 +339,6 @@ export const useSSEStream = () => {
     currentStreamId,
     setCurrentStreamId,
     userInteractedRef,
+    fingerprintManagerRef
   };
 };

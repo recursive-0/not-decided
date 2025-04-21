@@ -4,7 +4,6 @@
   white-space: pre-wrap;
   line-height: 1.6;
   padding-left: 24px;
-  padding-bottom: 30px;
   padding-right: 24px; /* Added right padding for balance */
   
   color: #073642; 
@@ -17,6 +16,7 @@
 .prosemirror-editor,
 .ProseMirror {
   outline: none !important;
+  padding-bottom: 5rem;
 }
 
 

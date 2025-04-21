@@ -144,7 +144,7 @@ export const ProseMirrorEditor = () => {
     isAcceptRejectDialogOpen,
   } = useEditor();
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const { isStreaming, userInteractedRef } = useSSEStream();
+  const { isStreaming, userInteractedRef, fingerprintManagerRef } = useSSEStream();
   const { totalCurrentEdits } = useEditorStore();
   const isDialogClosingRef = useRef(false);
   const suggestionsManagerRef = useRef<EditsSuggestionsManager | null>(null);
@@ -259,6 +259,12 @@ export const ProseMirrorEditor = () => {
           ) {
               // scrollToBottom();
           }
+
+        //   if(fingerprintManagerRef.current){
+        //   fingerprintManagerRef.current.generateEditorNodesFingerprints(
+        //     editorView.current
+        //   );
+        // }
         },
       });
 
@@ -392,10 +398,10 @@ export const ProseMirrorEditor = () => {
   return (
     <div
       ref={containerRef}
-      className="flex flex-col w-full h-full relative max-h-[calc(100vh - 60px)] overflow-scroll"
+      className="flex flex-col w-full relative max-h-[calc(100vh - 60px)] overflow-scroll"
     >
       <div
-        className="prosemirror-editor w-full h-full mb-4 px-4 outline-none bg-red-400"
+        className="prosemirror-editor w-full h-full py-4 px-4 outline-none"
         ref={editorRef}
       />
       {smartAiPopupPos !== null && (
@@ -404,6 +410,7 @@ export const ProseMirrorEditor = () => {
           clientY={smartAiPopupPos.y}
           onClose={() => handleDialogClose()}
           selectedText={userSelectionFromEditor}
+          setUserSelection={setUserSelection}
         />
       )}
 
@@ -416,7 +423,7 @@ export const ProseMirrorEditor = () => {
   );
 };
 
-const FloatingCommandDialog = ({ clientX, clientY, onClose, selectedText }) => {
+const FloatingCommandDialog = ({ clientX, clientY, onClose, selectedText, setUserSelection }) => {
   const [input, setInput] = useState("");
   const dialogRef = useRef(null);
   const textareaRef = useRef(null);
@@ -468,6 +475,7 @@ const FloatingCommandDialog = ({ clientX, clientY, onClose, selectedText }) => {
 
       handleSelectionQuery(selectedText, input.trim());
       setInput("");
+      setUserSelection("")
       onClose();
     }
   };
