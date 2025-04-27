@@ -734,10 +734,18 @@ const chunks = [
       // Function to send chunks with delays to simulate streaming
       const sendChunks = async () => {
         for (const chunk of chunks) {
-          // Format properly for SSE - each chunk needs "data: " prefix and double newline
-          controller.enqueue(`data: ${chunk}\n\n`);
+          // --- HOW TO ESCAPE NEWLINES ---
+          // Replace each newline character (\n) with the two characters \\n
+          const escapedChunk = chunk.replace(/\n/g, '\\n');
+          // --- END ESCAPING ---
 
-          // Simulate variable timing between chunks (20-200ms)
+          console.log("Original chunk:", JSON.stringify(chunk));
+          console.log("Escaped chunk:", JSON.stringify(escapedChunk));
+
+          // Format for SSE - using the escaped chunk
+          controller.enqueue(`data: ${escapedChunk}\n\n`);
+          console.log(`Sent chunk: data: ${JSON.stringify(escapedChunk)}\n\n`);
+
           await new Promise((resolve) => setTimeout(resolve, 20));
         }
         controller.close();

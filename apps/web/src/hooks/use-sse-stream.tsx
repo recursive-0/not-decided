@@ -6,7 +6,10 @@ import {
 import { IncrementalProsemirrorRenderer } from "@/lib/incremental-prosemirror-renderer";
 import type { ChatMode } from "@/types/messages";
 import { ChatModeIncrementalParser } from "@/lib/chat-mode-parser";
-import { ComposerModeParser } from "@/lib/composer-mode-parser";
+import {
+  ComposerModeParser,
+  type CodeBlockNodeType,
+} from "@/lib/composer-mode-parser";
 import { useChatStore } from "@/store/chat";
 import { FingerprintManager } from "@/lib/fingerprint-manager";
 import type { Node } from "prosemirror-model";
@@ -74,7 +77,8 @@ export const useSSEStream = () => {
         if (!rendererRef.current && editorView.current) {
           rendererRef.current = new IncrementalProsemirrorRenderer(
             editorView.current,
-            extendedProseMirrorSchema
+            extendedProseMirrorSchema,
+            fingerprintManagerRef.current
           );
 
           editorActionsManagerRef.current = new EditorActionsManager(
@@ -98,39 +102,39 @@ export const useSSEStream = () => {
             sendJsonNode: async (node: string) => await insertAfterThisNode(node),
             sendNodeToDelete: (node: string) => deleteNode(node),
             sendTokensCallback: (tokens: string) => sendTokensCallback(tokens),
+            sendCodeBlockNode: (codeBlock: CodeBlockNodeType) =>
+              rendererRef.current.onCodeBlock(codeBlock),
             onOpenTag: (tag: Tags) => rendererRef.current?.onOpenTag(tag),
             onCloseTag: (tag: Tags) => rendererRef.current?.onCloseTag(tag),
             onTextContent: (text: Tags) =>
               rendererRef.current?.onTextContent(text),
           });
         }
+        function findFirstParagraphContentPosition(node: Node): number | null {
+          let firstParagraphPos: number | null = null;
 
-        // if (!parserRef.current && rendererRef.current) {
-        //     if(chatMode === "CHAT"){
-        //         parserRef.current = new ChatModeIncrementalParser(sendTokensCallback)
-        //     } else if(chatMode === "COMPOSER") {
-
-        //     } else {
-
-        //     }
-        //     parserRef.current = new IncrementalParser(chatMode, {
-        //         sendTokensCallback: (tokens: string) => sendTokensCallback(tokens),
-        //         onOpenTag: (tag) => rendererRef.current?.onOpenTag(tag),
-        //         onCloseTag: (tag) => rendererRef.current?.onCloseTag(tag),
-        //         onTextContent: (text) => rendererRef.current?.onTextContent(text)
-        //     });
-        // }
+          node.descendants((node, pos) => {
+            if (node.type.name === "paragraph" && node.content.size > 0) {
+              firstParagraphPos = pos + 1;
+              return false;
+            }
+          });
+          return firstParagraphPos;
+        }
 
         const deleteNode = (nodeHash: string) => {
           fingerprintManagerRef.current.generateEditorNodesFingerprints(
             editorView.current
           );
+
           const matchedNode =
             fingerprintManagerRef.current.matchFingerprint(nodeHash);
-          console.log("DELETION NODE MTCHED: ", matchedNode);
+
+          console.log("DELETION NODE MATCHED:", matchedNode);
+
           if (matchedNode && editorView.current) {
             const { state } = editorView.current;
-            const { tr } = state;
+            let tr = state.tr;
 
             const nodePos = matchedNode.startPos;
             const originalNode = state.doc.nodeAt(nodePos);
@@ -139,7 +143,7 @@ export const useSSEStream = () => {
               const deletionSuggestion =
                 state.schema.nodes.deletion_suggestion.create(
                   {
-                    id: `deletion-${Date.now()}`, // Generate a unique ID
+                    id: `deletion-${Date.now()}`,
                     originalNodeType: originalNode.type.name,
                     originalAttrs: JSON.stringify(originalNode.attrs),
                   },
@@ -155,14 +159,57 @@ export const useSSEStream = () => {
                 deletionSuggestion
               );
 
-              // 5. Apply the transaction
-              editorView.current.dispatch(updatedTr);
+              const mappedPositionAfterDeletion = tr.mapping.map(nodePos);
+
+              let scrollTargetPosition = mappedPositionAfterDeletion;
+
+              const testPos = findFirstParagraphContentPosition(
+                matchedNode.node
+              );
+
+              if (testPos !== null) {
+                console.log(
+                  "DEBUG SCROLL TEST: Found first paragraph content at position:",
+                  testPos
+                );
+
+                scrollTargetPosition = testPos;
+
+                console.log(
+                  `DEBUG SCROLL TEST: Using test position ${scrollTargetPosition} for scrolling.`
+                );
+              } else {
+                console.log(
+                  "DEBUG SCROLL TEST: Could not find a paragraph content position for test. Using mapped deletion position."
+                );
+              }
+
+              tr = tr.setSelection(
+                TextSelection.create(tr.doc, scrollTargetPosition)
+              );
+
+              tr = tr.scrollIntoView();
+
+              editorView.current.dispatch(tr);
 
               const nextInsertionPos = tr.mapping.map(
                 nodePos + originalNode.nodeSize
               );
               rendererRef.current.setInsertionPoint(nextInsertionPos);
+            } else {
+              console.warn(
+                "Attempted to delete node with hash",
+                nodeHash,
+                "but could not find it in the document at original pos",
+                nodePos
+              );
             }
+          } else {
+            console.warn(
+              "Attempted to delete node with hash",
+              nodeHash,
+              "but no match found in the document."
+            );
           }
         };
 
@@ -253,6 +300,8 @@ export const useSSEStream = () => {
           const token = event.data;
 
           console.log("CURRENT PARSER IS: ", getCurrentParser());
+
+          console.log("TOKEN IS: ", token);
 
           switch (token.trim()) {
             case "[DONE]":

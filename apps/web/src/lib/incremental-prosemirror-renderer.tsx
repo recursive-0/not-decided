@@ -1,6 +1,8 @@
 import { MarkType, Node, type Mark, type Schema } from "prosemirror-model";
 import { TextSelection, type Transaction } from "prosemirror-state";
 import type { EditorView } from "prosemirror-view";
+import type { CodeBlockNodeType } from "./composer-mode-parser";
+import type { FingerprintManager } from "./fingerprint-manager";
 
 interface NodeContextType {
   type: Tags;
@@ -21,6 +23,8 @@ export enum Tags {
   "OL" = "OL",
   "LI" = "LI",
   "CODE" = "CODE",
+  "LANG" = "LANG",
+  "CONTENT" = "CONTENT",
   "ICODE" = "ICODE",
   "QUOTE" = "QUOTE",
   "CHECKBOX" = "CHECKBOX",
@@ -42,10 +46,16 @@ export class IncrementalProsemirrorRenderer {
   private editorMode: "COMPOSER" | "CHAT" = "COMPOSER";
   private shouldHiglightGeneratedContent: boolean = false;
   private successfulGenerations: number = 0;
+  private fingerPrintRef: FingerprintManager | null = null;
 
-  constructor(editorView: EditorView, extendedSchema: Schema) {
+  constructor(
+    editorView: EditorView,
+    extendedSchema: Schema,
+    fingerprintRef: FingerprintManager
+  ) {
     this.editorView = editorView;
     this.schema = extendedSchema;
+    this.fingerPrintRef = fingerprintRef;
   }
 
   public setMode(mode: "COMPOSER" | "CHAT") {
@@ -113,12 +123,14 @@ export class IncrementalProsemirrorRenderer {
       }
 
       // weird edge case from deepseek streaming where it was generating [p] insetad of [/p]
-      if(this.nodeStack.length > 0){
-        const topNode = this.nodeStack[this.nodeStack.length - 1]
-        if(topNode.type === tag){
-          console.warn("This should have been the close tag instead it's an open tag so definitely a mess up")
-          this.onCloseTag(tag)
-          return
+      if (this.nodeStack.length > 0) {
+        const topNode = this.nodeStack[this.nodeStack.length - 1];
+        if (topNode.type === tag) {
+          console.warn(
+            "This should have been the close tag instead it's an open tag so definitely a mess up"
+          );
+          this.onCloseTag(tag);
+          return;
         }
       }
 
@@ -135,12 +147,13 @@ export class IncrementalProsemirrorRenderer {
       if (topTag.type === tag) {
         this.activeMarks.pop();
       } else {
-        console.error(`Error: Couldn't find closing ${tag} in active marks stack`)
+        console.error(
+          `Error: Couldn't find closing ${tag} in active marks stack`
+        );
         throw new Error("Error: finding matching close mark tag");
       }
       return;
     }
-
 
     const lastNode = this.nodeStack[this.nodeStack.length - 1];
 
@@ -179,8 +192,8 @@ export class IncrementalProsemirrorRenderer {
 
     if (this.nodeStack.length > 0) {
       const parentNode = this.nodeStack[this.nodeStack.length - 1];
-      const insertPos = lastNode.contentPosition + 1
-      parentNode.contentPosition = insertPos
+      const insertPos = lastNode.contentPosition + 1;
+      parentNode.contentPosition = insertPos;
     }
   }
 
@@ -195,7 +208,7 @@ export class IncrementalProsemirrorRenderer {
       textToInsert = textToInsert.replace(/\n+/g, "");
       const insertPos = this.getInsertPosition();
       // tr.insertText(textToInsert, insertPos)
-      this.insertTextInEditor(textToInsert, insertPos, tr)
+      this.insertTextInEditor(textToInsert, insertPos, tr);
     } else {
       if (this.nodeStack[this.nodeStack.length - 1].type !== Tags.CODE) {
         textToInsert = textToInsert.replace(/\n+/g, "");
@@ -207,7 +220,7 @@ export class IncrementalProsemirrorRenderer {
       const endPos = mappedInsertPos + textToInsert.length;
 
       // tr.insertText(textToInsert, mappedInsertPos).setMeta("isStreaming", true);
-      this.insertTextInEditor(textToInsert, mappedInsertPos, tr)
+      this.insertTextInEditor(textToInsert, mappedInsertPos, tr);
 
       const currentRendererActiveMarkTypes = new Set(
         this.activeMarks.map((m) => m.type)
@@ -257,32 +270,55 @@ export class IncrementalProsemirrorRenderer {
     this.editorView.dispatch(tr);
   }
 
+  onCodeBlock(codeBlock: CodeBlockNodeType) {
+    const { lang, content } = codeBlock;
+    console.log("LANG FOUND IS: ", lang);
+    if (this.shouldHiglightGeneratedContent) {
+      const node = this.buildProsemirrorNode(Tags.ADDITION);
+      this.insertAdditionSuggestionContainer(node);
+    }
+
+    // // weird edge case from deepseek streaming where it was generating [p] insetad of [/p]
+    // if(this.nodeStack.length > 0){
+    //   const topNode = this.nodeStack[this.nodeStack.length - 1]
+    //   if(topNode.type === tag){
+    //     console.warn("This should have been the close tag instead it's an open tag so definitely a mess up")
+    //     this.onCloseTag(tag)
+    //     return
+    //   }
+    // }
+    const codeBlocknode = this.schema.nodes.code_block.create({
+      language: lang,
+    });
+    this.insertAndUpdateNodeContext(codeBlocknode, Tags.CODE);
+  }
+
   closeListItem() {
     const topNode = this.nodeStack[this.nodeStack.length - 1];
     const parentNode = this.nodeStack[this.nodeStack.length - 2];
 
-    if(topNode.type === Tags.LI){
+    if (topNode.type === Tags.LI) {
       // simple list
-      const currentPos = topNode.contentPosition
-      const insertPos = currentPos + 1
-      parentNode.contentPosition = insertPos
+      const currentPos = topNode.contentPosition;
+      const insertPos = currentPos + 1;
+      parentNode.contentPosition = insertPos;
 
-      this.nodeStack.pop()
-      return
+      this.nodeStack.pop();
+      return;
     }
 
-    if(topNode.type === Tags.P){
+    if (topNode.type === Tags.P) {
       // complex nested listing
-      const currentPos = topNode.contentPosition
-      const insertPos = currentPos + 2
+      const currentPos = topNode.contentPosition;
+      const insertPos = currentPos + 2;
 
-      const grandParentNode = this.nodeStack[this.nodeStack.length - 3]
-      grandParentNode.contentPosition = insertPos
+      const grandParentNode = this.nodeStack[this.nodeStack.length - 3];
+      grandParentNode.contentPosition = insertPos;
 
-      this.nodeStack.pop() // pop the paragrah
-      this.nodeStack.pop() // pop the LI
+      this.nodeStack.pop(); // pop the paragrah
+      this.nodeStack.pop(); // pop the LI
 
-      return
+      return;
     }
   }
 
@@ -385,8 +421,8 @@ export class IncrementalProsemirrorRenderer {
     const startPos = this.insertionPoint;
     const insertPos = startPos + 1;
 
-    const tr = this.editorView.state.tr
-    this.insertNodeInEditor(startPos, node, tr)
+    const tr = this.editorView.state.tr;
+    this.insertNodeInEditor(startPos, node, tr);
     this.editorView.dispatch(tr);
 
     this.nodeStack.push({
@@ -452,11 +488,11 @@ export class IncrementalProsemirrorRenderer {
       if (invalidParents.includes(topNode.type)) {
         this.nodeStack.pop(); // pop the P node
         const currentPos = topNode.contentPosition;
-        const startPos = currentPos + 1
+        const startPos = currentPos + 1;
         const insertPos = currentPos + 2;
 
-        const tr = this.editorView.state.tr
-        this.insertNodeInEditor(startPos, node, tr)
+        const tr = this.editorView.state.tr;
+        this.insertNodeInEditor(startPos, node, tr);
         this.editorView.dispatch(tr);
 
         this.nodeStack.push({
@@ -465,26 +501,24 @@ export class IncrementalProsemirrorRenderer {
           contentPosition: insertPos,
         });
       } else {
+        const startPos = this.getInsertPosition();
 
-
-        const startPos = this.getInsertPosition()
-
-        const tr = this.editorView.state.tr
-        this.insertNodeInEditor(startPos, node, tr)
+        const tr = this.editorView.state.tr;
+        this.insertNodeInEditor(startPos, node, tr);
         this.editorView.dispatch(tr);
 
         this.nodeStack.push({
           type: Tags.UL,
           startPosition: startPos,
-          contentPosition: startPos + 1
-        })
+          contentPosition: startPos + 1,
+        });
       }
     } else {
       const insertPos = this.getInsertPosition();
       const newCursorPos = insertPos + 1;
 
-      const tr = this.editorView.state.tr
-      this.insertNodeInEditor(insertPos, node, tr)
+      const tr = this.editorView.state.tr;
+      this.insertNodeInEditor(insertPos, node, tr);
       this.editorView.dispatch(tr);
 
       this.nodeStack.push({
@@ -502,11 +536,11 @@ export class IncrementalProsemirrorRenderer {
       if (invalidParents.includes(topNode.type)) {
         this.nodeStack.pop(); // pop the P node
         const currentPos = topNode.contentPosition;
-        const startPos = currentPos + 1
+        const startPos = currentPos + 1;
         const insertPos = currentPos + 2;
 
-        const tr = this.editorView.state.tr
-        this.insertNodeInEditor(startPos, node, tr)
+        const tr = this.editorView.state.tr;
+        this.insertNodeInEditor(startPos, node, tr);
         this.editorView.dispatch(tr);
 
         this.nodeStack.push({
@@ -515,26 +549,24 @@ export class IncrementalProsemirrorRenderer {
           contentPosition: insertPos,
         });
       } else {
+        const startPos = this.getInsertPosition();
 
-
-        const startPos = this.getInsertPosition()
-
-        const tr = this.editorView.state.tr
-        this.insertNodeInEditor(startPos, node, tr)
+        const tr = this.editorView.state.tr;
+        this.insertNodeInEditor(startPos, node, tr);
         this.editorView.dispatch(tr);
 
         this.nodeStack.push({
           type: Tags.UL,
           startPosition: startPos,
-          contentPosition: startPos + 1
-        })
+          contentPosition: startPos + 1,
+        });
       }
     } else {
       const insertPos = this.getInsertPosition();
       const newCursorPos = insertPos + 1;
 
-      const tr = this.editorView.state.tr
-      this.insertNodeInEditor(insertPos, node, tr)
+      const tr = this.editorView.state.tr;
+      this.insertNodeInEditor(insertPos, node, tr);
       this.editorView.dispatch(tr);
 
       this.nodeStack.push({
@@ -546,34 +578,33 @@ export class IncrementalProsemirrorRenderer {
   }
 
   handleListItemInsertion(node: Node) {
-
     const topNode = this.nodeStack[this.nodeStack.length - 1];
     if (topNode.type !== Tags.UL && topNode.type !== Tags.OL) {
       throw new Error("Error: LI must have a UL or OL parent in node stack!");
     }
 
     // if (topNode.type === Tags.UL || topNode.type === Tags.OL) {
-      const insertPos = this.getInsertPosition();
-      const listStartPos = insertPos
-      const afterListPos = listStartPos + 1
-      const paragraphStartPos = afterListPos
-      const afterParagraphPos = paragraphStartPos + 1
+    const insertPos = this.getInsertPosition();
+    const listStartPos = insertPos;
+    const afterListPos = listStartPos + 1;
+    const paragraphStartPos = afterListPos;
+    const afterParagraphPos = paragraphStartPos + 1;
 
-      const tr = this.editorView.state.tr
-      this.insertNodeInEditor(insertPos, node, tr)
-      this.editorView.dispatch(tr);
+    const tr = this.editorView.state.tr;
+    this.insertNodeInEditor(insertPos, node, tr);
+    this.editorView.dispatch(tr);
 
-      this.nodeStack.push({
-        type: Tags.LI,
-        startPosition: insertPos,
-        contentPosition: insertPos + 1,
-      });
+    this.nodeStack.push({
+      type: Tags.LI,
+      startPosition: insertPos,
+      contentPosition: insertPos + 1,
+    });
 
-      this.nodeStack.push({
-        type: Tags.P,
-        startPosition: paragraphStartPos,
-        contentPosition: afterParagraphPos
-      })
+    this.nodeStack.push({
+      type: Tags.P,
+      startPosition: paragraphStartPos,
+      contentPosition: afterParagraphPos,
+    });
     // } else {
     //   console.log("Tried to insert LI but parent is not UL or OL");
     //   if (!topNode.insertNextLiPos) {
@@ -602,7 +633,7 @@ export class IncrementalProsemirrorRenderer {
     const insertPos = this.getInsertPosition();
 
     const tr = this.editorView.state.tr;
-    this.insertNodeInEditor(insertPos, node, tr)
+    this.insertNodeInEditor(insertPos, node, tr);
 
     this.editorView.dispatch(tr);
 
@@ -617,8 +648,8 @@ export class IncrementalProsemirrorRenderer {
     const insertPos = this.getInsertPosition();
     const cursorPos = insertPos + 1;
 
-    const tr = this.editorView.state.tr
-    this.insertNodeInEditor(insertPos, node, tr)
+    const tr = this.editorView.state.tr;
+    this.insertNodeInEditor(insertPos, node, tr);
     this.editorView.dispatch(tr);
 
     this.nodeStack.push({
@@ -631,8 +662,8 @@ export class IncrementalProsemirrorRenderer {
   handleInlineCodeInsertion(node: Node) {
     const insertPos = this.getInsertPosition();
 
-    const tr = this.editorView.state.tr
-    this.insertNodeInEditor(insertPos, node, tr)
+    const tr = this.editorView.state.tr;
+    this.insertNodeInEditor(insertPos, node, tr);
     this.editorView.dispatch(tr);
 
     this.nodeStack.push({
@@ -657,14 +688,14 @@ export class IncrementalProsemirrorRenderer {
 
     // tr.setSelection(selection);
     // tr.scrollIntoView();
-}
+  }
 
-insertTextInEditor(textContent: string, insertPos: number, tr: Transaction) {
-  tr.insertText(textContent, insertPos);
-  const selectionPos = insertPos + textContent.length;
-  tr.setSelection(TextSelection.create(tr.doc, selectionPos));
-  tr.scrollIntoView();
-}
+  insertTextInEditor(textContent: string, insertPos: number, tr: Transaction) {
+    tr.insertText(textContent, insertPos);
+    const selectionPos = insertPos + textContent.length;
+    tr.setSelection(TextSelection.create(tr.doc, selectionPos));
+    tr.scrollIntoView();
+  }
 
   private getInsertPosition(): number {
     if (this.insertionPoint !== null) {
@@ -677,6 +708,50 @@ insertTextInEditor(textContent: string, insertPos: number, tr: Transaction) {
       return this.editorView.state.doc.content.size;
     } else {
       return this.nodeStack[this.nodeStack.length - 1].contentPosition;
+    }
+  }
+
+  public deleteNode(nodeHash: string) {
+    this.fingerPrintRef.generateEditorNodesFingerprints(this.editorView);
+    const matchedNode = this.fingerPrintRef.matchFingerprint(nodeHash);
+    console.log("DELETION NODE MTCHED: ", matchedNode);
+    if (matchedNode && this.editorView) {
+      const { state } = this.editorView;
+      const { tr } = state;
+
+      const nodePos = matchedNode.startPos;
+      const originalNode = state.doc.nodeAt(nodePos);
+
+      if (originalNode) {
+        const deletionSuggestion =
+          state.schema.nodes.deletion_suggestion.create(
+            {
+              id: `deletion-${Date.now()}`, // Generate a unique ID
+              originalNodeType: originalNode.type.name,
+              originalAttrs: JSON.stringify(originalNode.attrs),
+            },
+            originalNode
+          );
+
+        // 4. Replace the original node with the deletion suggestion
+        const updatedTr = tr.replaceWith(
+          nodePos,
+          nodePos + originalNode.nodeSize,
+          deletionSuggestion
+        );
+        const selectionPos = updatedTr.mapping.map(nodePos);
+        updatedTr.setSelection(
+          TextSelection.create(this.editorView.state.doc, selectionPos)
+        );
+        updatedTr.scrollIntoView();
+        // 5. Apply the transaction
+        this.editorView.dispatch(updatedTr);
+
+        const nextInsertionPos = tr.mapping.map(
+          nodePos + originalNode.nodeSize
+        );
+        this.setInsertionPoint(nextInsertionPos);
+      }
     }
   }
 }

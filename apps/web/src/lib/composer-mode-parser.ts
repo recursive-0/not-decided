@@ -1,5 +1,3 @@
-
-
 enum ParserState {
   normal = "normal",
   thought = "thought",
@@ -14,7 +12,7 @@ enum ParserState {
   inside_editor_content_tag = "inside_editor_content_tag",
 }
 
-type MODE = "THOUGHT" | "EDITOR_CONTENT" | "NORMAL" | "TARGETS" | "NODE" | "LRTC" | "CTRLD"
+type MODE = "THOUGHT" | "EDITOR_CONTENT" | "NORMAL" | "ADD" | "NODE" | "DELETE" | "CODE"
 
 export enum Tags {
   "H1" = "H1",
@@ -27,49 +25,52 @@ export enum Tags {
   "OL" = "OL",
   "LI" = "LI",
   "CODE" = "CODE",
+  "LANG" = "LANG",
+  "CONTENT" = "CONTENT",
   "ICODE" = "ICODE",
   "QUOTE" = "QUOTE",
+  "ADD" = "ADD",
   "CHECKBOX" = "CHECKBOX",
   "NODE" = "NODE",
-  "CTRLD" = "CTRLD",
-  "LRTC" = "LRTC"
+  "DELETE" = "DELETE",
 }
 
 interface ParserCallbacks {
-  sendJsonNode: (node: string) => void,
-  sendNodeToDelete: (node: string) => void,
+  sendJsonNode: (node: string) => void;
+  sendNodeToDelete: (node: string) => void;
   sendTokensCallback: (tokens: string) => void;
+  sendCodeBlockNode: (codeBlock: CodeBlockNodeType) => void;
   onOpenTag: (tag: Tags) => void;
   onCloseTag: (tag: Tags) => void;
   onTextContent: (txt: string) => void;
 }
 
 const all_tags = [
-    "<H1>",
-    "<H2>",
-    "<H3>",
-    "<B>",
-    "<I>",
-    "<P>",
-    "<CODE>",
-    "<ICODE>",
-    "<UL>",
-    "<LI>",
-    "<QUOTE>",
-    "<OL>",
-    "<CHECKBOX>",
+  "<H1>",
+  "<H2>",
+  "<H3>",
+  "<B>",
+  "<I>",
+  "<P>",
+  "<CODE>",
+  "<LANG>",
+  "<CONTENT>",
+  "<ICODE>",
+  "<UL>",
+  "<LI>",
+  "<QUOTE>",
+  "<OL>",
+  "<CHECKBOX>",
   "<THOUGHT>",
   "</THOUGHT>",
   "<EDITOR_CONTENT>",
   "</EDITOR_CONTENT>",
-  "<TARGETS>",
-  "</TARGETS>",
+  "<ADD>",
+  "</ADD>",
   "<NODE>",
   "</NODE>",
-  "<LRTC>",
-  "</LRTC>",
-  "<CTRLD>",
-  "</CTRLD>"
+  "<DELETE>",
+  "</DELETE>",
 ];
 
 const ALLOWED_TAGS = [
@@ -80,6 +81,8 @@ const ALLOWED_TAGS = [
   "I",
   "P",
   "CODE",
+  "LANG",
+  "CONTENT",
   "UL",
   "LI",
   "QUOTE",
@@ -88,10 +91,9 @@ const ALLOWED_TAGS = [
   "ICODE",
   "THOUGHT",
   "EDITOR_CONTENT",
-  "TARGETS",
+  "ADD",
   "NODE",
-  "CTRLD",
-  "LRTC"
+  "DELETE",
 ];
 
 const isValidTag = (tag: string) => {
@@ -102,6 +104,11 @@ const includesAllowedTags = (tag: string) => {
   return all_tags.find((t) => t.includes(tag)) ? true : false;
 };
 
+export type CodeBlockNodeType = {
+  lang: string;
+  content: string;
+};
+
 export class ComposerModeParser {
   private mode: MODE = "NORMAL";
   private state: ParserState = ParserState.normal;
@@ -109,8 +116,12 @@ export class ComposerModeParser {
   private currentTagName: string = "";
   private tagStack: string[] = [];
   private isActive: boolean = false;
-  private jsonNode: string = ""
-  private deleteNode: string = ""
+  private jsonNode: string = "";
+  private deleteNode: string = "";
+  private codeBlockNode: CodeBlockNodeType = {
+    lang: "",
+    content: "",
+  };
 
   constructor(private callbacks: ParserCallbacks) {}
 
@@ -122,29 +133,45 @@ export class ComposerModeParser {
   private flushTextBuffer() {
     if (this.textBuffer.length === 0) return;
 
-    if(this.state === ParserState.normal){
-        if (this.mode === "THOUGHT") {
-            this.callbacks.sendTokensCallback(this.textBuffer);
-          } else if (this.mode === "EDITOR_CONTENT") {
-            this.callbacks.onTextContent(this.textBuffer);
-          } else if (this.mode === "TARGETS"){
-            // this.jsonNode += this.textBuffer
+    console.log("CURRNT text buffer is: ", this.textBuffer)
 
-          } else if(this.mode === "NODE"){
-            this.jsonNode += this.textBuffer
-          } else if(this.mode === "CTRLD") {
-            console.log("Inside flushing ctrld", this.textBuffer)
-            this.deleteNode += this.textBuffer
-          } else if(this.mode === "LRTC"){
-            // do nothing here
-            console.log("Emitting the LRTC event when there's nothing")
-          } else {
-              console.warn("FLUSHING TEXT BUFFER BUT MODE IS NORMAL!!!")
-              this.callbacks.sendTokensCallback(this.textBuffer)
-          }
-      
-          this.clearTextBuffer();
-    } 
+    if (this.state === ParserState.normal) {
+      if (this.mode === "THOUGHT") {
+        this.callbacks.sendTokensCallback(this.textBuffer);
+      } else if (this.mode === "EDITOR_CONTENT") {
+        this.callbacks.onTextContent(this.textBuffer);
+      } else if(this.mode === "CODE"){
+        const topTag = this.tagStack[this.tagStack.length - 1]
+        if(topTag === "LANG"){
+          this.codeBlockNode.lang += this.textBuffer
+        } else if(topTag === "CONTENT"){
+          console.log("CURRENT CONTENT IN COD BLOCK IS: ", JSON.stringify(this.codeBlockNode))
+          this.codeBlockNode.content += this.textBuffer
+          this.callbacks.onTextContent(this.textBuffer)
+        }
+      } else if (this.mode === "ADD") {
+        // this.jsonNode += this.textBuffer
+      } else if (this.mode === "NODE") {
+        console.log("inside node mode when flushing text buffer");
+        if (this.tagStack[this.tagStack.length - 2] === "ADD") {
+          this.jsonNode += this.textBuffer;
+        } else if (this.tagStack[this.tagStack.length - 2] === "DELETE") {
+          this.deleteNode += this.textBuffer;
+        } else {
+          console.log(
+            "strange we couldn't find ADD or DELETE while the mode is NODE"
+          );
+        }
+      } else if (this.mode === "DELETE") {
+        // do nothing here
+        console.log("Emitting the LRTC event when there's nothing");
+      } else {
+        console.warn("FLUSHING TEXT BUFFER BUT MODE IS NORMAL!!!");
+        this.callbacks.sendTokensCallback(this.textBuffer);
+      }
+
+      this.clearTextBuffer();
+    }
   }
 
   private clearTextBuffer() {
@@ -156,25 +183,33 @@ export class ComposerModeParser {
     this.state = ParserState.normal;
     this.clearTextBuffer();
     this.currentTagName = "";
-    this.jsonNode = ""
-    this.deleteNode = ""
+    this.jsonNode = "";
+    this.deleteNode = "";
     this.tagStack = [];
     this.isActive = false;
   }
 
-  processChunk(chunk: string) {
-
-    if(!this.isActive){
-        console.warn("Error: trying to parse chunk when stream is not active")
-        throw new Error("Can't processs a dead stream")
+  private resetCodeBlockNode(){
+    this.codeBlockNode = {
+      lang: "",
+      content: "",
     }
+  }
+
+  processChunk(chunk: string) {
+    if (!this.isActive) {
+      console.warn("Error: trying to parse chunk when stream is not active");
+      throw new Error("Can't processs a dead stream");
+    }
+
+    console.log("CHUNK to process is: ", chunk)
 
     for (let i = 0; i < chunk.length; i++) {
       const char = chunk[i];
       this.processEachCharacter(char);
     }
 
-    console.log("TAG STACK IS: ", this.tagStack)
+    console.log("TAG STACK IS: ", this.tagStack);
 
     this.flushTextBuffer();
   }
@@ -184,235 +219,289 @@ export class ComposerModeParser {
     const originalTagText = `[${this.currentTagName}]`;
     console.log(`Parser: Attempting to open tag: "${tagName}"`);
 
-    if(!isValidTag(tagName)){
-        this.flushTextBuffer()
-        this.state = ParserState.normal
-        this.currentTagName = ""
-        return
+    if (!isValidTag(tagName)) {
+      this.flushTextBuffer();
+      this.state = ParserState.normal;
+      this.currentTagName = "";
+      return;
     }
 
-    if(tagName === "THOUGHT"){
-        this.mode = "THOUGHT"
-        this.tagStack.push(tagName)
-        this.clearTextBuffer()
-        this.state = ParserState.normal
-        this.currentTagName = ""
-        return
+    if (tagName === "THOUGHT") {
+      this.mode = "THOUGHT";
+      this.tagStack.push(tagName);
+      this.clearTextBuffer();
+      this.state = ParserState.normal;
+      this.currentTagName = "";
+      return;
     }
 
-    if(tagName === "EDITOR_CONTENT"){
-        this.mode = "EDITOR_CONTENT"
-        this.tagStack.push(tagName)
-        this.clearTextBuffer()
-        this.state = ParserState.normal
-        this.currentTagName = ""
-        return
+    if (tagName === "EDITOR_CONTENT") {
+      this.mode = "EDITOR_CONTENT";
+      this.tagStack.push(tagName);
+      this.clearTextBuffer();
+      this.state = ParserState.normal;
+      this.currentTagName = "";
+      return;
     }
 
-    if(tagName === "TARGETS"){
-        this.mode = "TARGETS"
-        this.tagStack.push(tagName)
-        this.clearTextBuffer()
-        this.state = ParserState.normal
-        this.currentTagName = ""
-        return
+    if (tagName === "ADD") {
+      this.mode = "ADD";
+      this.tagStack.push(tagName);
+      this.clearTextBuffer();
+      this.state = ParserState.normal;
+      this.currentTagName = "";
+      return;
     }
 
-    if(tagName === "NODE"){
-      this.mode = "NODE"
-      this.jsonNode = ""
-      this.tagStack.push(tagName)
-      this.clearTextBuffer()
-      this.state = ParserState.normal
-      this.currentTagName = ""
-      return
+    if (tagName === "NODE") {
+      this.mode = "NODE";
+      this.jsonNode = "";
+      this.deleteNode = "";
+      this.tagStack.push(tagName);
+      this.clearTextBuffer();
+      this.state = ParserState.normal;
+      this.currentTagName = "";
+      return;
     }
 
-    if(tagName === "LRTC"){
-      console.log("FOUND OPENING LRTC tag")
-      this.mode = "LRTC"
-      this.tagStack.push(tagName)
-      this.clearTextBuffer()
-      this.deleteNode = ""
-      this.state = ParserState.normal
-      this.currentTagName = ""
-      return
-  }
+    if (tagName === "DELETE") {
+      console.log("FOUND OPENING DELETE tag");
+      this.mode = "DELETE";
+      this.tagStack.push(tagName);
+      this.clearTextBuffer();
+      this.deleteNode = "";
+      this.state = ParserState.normal;
+      this.currentTagName = "";
+      return;
+    }
 
-
-  if(tagName === "CTRLD"){
-    this.mode = "CTRLD"
-    this.deleteNode = ""
-    this.tagStack.push(tagName)
-    this.clearTextBuffer()
-    this.state = ParserState.normal
-    this.currentTagName = ""
-    return
-  }
-
-    if(this.mode === "THOUGHT"){
+    if (tagName === "CODE") {
+      const topTag = this.tagStack[this.tagStack.length - 1]
+      console.log("FOUND CODE opening tag")
+      console.log("TOP TAG IS: ", topTag)
+      if(topTag === "THOUGHT"){
+        console.log("Found CODE tag in thought mode so emitting text for thought mode")
         this.callbacks.sendTokensCallback(this.textBuffer)
-    } else if(this.mode === "EDITOR_CONTENT"){
-        this.callbacks.onOpenTag(tagName as Tags)
-        this.tagStack.push(tagName)
-    } else if(this.mode === "TARGETS"){
-        this.tagStack.push(tagName)
-    } else if(this.mode === "LRTC") {
-      console.log("PUSHING CTRLD onto stakc")
+        return
+      } else {
+      this.mode = "CODE"
       this.tagStack.push(tagName)
-    } else {
-        this.flushTextBuffer()
+      this.clearTextBuffer()
+      this.resetCodeBlockNode()
+      this.state = ParserState.normal
+      this.currentTagName = ""
+      return
+      }
     }
 
-    this.currentTagName = ""
-    this.state = ParserState.normal
+    // if(tagName === "LANG"){
+    //   console.log("FOUND LANG opening tag")
+    //   this.tagStack.push(tagName)
+    //   this.clearTextBuffer()
+    //   this.resetCodeBlockNode()
+    //   this.state = ParserState.normal
+    //   this.currentTagName = ""
+    //   return
+    // }
+
+    if (this.mode === "THOUGHT") {
+      this.callbacks.sendTokensCallback(this.textBuffer);
+    } else if (this.mode === "EDITOR_CONTENT") {
+      this.callbacks.onOpenTag(tagName as Tags);
+      this.tagStack.push(tagName);
+    } else if(this.mode === 'CODE') {
+      if(tagName === "CONTENT"){
+        this.callbacks.sendCodeBlockNode(this.codeBlockNode)
+      }
+      this.tagStack.push(tagName)
+    } else if (this.mode === "ADD") {
+      this.tagStack.push(tagName);
+    } else if (this.mode === "DELETE") {
+      console.log("PUSHING NODE onto stakc");
+      this.tagStack.push(tagName);
+    } else {
+      this.flushTextBuffer();
+    }
+
+    this.currentTagName = "";
+    this.state = ParserState.normal;
     this.clearTextBuffer();
   }
 
   private closeTag() {
     const closingTag = this.currentTagName.toUpperCase();
     const originalTagText = `[/${this.currentTagName}]`;
-    const topTagInStack = this.tagStack[this.tagStack.length - 1]
+    const topTagInStack = this.tagStack[this.tagStack.length - 1];
 
-    if(!isValidTag(closingTag)){
-        this.flushTextBuffer()
-        this.state = ParserState.normal
-        this.currentTagName = ""
-        return
+    if (!isValidTag(closingTag)) {
+      this.flushTextBuffer();
+      this.state = ParserState.normal;
+      this.currentTagName = "";
+      return;
     }
 
-    if(closingTag === "THOUGHT"){
-        const topTagInStack = this.tagStack[this.tagStack.length - 1]
-        if(topTagInStack === closingTag){
-            this.tagStack.pop()
-            this.mode = "NORMAL"
-            this.clearTextBuffer()
-            this.currentTagName = ""
-            this.state = ParserState.normal
-        } else {
-            console.warn(`EXPECTED ${closingTag} TAG but Found ${topTagInStack}`)
-            throw new Error(`EXPECTED ${closingTag} TAG but Found ${topTagInStack}`)
-        }
-
-        return
-    }
-
-    if(closingTag === "EDITOR_CONTENT"){
-        const topTagInStack = this.tagStack[this.tagStack.length - 1]
-        if(topTagInStack === closingTag){
-            this.tagStack.pop()
-            this.mode = "NORMAL"
-            this.clearTextBuffer()
-            this.currentTagName = ""
-            this.state = ParserState.normal
-        } else {
-            console.warn(`EXPECTED ${closingTag} TAG but Found ${topTagInStack}`)
-            throw new Error(`EXPECTED ${closingTag} TAG but Found ${topTagInStack}`)
-        }
-
-        return
-    }
-
-    if(closingTag === "NODE"){
-      const topTagInStack = this.tagStack[this.tagStack.length - 1]
-      if(topTagInStack === closingTag){
-          this.tagStack.pop()
-          this.mode = "NORMAL"
-          this.clearTextBuffer()
-          this.callbacks.sendJsonNode(this.jsonNode)
-          this.jsonNode = ""
-          this.currentTagName = ""
-          this.state = ParserState.normal
+    if (closingTag === "THOUGHT") {
+      const topTagInStack = this.tagStack[this.tagStack.length - 1];
+      if (topTagInStack === closingTag) {
+        this.tagStack.pop();
+        this.mode = "NORMAL";
+        this.clearTextBuffer();
+        this.currentTagName = "";
+        this.state = ParserState.normal;
       } else {
-          console.warn(`EXPECTED ${closingTag} TAG but Found ${topTagInStack}`)
-          throw new Error(`EXPECTED ${closingTag} TAG but Found ${topTagInStack}`)
+        console.warn(`EXPECTED ${closingTag} TAG but Found ${topTagInStack}`);
+        throw new Error(
+          `EXPECTED ${closingTag} TAG but Found ${topTagInStack}`
+        );
       }
 
-      return
-  } 
+      return;
+    }
 
-    if(closingTag === "TARGETS"){
-      const topTagInStack = this.tagStack[this.tagStack.length - 1]
-      if(topTagInStack === closingTag){
-          this.tagStack.pop()
-          this.mode = "NORMAL"
-          this.clearTextBuffer()
-          this.currentTagName = ""
-          this.state = ParserState.normal
+    if (closingTag === "EDITOR_CONTENT") {
+      const topTagInStack = this.tagStack[this.tagStack.length - 1];
+      if (topTagInStack === closingTag) {
+        this.tagStack.pop();
+        this.mode = "NORMAL";
+        this.clearTextBuffer();
+        this.currentTagName = "";
+        this.state = ParserState.normal;
       } else {
-          console.warn(`EXPECTED ${closingTag} TAG but Found ${topTagInStack}`)
-          throw new Error(`EXPECTED ${closingTag} TAG but Found ${topTagInStack}`)
+        console.warn(`EXPECTED ${closingTag} TAG but Found ${topTagInStack}`);
+        throw new Error(
+          `EXPECTED ${closingTag} TAG but Found ${topTagInStack}`
+        );
       }
 
-      return
-  }
+      return;
+    }
 
-  if(closingTag === "CTRLD"){
-    const topTagInStack = this.tagStack[this.tagStack.length - 1]
-    if(topTagInStack === closingTag){
+    if (closingTag === "NODE") {
+      const topTagInStack = this.tagStack[this.tagStack.length - 1];
+      if (topTagInStack === closingTag) {
+        const parentTag = this.tagStack[this.tagStack.length - 2];
+        if (parentTag === "ADD") {
+          this.tagStack.pop();
+          this.mode = "NORMAL";
+          this.clearTextBuffer();
+          this.callbacks.sendJsonNode(this.jsonNode);
+          this.jsonNode = "";
+          this.currentTagName = "";
+          this.state = ParserState.normal;
+        } else if (parentTag === "DELETE") this.tagStack.pop();
+        this.mode = "NORMAL";
+        this.clearTextBuffer();
+        this.callbacks.sendNodeToDelete(this.deleteNode);
+        this.deleteNode = "";
+        this.currentTagName = "";
+        this.state = ParserState.normal;
+      } else {
+        console.warn(`EXPECTED ${closingTag} TAG but Found ${topTagInStack}`);
+        throw new Error(
+          `EXPECTED ${closingTag} TAG but Found ${topTagInStack}`
+        );
+      }
+
+      return;
+    }
+
+    if (closingTag === "ADD") {
+      const topTagInStack = this.tagStack[this.tagStack.length - 1];
+      if (topTagInStack === closingTag) {
+        this.tagStack.pop();
+        this.mode = "NORMAL";
+        this.clearTextBuffer();
+        this.currentTagName = "";
+        this.state = ParserState.normal;
+      } else {
+        console.warn(`EXPECTED ${closingTag} TAG but Found ${topTagInStack}`);
+        throw new Error(
+          `EXPECTED ${closingTag} TAG but Found ${topTagInStack}`
+        );
+      }
+
+      return;
+    }
+
+    if (closingTag === "DELETE") {
+      const topTagInStack = this.tagStack[this.tagStack.length - 1];
+      if (topTagInStack === closingTag) {
+        this.tagStack.pop();
+        this.mode = "NORMAL";
+        this.clearTextBuffer();
+        this.currentTagName = "";
+        this.state = ParserState.normal;
+      } else {
+        console.warn(`EXPECTED ${closingTag} TAG but Found ${topTagInStack}`);
+        throw new Error(
+          `EXPECTED ${closingTag} TAG but Found ${topTagInStack}`
+        );
+      }
+
+      return;
+    }
+
+    if(closingTag === "CODE"){
+      const topTagInStack = this.tagStack[this.tagStack.length - 1];
+      if (topTagInStack === closingTag) {
+        this.tagStack.pop();
+        this.mode = "EDITOR_CONTENT";
+        this.clearTextBuffer();
+        this.resetCodeBlockNode()
+        this.callbacks.onCloseTag(Tags.CODE)
+        this.currentTagName = "";
+        this.state = ParserState.normal;
+      } else {
+        console.warn(`EXPECTED ${closingTag} TAG but Found ${topTagInStack}`);
+        throw new Error(
+          `EXPECTED ${closingTag} TAG but Found ${topTagInStack}`
+        );
+      }
+
+      return;
+    }
+
+    if (this.mode === "THOUGHT") {
+      this.callbacks.sendTokensCallback(this.textBuffer);
+    } else if (this.mode === "EDITOR_CONTENT") {
+      if (topTagInStack === closingTag) {
+        this.callbacks.onCloseTag(closingTag as Tags);
+        this.tagStack.pop();
+      } else {
+        this.callbacks.onTextContent(this.textBuffer);
+      }
+    } else if(this.mode === "CODE"){
+      if(closingTag === "LANG" && topTagInStack === "LANG"){
+        this.tagStack.pop()
+      } else if(closingTag === "CONTENT"){
+        this.tagStack.pop()
+      } else if(closingTag === "CODE" && topTagInStack === "CODE"){
         this.tagStack.pop()
         this.mode = "NORMAL"
-        this.clearTextBuffer()
-        console.log("SENDING DELETE NODE: ", this.deleteNode)
-        this.callbacks.sendNodeToDelete(this.deleteNode)
-        this.deleteNode = ""
-        this.currentTagName = ""
-        this.state = ParserState.normal
-    } else {
-        console.warn(`EXPECTED ${closingTag} TAG but Found ${topTagInStack}`)
-        throw new Error(`EXPECTED ${closingTag} TAG but Found ${topTagInStack}`)
-    }
-
-    return
-} 
-
-  if(closingTag === "LRTC"){
-    const topTagInStack = this.tagStack[this.tagStack.length - 1]
-    if(topTagInStack === closingTag){
-        this.tagStack.pop()
-        this.mode = "NORMAL"
-        this.clearTextBuffer()
-        this.currentTagName = ""
-        this.state = ParserState.normal
-    } else {
-        console.warn(`EXPECTED ${closingTag} TAG but Found ${topTagInStack}`)
-        throw new Error(`EXPECTED ${closingTag} TAG but Found ${topTagInStack}`)
-    }
-
-    return
-}
-
-    if(this.mode === "THOUGHT"){
-        this.callbacks.sendTokensCallback(this.textBuffer)
-    } else if(this.mode === "EDITOR_CONTENT"){
-        if(topTagInStack === closingTag){
-            this.callbacks.onCloseTag(closingTag as Tags)
-            this.tagStack.pop()
-        } else {
-            this.callbacks.onTextContent(this.textBuffer)
-        }
-    } else if(this.mode === "TARGETS"){
-        if(topTagInStack === closingTag){
-          this.tagStack.pop()
-        } else {
-          console.log(`We were expecting ${closingTag} but found ${topTagInStack}`)
-        }
-    } else if(this.mode === "LRTC") {
-      if(topTagInStack === closingTag){
-        this.tagStack.pop()
-      } else {
-        console.log(`We were expecting ${closingTag} but found ${topTagInStack}`)
       }
-    }
-     else {
-        this.flushTextBuffer()
+    } else if (this.mode === "ADD") {
+      if (topTagInStack === closingTag) {
+        this.tagStack.pop();
+      } else {
+        console.log(
+          `We were expecting ${closingTag} but found ${topTagInStack}`
+        );
+      }
+    } else if (this.mode === "DELETE") {
+      if (topTagInStack === closingTag) {
+        this.tagStack.pop();
+      } else {
+        console.log(
+          `We were expecting ${closingTag} but found ${topTagInStack}`
+        );
+      }
+    } else {
+      this.flushTextBuffer();
     }
 
-
-    this.currentTagName = ""
-    this.state = ParserState.normal
+    this.currentTagName = "";
+    this.state = ParserState.normal;
     this.clearTextBuffer();
-
   }
 
   processEachCharacter(char: string) {
@@ -469,7 +558,6 @@ export class ComposerModeParser {
     this.reset();
   }
 }
-
 
 // const thoughtTokens: string[] = [];
 // const editorOpenTags: string[] = [];
