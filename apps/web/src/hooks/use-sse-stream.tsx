@@ -33,7 +33,7 @@ export enum Tags {
   "CHECKBOX" = "CHECKBOX",
 }
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL
+const BASE_URL = process.env.API_BASE_URL
 
 export const useSSEStream = () => {
   const [content, setContent] = useState<string>("");

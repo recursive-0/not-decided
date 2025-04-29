@@ -140,6 +140,13 @@ const entrypoints = [...new Bun.Glob("**.html").scanSync("src")]
   .filter(dir => !dir.includes("node_modules"));
 console.log(`📄 Found ${entrypoints.length} HTML ${entrypoints.length === 1 ? "file" : "files"} to process\n`);
 
+const apiBaseUrlFromBuildEnv = process.env.API_BASE_URL
+
+if (!apiBaseUrlFromBuildEnv) {
+  console.warn("⚠️ Warning: YOUR_API_BASE_URL_VAR_NAME is not set in the build environment!");
+  // You might want to exit or use a default here
+}
+
 // Build all the HTML files
 const result = await build({
   entrypoints,
@@ -150,6 +157,7 @@ const result = await build({
   sourcemap: "linked",
   define: {
     "process.env.NODE_ENV": JSON.stringify("production"),
+    "process.env.API_BASE_URL": JSON.stringify(apiBaseUrlFromBuildEnv || "http://localhost:8787"),
   },
   ...cliConfig, // Merge in any CLI-provided options
 });
