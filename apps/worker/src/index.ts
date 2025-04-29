@@ -1,72 +1,75 @@
-/**
- * Welcome to Cloudflare Workers! This is your first worker.
- *
- * - Run `npm run dev` in your terminal to start a development server
- * - Open a browser tab at http://localhost:8787/ to see your worker in action
- * - Run `npm run deploy` to publish your worker
- *
- * Bind resources to your worker in `wrangler.jsonc`. After adding bindings, a type definition for the
- * `Env` object can be regenerated with `npm run cf-typegen`.
- *
- * Learn more at https://developers.cloudflare.com/workers/
- */
+import { Env } from '../worker-configuration';
+import { generateStream } from './routes/generate-stream';
+import { initializeStream } from './routes/init-stream';
 
-import { Env } from "../worker-configuration";
-import { generateStream } from "./routes/generate-stream";
-import { initializeStream } from "./routes/init-stream";
+const defaultAllowedOrigins = ['https://wrisor-dev.pages.dev', 'http://localhost:3000'];
 
-function cors(handler: (req: Request, env: Env, ctx: ExecutionContext) => Promise<Response>){
+function cors(handler: (req: Request, env: Env, ctx: ExecutionContext) => Promise<Response>) {
+	return async (req: Request, env: Env, ctx: ExecutionContext) => {
+		const requestOrigin = req.headers.get('Origin');
 
+		const corsHeaders: HeadersInit = {
+			'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+			'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 
-    return async (req: Request, env: Env, ctx: ExecutionContext) => {
-        if(req.method === "OPTIONS"){
-            return new Response(null, {
-                headers: {
-                    "Access-Control-Allow-Origin": "http://localhost:3000",
-                    "Access-Control-Allow-Methods": "*",
-                     "Access-Control-Allow-Headers": "Content-Type, Authorization"
-                }
-            })
-        }
+			'Access-Control-Max-Age': '86400',
+		};
+		let isOriginAllowed = false;
 
-        const response = await handler(req, env, ctx)
-
-        const headers = new Headers(response.headers)
-        headers.set("Access-Control-Allow-Origin", "http://localhost:3000")
-
-        return new Response(response.body, {
-            status: response.status,
-            statusText: response.statusText,
-            headers
-        })
-    }
-}
-
-
-const initializeStreamWithCors = cors(initializeStream)
-const generateStreamWithCors = cors(generateStream)
-
-export default {
-	async fetch(request, env, ctx): Promise<Response> {
-		const url = new URL(request.url)
-		console.log("URL is: ", url)
-		const pathname = url.pathname
-		console.log("pathname is: ", pathname)
-		console.log("env is: ", env)
-		console.log("CTX IS: ", ctx)
-
-
-		switch(pathname){
-			case "/":
-			return new Response('Hello World!')
-			case "/favicon.ico":
-			return new Response('FAVICON ICO!!!')
-			case "/api/init/stream":
-			return await initializeStreamWithCors(request, env as Env, ctx)
-			case "/api/generate/stream":
-			return await generateStreamWithCors(request, env as Env, ctx)
+		if (requestOrigin && defaultAllowedOrigins.includes(requestOrigin)) {
+			corsHeaders['Access-Control-Allow-Origin'] = requestOrigin;
+			corsHeaders['Vary'] = 'Origin';
+			isOriginAllowed = true;
 		}
 
-		return new Response('Hello World!');
+		if (req.method === 'OPTIONS') {
+			return new Response(null, {
+				status: 204,
+				headers: corsHeaders,
+			});
+		}
+
+		const response = await handler(req, env, ctx);
+
+		const finalHeaders = new Headers(response.headers);
+
+		if (isOriginAllowed) {
+			finalHeaders.set('Access-Control-Allow-Origin', corsHeaders['Access-Control-Allow-Origin']!);
+			finalHeaders.set('Vary', corsHeaders['Vary']!);
+		}
+
+		return new Response(response.body, {
+			status: response.status,
+			statusText: response.statusText,
+			headers: finalHeaders,
+		});
+	};
+}
+
+const initializeStreamWithCors = cors(initializeStream);
+const generateStreamWithCors = cors(generateStream);
+
+export default {
+	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+		const url = new URL(request.url);
+		const pathname = url.pathname;
+		console.log(`Request: ${request.method} ${pathname}`);
+
+		switch (pathname) {
+			case '/':
+				return cors(async () => new Response('Hello World!'))(request, env, ctx);
+
+			case '/favicon.ico':
+				return new Response(null, { status: 204 });
+
+			case '/api/init/stream':
+				return initializeStreamWithCors(request, env, ctx);
+
+			case '/api/generate/stream':
+				return generateStreamWithCors(request, env, ctx);
+
+			default:
+				return cors(async () => new Response('Not Found', { status: 404 }))(request, env, ctx);
+		}
 	},
-} satisfies ExportedHandler;
+} satisfies ExportedHandler<Env>;
