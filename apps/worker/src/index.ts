@@ -2,7 +2,7 @@ import { Env } from '../worker-configuration';
 import { generateStream } from './routes/generate-stream';
 import { initializeStream } from './routes/init-stream';
 
-const defaultAllowedOrigins = ['https://wrisor-dev.pages.dev', 'http://localhost:3000'];
+const defaultAllowedOrigins = ['*.wrisor-dev.pages.dev', 'http://localhost:3000'];
 
 function cors(handler: (req: Request, env: Env, ctx: ExecutionContext) => Promise<Response>) {
 	return async (req: Request, env: Env, ctx: ExecutionContext) => {
