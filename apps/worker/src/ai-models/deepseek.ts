@@ -51,7 +51,10 @@ interface HandleDeepseekStreamProps {
 
 export async function handleDeepseekStream(props: HandleDeepseekStreamProps) {
 
+  console.log("Props are: ", props.env)
+
     if(!deepseekClient){
+        console.log("No deepseek client so setting one!!!")
         getClient(props.env)
     }
 
