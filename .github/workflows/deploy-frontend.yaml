@@ -1,0 +1,39 @@
+name: Deploy frontend to cloudflare pages
+on:
+    push:
+        branches:
+            - dev
+
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+        steps:
+
+            - run: echo "Checking out the code yo!"
+
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - run: echo "Installing BUN yo!"
+
+            - name: Install bun
+              uses: oven-sh/setup-bun@v1
+
+            - name: Install all the deps yo!
+              run: bun install
+
+            - name: Build the project
+              working-directory: ./apps/web
+              env:
+                VITE_API_BASE_URL: ${{secrets.DEV_WORKER_URL}}
+              run: bun run build
+
+            - name: Deploy to cloudflare pages
+              uses: cloudflare/pages@v1
+              with:
+                apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN_PAGES }}
+                accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+                projectName: 'wrisor-dev'
+                directory: ./apps/web/dist
+                gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+                branch: 'dev'
