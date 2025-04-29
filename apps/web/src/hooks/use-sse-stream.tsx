@@ -33,6 +33,8 @@ export enum Tags {
   "CHECKBOX" = "CHECKBOX",
 }
 
+const BASE_URL = "http://localhost:8787"
+
 export const useSSEStream = () => {
   const [content, setContent] = useState<string>("");
   const chatMode = useChatStore((state) => state.currentChatMode);
@@ -221,7 +223,7 @@ export const useSSEStream = () => {
             const hash = fingerprintManagerRef.current.fastHash(content);
             const contentNode = {
               type: node.type.name,
-              content: node.content,
+              content: node.textContent
             };
             validContentNodes.push({ id: hash, content: contentNode });
           }
@@ -271,7 +273,7 @@ export const useSSEStream = () => {
 
         // Initialize stream
         const response = await fetch(
-          "http://localhost:4000/api/generate/init",
+          `${BASE_URL}/api/init/stream`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -292,7 +294,7 @@ export const useSSEStream = () => {
 
         // Setup SSE
         eventSourceRef.current = new EventSource(
-          `http://localhost:4000/api/generate/stream/${streamId}`
+          `${BASE_URL}/api/generate/stream?streamID=${streamId}`
         );
 
         // Handle messages

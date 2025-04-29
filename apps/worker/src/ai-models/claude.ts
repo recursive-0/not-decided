@@ -1,24 +1,40 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { chatModePrompt } from "../prompts/markdown-instructions-prompt";
-import { composerModePrompt } from "../prompts/composer-mode-prompt";
-import { wrisorSystemPrompt } from "../prompts/wrisor-system-prompt";
-import { wrisorSystemPromptV1 } from "../prompts/wrisor-system-prompt-1";
+import { wrisorChatModePrompt } from "../prompts/wrisor-chatmode-prompt-v1";
+import { Env } from "../../worker-configuration";
+import { wrisorSystemPromptV1 } from "../prompts/wrisor-composer-prompt-v1";
 
-const client = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
-});
+
+  let claudeClient: Anthropic | null = null;
+
+export function getClient(env: Env): Anthropic {
+  if (claudeClient === null) {
+    console.log("Initializing Google AI Client for this isolate...");
+    if (!env.GEMINI_API_KEY) { // Make sure Env interface includes GEMINI_API_KEY: string
+      throw new Error("Missing GEMINI_API_KEY secret in environment configuration!");
+    }
+    claudeClient = new Anthropic({apiKey: env.ANTHROPIC_API_KEY});
+  }
+  return claudeClient;
+}
+  
 
 
 interface HandleClaudeStreamProps {
   prompt: string;
   chatMode: "CHAT" | "COMPOSER"
   contentNodes: any
+  env: Env
 }
 
 export async function handleClaudeStream(props: HandleClaudeStreamProps) {
+
+     if(!claudeClient){
+            getClient(props.env)
+        }
+
   const { prompt, chatMode, contentNodes } = props;
 
-  const systemPrompt = chatMode === "CHAT" ? chatModePrompt() : wrisorSystemPromptV1(prompt, contentNodes)
+  const systemPrompt = chatMode === "CHAT" ? wrisorChatModePrompt() : wrisorSystemPromptV1(prompt, contentNodes)
 
   console.log("SYSTEM PROMPT IS: ", systemPrompt)
 
@@ -27,7 +43,7 @@ export async function handleClaudeStream(props: HandleClaudeStreamProps) {
       try {
         controller.enqueue(`data: START_STREAM \n\n`);
 
-        const tokens = await client.messages.countTokens({
+        const tokens = await claudeClient!.messages.countTokens({
           messages: [{ role: "user", content: prompt }],
           system: systemPrompt,
           model: "claude-3-7-sonnet-20250219",
@@ -35,7 +51,7 @@ export async function handleClaudeStream(props: HandleClaudeStreamProps) {
         
         console.log("INPUT TOKENS ARE: ", tokens)
 
-        const messageStream = await client.messages.stream({
+        const messageStream = await claudeClient!.messages.stream({
           messages: [{ role: "user", content: prompt }],
           system: systemPrompt,
           model: "claude-3-7-sonnet-20250219",

@@ -1,4 +1,4 @@
-export function chatModePrompt() {
+export function wrisorChatModePrompt() {
     return ` ## CHAT MODE FORMATTING
   You must format ALL responses using regular markdown syntax inside [CHAT] tags.
   
