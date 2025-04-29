@@ -10,12 +10,9 @@
   "private": true,
   "scripts": {
     "dev": "bun run dev:web",
-    "dev:server": "bun run --cwd apps/server dev",
     "dev:web": "bun run --cwd apps/web dev",
-    "build": "bun run build:server & bun run build:web",
-    "build:server": "bun run --cwd apps/server build",
+    "build": "bun run build:web",
     "build:web": "bun run --cwd apps/web build",
-    "i:server": "bun --cwd apps/server",
     "i:web": "bun --cwd apps/web add"
   },
   "type": "module",
