@@ -2,7 +2,7 @@ import { Env } from '../worker-configuration';
 import { generateStream } from './routes/generate-stream';
 import { initializeStream } from './routes/init-stream';
 
-const defaultAllowedOrigins = ['*.wrisor-dev.pages.dev', 'http://localhost:3000'];
+const defaultAllowedOrigins = ['*', 'http://localhost:3000'];
 
 function cors(handler: (req: Request, env: Env, ctx: ExecutionContext) => Promise<Response>) {
 	return async (req: Request, env: Env, ctx: ExecutionContext) => {
@@ -16,11 +16,10 @@ function cors(handler: (req: Request, env: Env, ctx: ExecutionContext) => Promis
 		};
 		let isOriginAllowed = false;
 
-		if (requestOrigin && defaultAllowedOrigins.includes(requestOrigin)) {
-			corsHeaders['Access-Control-Allow-Origin'] = requestOrigin;
+
+			corsHeaders['Access-Control-Allow-Origin'] = "*"
 			corsHeaders['Vary'] = 'Origin';
 			isOriginAllowed = true;
-		}
 
 		if (req.method === 'OPTIONS') {
 			return new Response(null, {
