@@ -17,7 +17,7 @@ import { initializeStream } from "./routes/init-stream";
 
 function cors(handler: (req: Request, env: Env, ctx: ExecutionContext) => Promise<Response>){
 
-    console.log("inside cors")
+
     return async (req: Request, env: Env, ctx: ExecutionContext) => {
         if(req.method === "OPTIONS"){
             return new Response(null, {
