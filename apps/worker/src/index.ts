@@ -2,47 +2,35 @@ import { Env } from '../worker-configuration';
 import { generateStream } from './routes/generate-stream';
 import { initializeStream } from './routes/init-stream';
 
-const defaultAllowedOrigins = ['*', 'http://localhost:3000'];
-
 function cors(handler: (req: Request, env: Env, ctx: ExecutionContext) => Promise<Response>) {
-	return async (req: Request, env: Env, ctx: ExecutionContext) => {
-		const requestOrigin = req.headers.get('Origin');
+    return async (req: Request, env: Env, ctx: ExecutionContext) => {
 
-		const corsHeaders: HeadersInit = {
-			'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
-			'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        const corsHeadersConfig: HeadersInit = {
+            'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+            'Access-Control-Allow-Origin': "*", 
+        };
 
-			'Access-Control-Max-Age': '86400',
-		};
-		let isOriginAllowed = false;
+        if (req.method === 'OPTIONS') {
+            return new Response(null, {
+                status: 204,
+                headers: corsHeadersConfig,
+            });
+        }
+
+        const response = await handler(req, env, ctx);
+
+        const finalHeaders = new Headers(response.headers); // This properly copies original headers
+
+        finalHeaders.set('Access-Control-Allow-Origin', corsHeadersConfig['Access-Control-Allow-Origin']);
 
 
-			corsHeaders['Access-Control-Allow-Origin'] = "*"
-			corsHeaders['Vary'] = 'Origin';
-			isOriginAllowed = true;
-
-		if (req.method === 'OPTIONS') {
-			return new Response(null, {
-				status: 204,
-				headers: corsHeaders,
-			});
-		}
-
-		const response = await handler(req, env, ctx);
-
-		const finalHeaders = new Headers(response.headers);
-
-		if (isOriginAllowed) {
-			finalHeaders.set('Access-Control-Allow-Origin', corsHeaders['Access-Control-Allow-Origin']!);
-			finalHeaders.set('Vary', corsHeaders['Vary']!);
-		}
-
-		return new Response(response.body, {
-			status: response.status,
-			statusText: response.statusText,
-			headers: finalHeaders,
-		});
-	};
+        return new Response(response.body, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: finalHeaders, 
+        });
+    };
 }
 
 const initializeStreamWithCors = cors(initializeStream);

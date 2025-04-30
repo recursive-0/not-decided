@@ -33,7 +33,7 @@ export enum Tags {
   "CHECKBOX" = "CHECKBOX",
 }
 
-const BASE_URL = process.env.API_BASE_URL
+const BASE_URL = "http://localhost:8787"
 
 export const useSSEStream = () => {
   const [content, setContent] = useState<string>("");
@@ -217,16 +217,18 @@ export const useSSEStream = () => {
 
         const editorDocNodes = editorView.current.state.doc.content;
         let validContentNodes = [];
+        fingerprintManagerRef.current.clearHashCollisionCounter()
         editorDocNodes.content.forEach((node: Node) => {
-          if (node.content.size > 0) {
+          console.log("NODE is: ", node)
+          // if (node.content.size > 0) {
             const content = fingerprintManagerRef.current.normalizeNodeTextContent(node);
-            const hash = fingerprintManagerRef.current.fastHash(content);
+            const hash = fingerprintManagerRef.current.getUniqueHash(content);
             const contentNode = {
               type: node.type.name,
               content: node.textContent
             };
             validContentNodes.push({ id: hash, content: contentNode });
-          }
+          // }
         });
 
         console.log("CONTENT NODESSSSSSSS: ", validContentNodes);
@@ -254,6 +256,7 @@ export const useSSEStream = () => {
         //       pNode
         //     );
         //   }
+          fingerprintManagerRef.current.clearHashCollisionCounter()
           fingerprintManagerRef.current.generateEditorNodesFingerprints(
             editorView.current
           );

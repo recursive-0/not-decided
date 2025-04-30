@@ -74,7 +74,7 @@ export class FingerprintManager {
     console.log("CURRENT HASHES IN EDITOR", this.nodeFingerprints);
 
     const matchedNode = this.nodeFingerprints.get(hash);
-    if (!matchedNode) return null;
+    if (!matchedNode || matchedNode.type.name === "deletion_suggestion") return null;
 
     // This gives us node's start position in the document
     const pos = this.findNodePosition(matchedNode);

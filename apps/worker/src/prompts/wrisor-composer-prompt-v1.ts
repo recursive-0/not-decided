@@ -2,8 +2,6 @@ export function wrisorSystemPromptV1(userQuery: string, contentNodes: any) {
     console.log("CONTENT NODES are: ", contentNodes);
   
     return `
-     ## USER QUERY
-     ${userQuery}
      
   <editor_content_nodes>
      ${
@@ -1014,6 +1012,8 @@ export function wrisorSystemPromptV1(userQuery: string, contentNodes: any) {
   Would you like me to add this comparison to your document? If so, I can format it as a new section.
   </THOUGHT>
   </complete_response_examples>
+
+  NOW GENERATE THE OUTPUT STARTING WITH THE THOUGHT TAG!!!!
   
      `;
   }

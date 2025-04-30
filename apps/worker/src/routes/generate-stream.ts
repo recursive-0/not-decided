@@ -1,5 +1,7 @@
 import { Env } from '../../worker-configuration';
+import { handleClaudeStream } from '../ai-models/claude';
 import { handleDeepseekStream } from '../ai-models/deepseek';
+import { handleGeminiStream } from '../ai-models/gemini';
 
 export async function generateStream(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 	const url = new URL(req.url);
@@ -21,7 +23,7 @@ export async function generateStream(req: Request, env: Env, ctx: ExecutionConte
 	console.log('Content nodes are: ', contentNodes);
 
 	try {
-		return await handleDeepseekStream({ prompt, chatMode: chatMode as 'CHAT' | 'COMPOSER', contentNodes: contentNodes, env: env });
+		return await handleGeminiStream({ prompt, chatMode: chatMode as 'CHAT' | 'COMPOSER', contentNodes: contentNodes, env: env });
 		// return await simpleStaticStream()
 	} catch (error) {
 		return Response.json(

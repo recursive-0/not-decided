@@ -20,16 +20,6 @@ const initializeStreamBodySchema = z.object({
 
 export async function initializeStream(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 
-    if(request.method === "OPTIONS"){
-        return new Response(null, {
-            headers: {
-                "Access-Control-Allow-Origin": "http://localhost:3000",
-                "Access-Control-Allow-Methods": "*",
-                 "Access-Control-Allow-Headers": "Content-Type, Authorization"
-            }
-        })
-    }
-
     console.log("inside init stream")
     let rawBody: InitializeStreamBodyType | null;
     try{
@@ -50,6 +40,5 @@ export async function initializeStream(request: Request, env: Env, ctx: Executio
     // 
     const streamId = crypto.randomUUID()
     await env.STREAM_CONTEXT_STORE.put(streamId, JSON.stringify({prompt: prompt, chatMode: chatMode, contentNodes: contentNodes}))
-
     return Response.json({streamId})
 }

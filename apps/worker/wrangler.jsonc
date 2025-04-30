@@ -10,6 +10,12 @@
 	"observability": {
 		"enabled": true
 	},
+	"kv_namespaces": [
+    {
+      "binding": "STREAM_CONTEXT_STORE",
+      "id": "128acbbde6ea464886b2b73b5cbe1454"
+    }
+  ],
 	"env": {
 		"dev": {
 			"name": "wrisor-dev-worker",
