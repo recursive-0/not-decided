@@ -33,7 +33,7 @@ export enum Tags {
   "CHECKBOX" = "CHECKBOX",
 }
 
-const BASE_URL = "http://localhost:8787"
+const BASE_URL = process.env.API_BASE_URL || "http://localhost:8787"
 
 export const useSSEStream = () => {
   const [content, setContent] = useState<string>("");
