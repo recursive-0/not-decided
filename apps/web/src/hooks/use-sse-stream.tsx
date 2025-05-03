@@ -8,6 +8,7 @@ import type { ChatMode } from "@/types/messages";
 import { ChatModeIncrementalParser } from "@/lib/chat-mode-parser";
 import {
   ComposerModeParser,
+  CurrentActionType,
   type CodeBlockNodeType,
 } from "@/lib/composer-mode-parser";
 import { useChatStore } from "@/store/chat";
@@ -290,6 +291,7 @@ export const useSSEStream = () => {
               getCurrentParser()?.current!.stopStreaming();
               rendererRef.current!.updateSuccessfulGenerations();
               setIsStreaming(false);
+              setCurrentLLMAction(CurrentActionType.NORMAL)
               eventSourceRef.current!.close();
               if (window.suggestionsManager!.totalEdits() > 0) {
                 setAcceptRejectDialog(true);
@@ -297,8 +299,8 @@ export const useSSEStream = () => {
               return;
 
             case "START_STREAM":
-              getCurrentParser()?.current!.startStreaming();
-
+              getCurrentParser().current!.startStreaming();
+              setCurrentLLMAction(CurrentActionType.NORMAL)
               if (editorView.current!.state.doc.textContent.trim().length === 0) {
                 rendererRef.current!.setHighlight(false);
               } else {

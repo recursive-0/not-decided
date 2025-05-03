@@ -39,3 +39,4 @@ jobs:
                 projectName: 'wrisor-dev'
                 directory: ./apps/web/dist
                 gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+                branch: "prod"
