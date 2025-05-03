@@ -9,9 +9,9 @@
   },
   "private": true,
   "scripts": {
-    "dev": "bun run dev:worker && bun run dev:web",
+    "dev": "bun run dev:web && bun run dev:worker",
     "dev:web": "bun run --cwd apps/web dev",
-    "dev:worker": "bunx run --cwd apps/worker dev",
+    "dev:worker": "bun run --cwd apps/worker dev",
     "build": "bun run build:web",
     "build:web": "bun run --cwd apps/web build",
     "i:web": "bun --cwd apps/web add"
