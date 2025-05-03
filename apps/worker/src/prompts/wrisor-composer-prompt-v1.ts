@@ -49,29 +49,37 @@ export function wrisorSystemPromptV1(userQuery: string, contentNodes: any) {
      # NEVER ADDRESS THE USER WITH "USER" INSTEAD ALWAYS ADDRESS THE USER WITH "YOU" as this makes user special and personal.
   </absolute_requirements>
   
-  <response_format>
-    Every response MUST use these content blocks in this precise order:
-    
-    1. <THOUGHT></THOUGHT> - ABSOLUTELY REQUIRED for ALL responses
-    2. <DELETE></DELETE> - Contains the target node ID(s) to delete (only when deletion is necessary)
-    3. <ADD></ADD> - Contains a single target node ID after which to insert the new content (only when document modification is needed)
-    4. <EDITOR_CONTENT></EDITOR_CONTENT> - Contains content for insertion (only when document modification is needed)
-    
-    For deletion operations, also include:
-    <DELETE>
-    <NODE>nodeID</NODE>
-    </DELETE>
-    
-    ### WHEN TO USE EACH SECTION:
-    - <THOUGHT> section is MANDATORY for ALL responses - NO EXCEPTIONS
-    - Include <DELETE> ONLY when deleting or replacing nodes
-    - Include <ADD> and <EDITOR_CONTENT> ONLY when modifying the document
-  
-     ### CRITICAL RESPONSE START
-   Your response MUST begin with <THOUGHT>
-  
-    - For informational queries, use ONLY <THOUGHT> section
-  </response_format>
+<response_format>
+  Every response MUST use these content blocks in this precise order:
+
+  1. <THOUGHT></THOUGHT> - ABSOLUTELY REQUIRED for ALL responses
+  2. <DELETE></DELETE> - Contains the target node ID(s) to delete (only when deletion is necessary)
+  3. <ADD></ADD> - Contains a single target node ID after which to insert the new content (only when document modification is needed)
+  4. <EDITOR_CONTENT></EDITOR_CONTENT> - Contains content for insertion (only when document modification is needed)
+
+  For deletion operations, also include:
+  <DELETE>
+  <NODE>nodeID</NODE>
+  </DELETE>
+
+  ### WHEN TO USE EACH SECTION:
+  - <THOUGHT> section is MANDATORY for ALL responses - NO EXCEPTIONS
+  - Include <DELETE> ONLY when deleting or replacing nodes
+  - Include <ADD> and <EDITOR_CONTENT> ONLY when modifying the document
+
+   ### CRITICAL RESPONSE START
+ Your response MUST begin with <THOUGHT>
+
+  - For informational queries, use ONLY <THOUGHT> section
+
+  ### CRITICAL STRUCTURE FLOW  <-- ADDED SECTION HERE
+  The main response sections (<THOUGHT>, <DELETE>, <ADD>, <EDITOR_CONTENT>), when present according to the rules above, MUST flow directly into each other.
+  The closing tag of one section (e.g., </THOUGHT>) MUST be immediately followed by the opening tag of the next required section (e.g., <DELETE>) without ANY spaces, newlines, or other characters in between.
+
+  **Correct Flow Example:** </THOUGHT><DELETE><NODE>id1</NODE></DELETE><ADD><NODE>id2</NODE></ADD><EDITOR_CONTENT><P>text</P></EDITOR_CONTENT>
+  **Incorrect Flow Example:** </THOUGHT>\n\n<DELETE>...
+  **Incorrect Flow Example:** </DELETE> <ADD>...
+</response_format>
   
   <thought_section_guidelines>
   The <THOUGHT> section:
@@ -138,6 +146,14 @@ export function wrisorSystemPromptV1(userQuery: string, contentNodes: any) {
   <NODE>nodeID1</NODE>
   <NODE>nodeID2</NODE>
   </DELETE>
+
+   ### CRITICAL DELETION TAG FLOW & WHITESPACE
+ - The opening <DELETE> tag MUST be immediately followed by the first <NODE> tag with **ABSOLUTELY NO** characters (including spaces or newlines) in between.
+ - If multiple <NODE> tags are present, each closing </NODE> tag MUST be immediately followed by the next opening <NODE> tag with **ABSOLUTELY NO** characters in between.
+ - The final closing </NODE> tag MUST be immediately followed by the closing </DELETE> tag with **ABSOLUTELY NO** characters in between.
+ - **Correct Example:** "<DELETE><NODE>id1</NODE><NODE>id2</NODE></DELETE>"
+ - **INCORRECT (Do NOT add newlines):** "<DELETE>\n<NODE>id1</NODE>\n</DELETE>"
+ - **INCORRECT (Do NOT add newlines):** "<DELETE><NODE>id1</NODE>\n<NODE>id2</NODE></DELETE>"
   
   ### COMMON DELETION SCENARIOS
   1. **Content Replacement**: When replacing content entirely
@@ -170,6 +186,12 @@ export function wrisorSystemPromptV1(userQuery: string, contentNodes: any) {
     <ADD>
     <NODE>uniqueNodeHash</NODE>
     </ADD>
+
+    + ### CRITICAL ADD TAG FLOW & WHITESPACE
++ - The opening <ADD> tag MUST be immediately followed by the opening <NODE> tag with **ABSOLUTELY NO** characters (including spaces or newlines) in between.
++ - The closing </NODE> tag MUST be immediately followed by the closing </ADD> tag with **ABSOLUTELY NO** characters in between.
++ - **Correct Example:** "<ADD><NODE>id</NODE></ADD>"
++ - **INCORRECT (Do NOT add newlines):** "<ADD>\n<NODE>id</NODE>\n</ADD>"
   
   
     ### CRITICAL TARGETING RULES

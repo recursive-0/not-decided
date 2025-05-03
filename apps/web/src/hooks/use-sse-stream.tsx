@@ -17,8 +17,8 @@ import { EditorActionsManager } from "@/lib/editor-actions-manager";
 import { TextSelection } from "prosemirror-state";
 import { Tags } from "@/types/editor";
 
-// const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8787"
-const BASE_URL = "https://wrisor-dev-worker.itsrecursive-l.workers.dev"
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8787"
+// const BASE_URL = "https://wrisor-dev-worker.itsrecursive-l.workers.dev"
 
 export const useSSEStream = () => {
   const [content, setContent] = useState<string>("");
@@ -114,6 +114,7 @@ export const useSSEStream = () => {
         }
 
         const deleteNode = (nodeHash: string) => {
+          console.log("Delete node called with hash: ", nodeHash)
           if(!fingerprintManagerRef.current || !editorView.current) return
 
           fingerprintManagerRef.current.generateEditorNodesFingerprints(

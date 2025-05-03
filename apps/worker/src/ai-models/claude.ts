@@ -59,12 +59,11 @@ export async function handleClaudeStream(props: HandleClaudeStreamProps) {
 
 				// Create a separate handler function with the correct controller reference
 				const handleText = (text: string) => {
-					console.log(`content is: "${text.replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t')}"`);
-					// const safeText = text.replace(/\n/g, "\\n").replace(/\r/g, "\\r").replace(/\t/g, "\\t");
 					const safeText = text
 					.replace(/\n/g, "\\n")
 					.replace(/\r/g, "\\r")
 					.replace(/\t/g, "\\t");
+					console.log("SAFE TEXT IS: ", safeText)
 					const sseMessage = `data: ${safeText}\n\n`;
 					controller.enqueue(encoder.encode(sseMessage));
 				};
