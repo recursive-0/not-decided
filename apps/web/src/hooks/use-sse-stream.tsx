@@ -17,8 +17,6 @@ import { EditorActionsManager } from "@/lib/editor-actions-manager";
 import { TextSelection } from "prosemirror-state";
 import { Tags } from "@/types/editor";
 
-console.log("OKay so all the envs are: ", import.meta.env)
-
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8787"
 
 export const useSSEStream = () => {
