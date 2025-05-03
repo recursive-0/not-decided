@@ -1,6 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
-import { useChatHandler } from "@/hooks/use-chat-handler";
-import { Lock } from "lucide-react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import "./lock-feedback.css";
 
@@ -35,7 +33,7 @@ export const LockFeedbackOverlay = () => {
   }, [isStreaming, preventScroll]);
 
   const triggerFeedback = useCallback(
-    (e: React.MouseEvent | React.TouchEvent | React.KeyboardEvent) => {
+    () => {
       if (isStreaming) {
         setShowLockFeedback(true);
         if (feedbackTimeoutRef.current)
@@ -71,9 +69,9 @@ export const LockFeedbackOverlay = () => {
         "bg-light-mushroom/10 backdrop-blur-[1px]",
         "transition-opacity duration-200 ease-in-out"
       )}
-      onClick={(e) => triggerFeedback(e)}
-      onTouchStart={(e) => triggerFeedback(e)}
-      onKeyDown={(e) => triggerFeedback(e)}
+      onClick={() => triggerFeedback()}
+      onTouchStart={() => triggerFeedback()}
+      onKeyDown={() => triggerFeedback()}
       tabIndex={-1}
       aria-label="Editor interactions locked during AI generation"
       role="presentation"

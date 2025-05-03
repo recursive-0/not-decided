@@ -716,6 +716,11 @@ export async function simpleStaticStream(prompt?: string) {
     "QUO",
     "TE",
     ">",
+    `<P>Here's a simple "Hello, World!" program in`,
+    ` Rust:</P><CODE><LANG>`,
+    `rust</LANG><CONTENT>fn main() {`,
+    `\n    println!("Hello, World!");\n}`,
+    `</CONTENT></CODE`,
     "</EDITOR_CONTENT>"
   ];
   
@@ -729,7 +734,8 @@ export async function simpleStaticStream(prompt?: string) {
   // e.g., "[", "E", "D", "I", "T", "O", "R", ... etc.
   
         // First send a "START_STREAM" event to initialize
-        controller.enqueue(`data: START_STREAM\n\n`);
+        const encoder = new TextEncoder()
+        controller.enqueue(encoder.encode(`data: START_STREAM\n\n`));
   
         // Function to send chunks with delays to simulate streaming
         const sendChunks = async () => {
@@ -743,7 +749,7 @@ export async function simpleStaticStream(prompt?: string) {
             console.log("Escaped chunk:", JSON.stringify(escapedChunk));
   
             // Format for SSE - using the escaped chunk
-            controller.enqueue(`data: ${escapedChunk}\n\n`);
+            controller.enqueue(encoder.encode(`data: ${escapedChunk}\n\n`));
             console.log(`Sent chunk: data: ${JSON.stringify(escapedChunk)}\n\n`);
   
             await new Promise((resolve) => setTimeout(resolve, 20));

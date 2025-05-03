@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useState } from 'react';
 import {
   Tooltip,
   TooltipContent,
@@ -23,22 +23,15 @@ import {
   AlignRight,
   Link,
   Sparkles,
-  Superscript,
-  Subscript,
   Heading1,
   Heading2,
   Heading3,
   List,
   ListOrdered,
   Quote,
-  Palette,
   HighlighterIcon,
-  Indent,
-  Outdent,
   Type,
-  QuoteIcon
 } from 'lucide-react';
-import { useSSEStream } from '@/hooks/use-sse-stream';
 import { useEditor } from '@/providers/editor-context-provider';
 import { 
   boldText, 
@@ -63,9 +56,6 @@ import { Button } from '@/components/ui/button';
 type TextFormatType = "bold" | "italic" | "underline" | "strikethrough" | "superscript" | "subscript";
 type AlignmentType = "alignLeft" | "alignCenter" | "alignRight" | "alignJustify";
 type BlockType = "heading1" | "heading2" | "heading3" | "paragraph" | "bulletList" | "orderedList" | "blockquote";
-
-// Combined type for state tracking
-type FormatType = TextFormatType | AlignmentType | BlockType;
 
 // Format options for basic text styling
 const textFormatOptions = [
@@ -161,7 +151,6 @@ const FormatButton = ({
 
 const ColorButton = ({ 
   icon: Icon, 
-  label, 
   options, 
   onSelect 
 }: { 
@@ -209,8 +198,6 @@ const Toolbar = () => {
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [linkText, setLinkText] = useState("");
   const [linkUrl, setLinkUrl] = useState("");
-  
-  const { startStreaming } = useSSEStream();
   const { editorView } = useEditor();
 
     // Update the handleInsertLink function
@@ -222,7 +209,7 @@ const Toolbar = () => {
     const handleAddLink = () => {
       // This function will need to be implemented based on your editor's API
       // For example, it might look something like this:
-      insertLink(editorView.current, linkText, linkUrl);
+      insertLink(editorView.current!, linkText, linkUrl);
       
       // Close the dialog and reset fields
       setLinkDialogOpen(false);
@@ -236,22 +223,22 @@ const Toolbar = () => {
 
     switch(format) {
       case "bold":
-        boldText(editorView.current, !isAlreadySelected);
+        boldText(editorView.current!, !isAlreadySelected);
         break;
       case "italic":
-        italicizeText(editorView.current, !isAlreadySelected);
+        italicizeText(editorView.current!, !isAlreadySelected);
         break;
       case "underline":
-        underlineText(editorView.current, !isAlreadySelected);
+        underlineText(editorView.current!, !isAlreadySelected);
         break;
       case "strikethrough":
-        strikethroughText(editorView.current, !isAlreadySelected);
+        strikethroughText(editorView.current!, !isAlreadySelected);
         break;
       case "superscript":
-        superscriptText(editorView.current, !isAlreadySelected);
+        superscriptText(editorView.current!, !isAlreadySelected);
         break;
       case "subscript":
-        subscriptText(editorView.current, !isAlreadySelected);
+        subscriptText(editorView.current!, !isAlreadySelected);
         break;
       default:
         break;
@@ -276,7 +263,7 @@ const Toolbar = () => {
     };
     
     // Apply alignment to editor
-    setTextAlignment(editorView.current, alignmentMap[alignment] as 'left' | 'center' | 'right' | 'justify');
+    setTextAlignment(editorView.current!, alignmentMap[alignment] as 'left' | 'center' | 'right' | 'justify');
     
     // Update active alignment
     setActiveAlignment(alignment);
@@ -303,6 +290,8 @@ const Toolbar = () => {
 
   // Handler for block formatting
   const setBlockFormat = (blockType: BlockType) => {
+    if(!editorView.current) return
+
     switch(blockType) {
       case "heading1":
         applyHeading(editorView.current, 1);
@@ -393,13 +382,13 @@ const Toolbar = () => {
             icon={Type}
             label="Text Color"
             options={textColorOptions}
-            onSelect={(color) => setTextColor(editorView.current, color)}
+            onSelect={(color) => setTextColor(editorView.current!, color)}
           />
           <ColorButton
             icon={HighlighterIcon}
             label="Highlight Color"
             options={highlightOptions}
-            onSelect={(color) => setHighlightColor(editorView.current, color)}
+            onSelect={(color) => setHighlightColor(editorView.current!, color)}
           />
         </div>
 

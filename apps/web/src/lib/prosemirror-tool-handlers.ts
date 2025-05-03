@@ -346,7 +346,7 @@ export const setTextColor = (editorView: EditorView, color: string): void => {
   export const setTextAlignment = (editorView: EditorView, alignment: 'left' | 'center' | 'right' | 'justify'): void => {
     console.log("Setting text alignment to:", alignment);
     const { state } = editorView;
-    const { selection, schema, tr } = state;
+    const { selection, tr } = state;
     
     const { $from, $to } = selection;
     const range = $from.blockRange($to);

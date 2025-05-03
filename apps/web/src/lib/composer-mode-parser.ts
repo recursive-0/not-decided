@@ -43,6 +43,7 @@ interface ParserCallbacks {
   onOpenTag: (tag: Tags) => void;
   onCloseTag: (tag: Tags) => void;
   onTextContent: (txt: string) => void;
+  setCurrentActionState: (action: CurrentActionType) => void
 }
 
 const all_tags = [
@@ -95,6 +96,13 @@ const ALLOWED_TAGS = [
   "NODE",
   "DELETE",
 ];
+
+export enum CurrentActionType {
+  THINKING = "THINKING",
+  DELETING = "DELETING",
+  ADDING = "ADDING",
+  NORMAL = "NORMAL"
+}
 
 const isValidTag = (tag: string) => {
   return ALLOWED_TAGS.find((t) => t === tag) ? true : false;
@@ -214,9 +222,10 @@ export class ComposerModeParser {
     this.flushTextBuffer();
   }
 
+
   private openTag() {
     const tagName = this.currentTagName.toUpperCase();
-    const originalTagText = `[${this.currentTagName}]`;
+    // const originalTagText = `[${this.currentTagName}]`;
     console.log(`Parser: Attempting to open tag: "${tagName}"`);
 
     if (!isValidTag(tagName)) {
@@ -228,6 +237,7 @@ export class ComposerModeParser {
 
     if (tagName === "THOUGHT") {
       this.mode = "THOUGHT";
+      this.callbacks.setCurrentActionState(CurrentActionType.THINKING)
       this.tagStack.push(tagName);
       this.clearTextBuffer();
       this.state = ParserState.normal;
@@ -237,6 +247,7 @@ export class ComposerModeParser {
 
     if (tagName === "EDITOR_CONTENT") {
       this.mode = "EDITOR_CONTENT";
+      this.callbacks.setCurrentActionState(CurrentActionType.ADDING)
       this.tagStack.push(tagName);
       this.clearTextBuffer();
       this.state = ParserState.normal;
@@ -267,6 +278,7 @@ export class ComposerModeParser {
     if (tagName === "DELETE") {
       console.log("FOUND OPENING DELETE tag");
       this.mode = "DELETE";
+      this.callbacks.setCurrentActionState(CurrentActionType.DELETING)
       this.tagStack.push(tagName);
       this.clearTextBuffer();
       this.deleteNode = "";
@@ -330,7 +342,7 @@ export class ComposerModeParser {
 
   private closeTag() {
     const closingTag = this.currentTagName.toUpperCase();
-    const originalTagText = `[/${this.currentTagName}]`;
+    // const originalTagText = `[/${this.currentTagName}]`;
     const topTagInStack = this.tagStack[this.tagStack.length - 1];
 
     if (!isValidTag(closingTag)) {
@@ -345,6 +357,7 @@ export class ComposerModeParser {
       if (topTagInStack === closingTag) {
         this.tagStack.pop();
         this.mode = "NORMAL";
+        this.callbacks.setCurrentActionState(CurrentActionType.NORMAL)
         this.clearTextBuffer();
         this.currentTagName = "";
         this.state = ParserState.normal;
@@ -363,6 +376,7 @@ export class ComposerModeParser {
       if (topTagInStack === closingTag) {
         this.tagStack.pop();
         this.mode = "NORMAL";
+        this.callbacks.setCurrentActionState(CurrentActionType.NORMAL)
         this.clearTextBuffer();
         this.currentTagName = "";
         this.state = ParserState.normal;
@@ -428,6 +442,7 @@ export class ComposerModeParser {
       if (topTagInStack === closingTag) {
         this.tagStack.pop();
         this.mode = "NORMAL";
+        this.callbacks.setCurrentActionState(CurrentActionType.NORMAL)
         this.clearTextBuffer();
         this.currentTagName = "";
         this.state = ParserState.normal;
@@ -558,130 +573,3 @@ export class ComposerModeParser {
     this.reset();
   }
 }
-
-// const thoughtTokens: string[] = [];
-// const editorOpenTags: string[] = [];
-// const editorCloseTags: string[] = [];
-// const editorTexts: string[] = [];
-
-// const callbacks: ParserCallbacks = {
-//   sendTokensCallback: (tokens: string) => {
-//     console.log("--> Received THOUGHT Tokens:", JSON.stringify(tokens));
-//     thoughtTokens.push(tokens);
-//   },
-//   onOpenTag: (tag: Tags) => {
-//     console.log("--> Received EDITOR Open Tag:", tag);
-//     editorOpenTags.push(tag);
-//   },
-//   onCloseTag: (tag: Tags) => {
-//     console.log("--> Received EDITOR Close Tag:", tag);
-//     editorCloseTags.push(tag);
-//   },
-//   onTextContent: (txt: string) => {
-//     console.log("--> Received EDITOR Text:", JSON.stringify(txt));
-//     editorTexts.push(txt);
-//   },
-// };
-
-// const composerParser = new ComposerModeParser(callbacks);
-
-// function runComposerTest(testName: string, chunks: string[]) {
-//   console.log(`\n--- Running Composer Test: ${testName} ---`);
-
-//   thoughtTokens.length = 0;
-//   editorOpenTags.length = 0;
-//   editorCloseTags.length = 0;
-//   editorTexts.length = 0;
-
-//   composerParser.startStreaming();
-
-//   chunks.forEach((chunk, index) => {
-//     console.log(`Processing chunk ${index + 1}:`, JSON.stringify(chunk));
-//     composerParser.processChunk(chunk);
-//   });
-
-//   composerParser.stopStreaming();
-
-//   console.log(`\n--- Results for ${testName} ---`);
-//   console.log("Thought Tokens:", thoughtTokens);
-//   console.log("Editor Open Tags:", editorOpenTags);
-//   console.log("Editor Close Tags:", editorCloseTags);
-//   console.log("Editor Texts:", editorTexts);
-//   console.log(`--- Finished Composer Test: ${testName} ---\n`);
-// }
-
-// const composer_test1_chunks = ["[THOUGHT]Let's start thinking.[/THOUGHT]"];
-// const composer_test2_chunks = [
-//   "[EDITOR_CONTENT]Just some text.[/EDITOR_CONTENT]",
-// ];
-// const composer_test3_chunks = [
-//   "[EDITOR_CONTENT][H1]Title[/H1][P]Paragraph with [B]bold[/B] text.[/P][/EDITOR_CONTENT]",
-// ];
-// const composer_test4_chunks = [
-//   "[THOUGHT]Okay, planning to add a title and paragraph.",
-//   "[/THOUGHT]",
-//   "[EDITOR_CONTENT]",
-//   "[H1]My Doc",
-//   "[/H1]",
-//   "[P]This is the first paragraph.",
-//   "[/P]",
-//   "[/EDITOR_CONTENT]",
-//   "[THOUGHT]Now adding a list.",
-//   "[/THOUGHT][EDITOR_CONTENT][UL][LI]Item 1[/LI]",
-//   "[LI]Item 2[/LI][/UL]",
-//   "[/EDITOR_CONTENT]",
-// ];
-// const composer_test5_chunks = [
-//   "[THOUGHT]Split th",
-//   "ought[/THOUGHT][EDITOR_CONT",
-//   "ENT][P]Split Para",
-//   "graph[/P][/EDITOR_CONTENT]",
-// ];
-// const composer_test6_chunks = [
-//   "[THOUGHT]",
-//   "[/THOUGHT]",
-//   "[EDITOR_CONTENT]",
-//   "[/EDITOR_CONTENT]",
-// ];
-// const composer_test7_chunks = ["[THOUGHT]This thought is never closed..."];
-// const composer_test8_chunks = ["[EDITOR_CONTENT][H1]Unclosed title"];
-// const composer_test9_chunks = [
-//   "[EDITOR_CONTENT][H1]Title[/H1][P]Mismatched [B]bold[/I] text.[/P][/EDITOR_CONTENT]",
-// ];
-// const composer_test10_chunks = [
-//   "[INVALID_OUTER]Some text[/INVALID_OUTER][THOUGHT]Valid thought.[/THOUGHT]",
-// ];
-// const composer_test11_chunks = [
-//   "[THOUGHT]Thought with [H1]tags[/H1] inside.[/THOUGHT]",
-// ];
-// const composer_test12_chunks = [
-//   "[EDITOR_CONTENT][INVALID]Invalid inner[/INVALID][/EDITOR_CONTENT]",
-// ];
-
-// runComposerTest("Composer Test 1: Basic Thought", composer_test1_chunks);
-// runComposerTest("Composer Test 2: Basic Editor Content", composer_test2_chunks);
-// runComposerTest(
-//   "Composer Test 3: Editor Content with Tags",
-//   composer_test3_chunks
-// );
-// runComposerTest("Composer Test 4: Mixed Content", composer_test4_chunks);
-// runComposerTest("Composer Test 5: Split Content", composer_test5_chunks);
-// runComposerTest("Composer Test 6: Empty Blocks", composer_test6_chunks);
-// runComposerTest(
-//   "Composer Test 7: Incomplete Thought Block",
-//   composer_test7_chunks
-// );
-// runComposerTest(
-//   "Composer Test 8: Incomplete Editor Block (Inner Tag)",
-//   composer_test8_chunks
-// );
-// runComposerTest(
-//   "Composer Test 9: Mismatched Inner Tags",
-//   composer_test9_chunks
-// );
-// runComposerTest("Composer Test 10: Invalid Outer Tag", composer_test10_chunks);
-// runComposerTest(
-//   "Composer Test 11: Inner Tags Inside Thought",
-//   composer_test11_chunks
-// );
-// runComposerTest("Composer Test 12: Invalid Inner Tag", composer_test12_chunks);

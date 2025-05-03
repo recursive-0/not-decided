@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { EditorView } from "prosemirror-view";
-import { EditorState, Selection, TextSelection } from "prosemirror-state";
+import { EditorState, Selection } from "prosemirror-state";
 import {
   extendedProseMirrorSchema,
   useEditor,
@@ -13,30 +13,21 @@ import {
   baseKeymap,
   chainCommands,
   deleteSelection,
-  joinBackward,
   joinTextblockBackward,
 } from "prosemirror-commands";
 import { keymap } from "prosemirror-keymap";
 import {
   splitListItem,
   liftListItem,
-  sinkListItem,
 } from "prosemirror-schema-list";
 import { undo, redo, history } from "prosemirror-history";
-import { trailingNode } from "prosemirror-trailing-node";
 import { CodeBlock } from "@/custom-nodes/code-block";
-import { InlineCodeNodeView } from "@/custom-nodes/inline-code";
-import { useSSEStream } from "@/hooks/use-sse-stream";
 import { Textarea } from "@/components/ui/textarea";
 import { CornerDownLeft } from "lucide-react";
 import { DeletionSuggestion } from "@/custom-nodes/deletion-suggestion";
 import { AdditionSuggestion } from "@/custom-nodes/addition-suggestion";
-import { ensureTrailingParagraphPlugin } from "@/plugins/trailing-paragraph-plugin";
-import { dragHandlePlugin } from "@/custom-nodes/drag-handle";
-import type { Node } from "prosemirror-model";
 import { AcceptAllRejectAllDialog } from "./accpet-all-reject-all-dialog";
 import { EditsSuggestionsManager } from "@/services/suggestion-manager";
-import { v4 as uuidv4 } from "uuid";
 import { useChatHandler } from "@/hooks/use-chat-handler";
 import { useChatStore } from "@/store/chat";
 import { useEditorStore } from "@/store/editor";
@@ -44,10 +35,9 @@ import { placeholderPlugin } from "@/custom-nodes/placeholder-plugin";
 import {
   slashCommandTriggerKey,
   slashOpenCommandDialog,
-} from "@/editor-input-rules/slash-command-dialog";
+} from "../../editor-input-rules/slash-command-dialog";
 import { toast } from "@/components/ui/custom-toasts";
 import { persistentHighlightPlugin } from "@/custom-nodes/persistent-highlight-plugin";
-import { LockFeedbackOverlay } from "./lock-feedback-overlay";
 
 const debounce = (func, delay) => {
   let timer;
@@ -141,10 +131,8 @@ export const ProseMirrorEditor = () => {
     editorView,
     setEditorReady,
     isEditorReady,
-    isAcceptRejectDialogOpen,
   } = useEditor();
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const { isStreaming, userInteractedRef, fingerprintManagerRef } = useSSEStream();
   const { totalCurrentEdits } = useEditorStore();
   const isDialogClosingRef = useRef(false);
   const suggestionsManagerRef = useRef<EditsSuggestionsManager | null>(null);
@@ -154,8 +142,8 @@ export const ProseMirrorEditor = () => {
     bottom: number;
   } | null>(null);
   const [smartAiPopupPos, setSmartAiPopupPos] = useState<null | {
-    x: Number;
-    y: Number;
+    x: number;
+    y: number;
   }>(null);
 
 
@@ -216,6 +204,7 @@ export const ProseMirrorEditor = () => {
           },
         },
         dispatchTransaction(tr) {
+          if(!editorView.current) return
           const originalState = editorView.current.state;
           const newState = originalState.apply(tr);
           editorView.current.updateState(newState);
@@ -239,7 +228,7 @@ export const ProseMirrorEditor = () => {
             const coordsAtPos = editorView.current.coordsAtPos(endPos);
 
             const editorContainerPos =
-              containerRef.current.getBoundingClientRect();
+              containerRef.current!.getBoundingClientRect();
 
             const { left, top } = normalizeCommandDialogPos(
               coordsAtPos,
@@ -305,7 +294,7 @@ export const ProseMirrorEditor = () => {
   const handleDialogClose = () => {
     isDialogClosingRef.current = true;
     setSmartAiPopupPos(null);
-    editorView.current.focus();
+    editorView.current!.focus();
     setTimeout(() => {
       isDialogClosingRef.current = false;
     }, 100);
@@ -315,7 +304,7 @@ export const ProseMirrorEditor = () => {
     const editorElement = editorRef.current;
     if (!editorElement || !editorView) return;
 
-    const handleSelectionCheck = (event) => {
+    const handleSelectionCheck = () => {
       if (isDialogClosingRef.current) return;
       let isMouseDown = true
 
@@ -334,7 +323,7 @@ export const ProseMirrorEditor = () => {
               const coordsAtPos = editorView.current.coordsAtPos(toPos);
               console.log("COOOOORDS ARE: ", coordsAtPos)
     
-              const editorContainerPos = containerRef.current.getBoundingClientRect();
+              const editorContainerPos = containerRef.current!.getBoundingClientRect();
               console.log("EDITOR CONTAINER POSSSS: ", editorContainerPos)
     
               const { left, top } = normalizeCommandDialogPos(
@@ -374,8 +363,9 @@ export const ProseMirrorEditor = () => {
   useEffect(() => {
     if (editorView.current && isEditorReady) {
       setTimeout(() => {
+        if(!editorView.current) return
         suggestionsManagerRef.current = new EditsSuggestionsManager(
-          editorView.current
+          editorView.current!
         );
 
         window.suggestionsManager = suggestionsManagerRef.current;
@@ -384,7 +374,6 @@ export const ProseMirrorEditor = () => {
         const state = view.state;
         const tr = state.tr;
 
-        const selectionPos = 1;
         const selection = Selection.atEnd(tr.doc);
         tr.setSelection(selection);
 
@@ -392,7 +381,7 @@ export const ProseMirrorEditor = () => {
         view.dispatch(tr);
       }, 10);
     }
-  }, [isEditorReady]);
+  }, [isEditorReady, editorView]);
 
 
   return (
@@ -425,7 +414,7 @@ export const ProseMirrorEditor = () => {
 
 const FloatingCommandDialog = ({ clientX, clientY, onClose, selectedText, setUserSelection }) => {
   const [input, setInput] = useState("");
-  const dialogRef = useRef(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef(null);
   const setChatMode = useChatStore((state) => state.setCurrentChatMode);
 
@@ -438,7 +427,8 @@ const FloatingCommandDialog = ({ clientX, clientY, onClose, selectedText, setUse
     }
 
     const handleClickOutside = (event: MouseEvent) => {
-      if (dialogRef.current && !dialogRef.current.contains(event.target)) {
+      // make sure event.target is a node
+      if (event.target instanceof Node && dialogRef.current!.contains(event.target)) {
         onClose();
       }
     };

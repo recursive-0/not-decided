@@ -3,6 +3,7 @@ import { TextSelection, type Transaction } from "prosemirror-state";
 import type { EditorView } from "prosemirror-view";
 import type { CodeBlockNodeType } from "./composer-mode-parser";
 import type { FingerprintManager } from "./fingerprint-manager";
+import { Tags } from "@/types/editor";
 
 interface NodeContextType {
   type: Tags;
@@ -12,25 +13,6 @@ interface NodeContextType {
   insertNextLiPos?: number;
 }
 
-export enum Tags {
-  "H1" = "H1",
-  "H2" = "H2",
-  "H3" = "H3",
-  "P" = "P",
-  "B" = "B",
-  "I" = "I",
-  "UL" = "UL",
-  "OL" = "OL",
-  "LI" = "LI",
-  "CODE" = "CODE",
-  "LANG" = "LANG",
-  "CONTENT" = "CONTENT",
-  "ICODE" = "ICODE",
-  "QUOTE" = "QUOTE",
-  "CHECKBOX" = "CHECKBOX",
-  "DELETION" = "DELETION",
-  "ADDITION" = "ADDITION",
-}
 
 interface MarkContext {
   type: Tags.B | Tags.I | Tags.ICODE;
@@ -43,7 +25,6 @@ export class IncrementalProsemirrorRenderer {
   private activeMarks: MarkContext[] = [];
   private schema: Schema | null = null;
   private insertionPoint: number | null = null;
-  private editorMode: "COMPOSER" | "CHAT" = "COMPOSER";
   private shouldHiglightGeneratedContent: boolean = false;
   private successfulGenerations: number = 0;
   private fingerPrintRef: FingerprintManager | null = null;
@@ -58,10 +39,6 @@ export class IncrementalProsemirrorRenderer {
     this.fingerPrintRef = fingerprintRef;
   }
 
-  public setMode(mode: "COMPOSER" | "CHAT") {
-    this.editorMode = mode;
-  }
-
   public updateSuccessfulGenerations() {
     this.successfulGenerations++;
     return this.successfulGenerations;
@@ -74,7 +51,7 @@ export class IncrementalProsemirrorRenderer {
   public cleanupAfterStreamStop() {
     if (
       this.nodeStack.length > 0 &&
-      this.nodeStack[this.nodeStack.length - 1].type === Tags.ADDITION
+      this.nodeStack[this.nodeStack.length - 1].type === Tags.ADD
     ) {
       this.nodeStack = [];
       this.activeMarks = [];
@@ -83,12 +60,12 @@ export class IncrementalProsemirrorRenderer {
 
   //todo: need to improvise the method and make it robust
   public setInsertionPoint(targetedPos: number) {
-    if (this.editorMode !== "COMPOSER" || !this.editorView || !this.schema) {
-      console.warn(
-        "setInsertionPoint: Not in COMPOSER mode or view/schema missing."
-      );
-      return;
-    }
+    // if (this.editorMode !== "COMPOSER" || !this.editorView || !this.schema) {
+    //   console.warn(
+    //     "setInsertionPoint: Not in COMPOSER mode or view/schema missing."
+    //   );
+    //   return;
+    // }
 
     this.insertionPoint = targetedPos;
   }
@@ -98,6 +75,9 @@ export class IncrementalProsemirrorRenderer {
   }
 
   createListNode(type: "ul" | "ol") {
+
+    if(!this.schema) return
+
     if (type === "ul") {
       const bulletList = this.schema.nodes.bullet_list.create();
       return bulletList;
@@ -118,8 +98,8 @@ export class IncrementalProsemirrorRenderer {
       });
     } else {
       if (this.shouldHiglightGeneratedContent) {
-        const node = this.buildProsemirrorNode(Tags.ADDITION);
-        this.insertAdditionSuggestionContainer(node);
+        const node = this.buildProsemirrorNode(Tags.ADD);
+        this.insertAdditionSuggestionContainer(node!);
       }
 
       // weird edge case from deepseek streaming where it was generating [p] insetad of [/p]
@@ -135,7 +115,7 @@ export class IncrementalProsemirrorRenderer {
       }
 
       const node = this.buildProsemirrorNode(tag);
-      this.insertAndUpdateNodeContext(node, tag);
+      this.insertAndUpdateNodeContext(node!, tag);
     }
   }
 
@@ -201,7 +181,7 @@ export class IncrementalProsemirrorRenderer {
     let textToInsert = txt;
     if (txt.length === 0) return;
 
-    let tr = this.editorView.state.tr;
+    const tr = this.editorView!.state.tr;
 
     if (this.nodeStack.length === 0) {
       console.warn("MESSED UP. Can't Insert text without a parent node!!!");
@@ -227,17 +207,19 @@ export class IncrementalProsemirrorRenderer {
       );
 
       const marksToAdd: Mark[] = [];
+      if(!this.schema) return
       if (currentRendererActiveMarkTypes.has(Tags.B)) {
-        this.schema.marks.strong &&
           marksToAdd.push(this.schema.marks.strong.create());
       }
+
       if (currentRendererActiveMarkTypes.has(Tags.I)) {
-        this.schema.marks.em && marksToAdd.push(this.schema.marks.em.create());
+         marksToAdd.push(this.schema.marks.em.create());
       }
+
       if (currentRendererActiveMarkTypes.has(Tags.ICODE)) {
         try {
           console.log("WILL RENDER INLINE CODE");
-          this.schema.marks.inline_code &&
+          
             marksToAdd.push(this.schema.marks.inline_code.create());
         } catch (e) {
           console.log("GOT ITTTTTTTTT", e);
@@ -267,15 +249,15 @@ export class IncrementalProsemirrorRenderer {
       }
     }
 
-    this.editorView.dispatch(tr);
+    this.editorView!.dispatch(tr);
   }
 
   onCodeBlock(codeBlock: CodeBlockNodeType) {
-    const { lang, content } = codeBlock;
+    const { lang } = codeBlock;
     console.log("LANG FOUND IS: ", lang);
     if (this.shouldHiglightGeneratedContent) {
-      const node = this.buildProsemirrorNode(Tags.ADDITION);
-      this.insertAdditionSuggestionContainer(node);
+      const node = this.buildProsemirrorNode(Tags.ADD);
+      this.insertAdditionSuggestionContainer(node!);
     }
 
     // // weird edge case from deepseek streaming where it was generating [p] insetad of [/p]
@@ -287,7 +269,7 @@ export class IncrementalProsemirrorRenderer {
     //     return
     //   }
     // }
-    const codeBlocknode = this.schema.nodes.code_block.create({
+    const codeBlocknode = this.schema!.nodes.code_block.create({
       language: lang,
     });
     this.insertAndUpdateNodeContext(codeBlocknode, Tags.CODE);
@@ -373,7 +355,22 @@ export class IncrementalProsemirrorRenderer {
     }
   }
 
+  createListNodeItem(): Node{
+    const pN = this.schema!.nodes.paragraph.create();
+        const lN = this.schema!.nodes.list_item.create(null, [pN]);
+        return lN
+  }
+
+  createQuoteNode(): Node{
+
+    const emptyPara = this.schema!.nodes.paragraph.create();
+    return this.schema!.nodes.blockquote.create(null, emptyPara);
+  }
+
   buildProsemirrorNode(tag: Tags) {
+
+    if(!this.schema) return
+
     switch (tag) {
       case Tags.H1:
         return this.schema.nodes.heading.create({ level: 1 });
@@ -388,19 +385,15 @@ export class IncrementalProsemirrorRenderer {
       case Tags.OL:
         return this.createListNode("ol");
       case Tags.LI:
-        const pN = this.schema.nodes.paragraph.create();
-        const lN = this.schema.nodes.list_item.create(null, [pN]);
-        return lN;
+        return this.createListNodeItem();
       case Tags.CODE:
         return this.schema.nodes.code_block.create({ language: "bash" });
       case Tags.QUOTE:
-        const emptyPara = this.schema.nodes.paragraph.create();
-        return this.schema.nodes.blockquote.create(null, emptyPara);
+        return this.createQuoteNode()
       case Tags.CHECKBOX:
         return this.schema.nodes.checkbox_item.create();
-      case Tags.ADDITION:
-        const higlighterContainer = this.generateAdditionSuggestionContainer();
-        return higlighterContainer;
+      case Tags.ADD:
+        return this.generateAdditionSuggestionContainer();
       default:
         break;
     }
@@ -408,7 +401,7 @@ export class IncrementalProsemirrorRenderer {
 
   generateAdditionSuggestionContainer() {
     const suggestionNode =
-      this.editorView.state.schema.nodes.addition_suggestion.create({
+      this.editorView!.state.schema.nodes.addition_suggestion.create({
         id: `exp-suggestion-${Date.now()}`,
         originalNodeType: "EXPERIMENT_CONTAINER",
         originalAttrs: "{}",
@@ -418,7 +411,8 @@ export class IncrementalProsemirrorRenderer {
   }
 
   insertAdditionSuggestionContainer(node: Node) {
-    const startPos = this.insertionPoint;
+    if(!this.editorView) return
+    const startPos = this.insertionPoint!;
     const insertPos = startPos + 1;
 
     const tr = this.editorView.state.tr;
@@ -426,7 +420,7 @@ export class IncrementalProsemirrorRenderer {
     this.editorView.dispatch(tr);
 
     this.nodeStack.push({
-      type: Tags.ADDITION,
+      type: Tags.ADD,
       startPosition: startPos,
       contentPosition: insertPos,
     });
@@ -470,9 +464,9 @@ export class IncrementalProsemirrorRenderer {
 
     console.log("POSITION TO INSERTTTT IS: ", pos)
 
-    const tr = this.editorView.state.tr
+    const tr = this.editorView!.state.tr
     this.insertNodeInEditor(pos, node, tr)
-    this.editorView.dispatch(tr);
+    this.editorView!.dispatch(tr);
 
     this.nodeStack.push({
       type: tag,
@@ -485,6 +479,8 @@ export class IncrementalProsemirrorRenderer {
     if (this.nodeStack.length > 0) {
       const topNode = this.nodeStack[this.nodeStack.length - 1];
       const invalidParents = [Tags.P, Tags.CODE, Tags.ICODE];
+
+      if(!this.editorView) return
       if (invalidParents.includes(topNode.type)) {
         this.nodeStack.pop(); // pop the P node
         const currentPos = topNode.contentPosition;
@@ -517,9 +513,9 @@ export class IncrementalProsemirrorRenderer {
       const insertPos = this.getInsertPosition();
       const newCursorPos = insertPos + 1;
 
-      const tr = this.editorView.state.tr;
+      const tr = this.editorView!.state.tr;
       this.insertNodeInEditor(insertPos, node, tr);
-      this.editorView.dispatch(tr);
+      this.editorView!.dispatch(tr);
 
       this.nodeStack.push({
         type: Tags.UL,
@@ -530,6 +526,9 @@ export class IncrementalProsemirrorRenderer {
   }
 
   handleOrderedListInsertion(node: Node) {
+
+    if(!this.editorView) return
+
     if (this.nodeStack.length > 0) {
       const topNode = this.nodeStack[this.nodeStack.length - 1];
       const invalidParents = [Tags.P, Tags.CODE, Tags.ICODE];
@@ -578,6 +577,8 @@ export class IncrementalProsemirrorRenderer {
   }
 
   handleListItemInsertion(node: Node) {
+    if(!this.editorView) return
+
     const topNode = this.nodeStack[this.nodeStack.length - 1];
     if (topNode.type !== Tags.UL && topNode.type !== Tags.OL) {
       throw new Error("Error: LI must have a UL or OL parent in node stack!");
@@ -630,6 +631,8 @@ export class IncrementalProsemirrorRenderer {
   }
 
   handleQuoteInsertion(node: Node) {
+    if(!this.editorView) return
+
     const insertPos = this.getInsertPosition();
 
     const tr = this.editorView.state.tr;
@@ -645,6 +648,8 @@ export class IncrementalProsemirrorRenderer {
   }
 
   handleCheckboxItemInsertion(node: Node) {
+    if(!this.editorView) return
+
     const insertPos = this.getInsertPosition();
     const cursorPos = insertPos + 1;
 
@@ -660,6 +665,8 @@ export class IncrementalProsemirrorRenderer {
   }
 
   handleInlineCodeInsertion(node: Node) {
+    if(!this.editorView) return
+
     const insertPos = this.getInsertPosition();
 
     const tr = this.editorView.state.tr;
@@ -705,15 +712,15 @@ export class IncrementalProsemirrorRenderer {
     }
 
     if (this.nodeStack.length === 0) {
-      return this.editorView.state.doc.content.size;
+      return this.editorView!.state.doc.content.size;
     } else {
       return this.nodeStack[this.nodeStack.length - 1].contentPosition;
     }
   }
 
   public deleteNode(nodeHash: string) {
-    this.fingerPrintRef.generateEditorNodesFingerprints(this.editorView);
-    const matchedNode = this.fingerPrintRef.matchFingerprint(nodeHash);
+    this.fingerPrintRef!.generateEditorNodesFingerprints(this.editorView!);
+    const matchedNode = this.fingerPrintRef!.matchFingerprint(nodeHash);
     console.log("DELETION NODE MTCHED: ", matchedNode);
     if (matchedNode && this.editorView) {
       const { state } = this.editorView;

@@ -61,7 +61,11 @@ export async function handleClaudeStream(props: HandleClaudeStreamProps) {
 				const handleText = (text: string) => {
 					console.log(`content is: "${text.replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t')}"`);
 					// const safeText = text.replace(/\n/g, "\\n").replace(/\r/g, "\\r").replace(/\t/g, "\\t");
-					const sseMessage = `data: ${text}\n\n`;
+					const safeText = text
+					.replace(/\n/g, "\\n")
+					.replace(/\r/g, "\\r")
+					.replace(/\t/g, "\\t");
+					const sseMessage = `data: ${safeText}\n\n`;
 					controller.enqueue(encoder.encode(sseMessage));
 				};
 

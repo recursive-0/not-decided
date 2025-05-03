@@ -1,11 +1,9 @@
-import React from "react";
 import type { Message } from "@/types/messages";
-import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+import * as styles from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 interface ChatMessagesProps {
   messages: Message[];
@@ -45,14 +43,19 @@ const AIMessage = ({ content }: { content: string }) => {
               code({ className, children, ...props }) {
                 const match = /language-(\w+)/.exec(className || "");
                 return match ? (
-                  <div className="overflow-x-auto my-4">
+                  <div className="overflow-x-auto">
                     <SyntaxHighlighter
+                      showLineNumbers
+                      wrapLines
+                      wrapLongLines
                       language={match[1]}
-                      style={vscDarkPlus}
+                      // @ts-expect-error ignore it
+                      style={styles.solarizedDarkAtom as { [key: string]: React.CSSProperties }}
                       customStyle={{
                         margin: 0,
                         borderRadius: "0.25rem",
                         fontSize: "0.875rem",
+                        padding: 0,
                       }}
                       {...props}
                     >
@@ -202,7 +205,7 @@ export const ChatMessages = ({ messages }: ChatMessagesProps) => {
   }
 
   return (
-    <div className="space-y-6 py-4">
+    <div className="space-y-4 py-2">
       {messages.map((msg) => (
         <div key={msg.id}>
           {msg.role === "user" ? (

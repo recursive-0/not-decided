@@ -13,27 +13,13 @@ import {
 import { useChatStore } from "@/store/chat";
 import { FingerprintManager } from "@/lib/fingerprint-manager";
 import type { Node } from "prosemirror-model";
-import { EditsSuggestionsManager } from "@/services/suggestion-manager";
 import { EditorActionsManager } from "@/lib/editor-actions-manager";
 import { TextSelection } from "prosemirror-state";
+import { Tags } from "@/types/editor";
 
-export enum Tags {
-  "H1" = "H1",
-  "H2" = "H2",
-  "H3" = "H3",
-  "P" = "P",
-  "B" = "B",
-  "I" = "I",
-  "UL" = "UL",
-  "OL" = "OL",
-  "LI" = "LI",
-  "CODE" = "CODE",
-  "ICODE" = "ICODE",
-  "QUOTE" = "QUOTE",
-  "CHECKBOX" = "CHECKBOX",
-}
+console.log("OKay so all the envs are: ", import.meta.env)
 
-const BASE_URL = process.env.API_BASE_URL || "http://localhost:8787"
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8787"
 
 export const useSSEStream = () => {
   const [content, setContent] = useState<string>("");
@@ -42,6 +28,7 @@ export const useSSEStream = () => {
   const [error, setError] = useState<Error | null>(null);
   const [currentStreamId, setCurrentStreamId] = useState<string>("");
   const { editorView, setAcceptRejectDialog } = useEditor();
+  const { setCurrentLLMAction} = useChatStore()
 
   const editorActionsManagerRef = useRef<EditorActionsManager | null>(null);
   const userInteractedRef = useRef<boolean>(false);
@@ -80,7 +67,7 @@ export const useSSEStream = () => {
           rendererRef.current = new IncrementalProsemirrorRenderer(
             editorView.current,
             extendedProseMirrorSchema,
-            fingerprintManagerRef.current
+            fingerprintManagerRef.current!
           );
 
           editorActionsManagerRef.current = new EditorActionsManager(
@@ -97,7 +84,7 @@ export const useSSEStream = () => {
 
         if (!composerParserRef.current && rendererRef.current) {
           fingerprintManagerRef.current = new FingerprintManager(
-            editorView.current
+            editorView.current!
           );
 
           composerParserRef.current = new ComposerModeParser({
@@ -105,11 +92,14 @@ export const useSSEStream = () => {
             sendNodeToDelete: (node: string) => deleteNode(node),
             sendTokensCallback: (tokens: string) => sendTokensCallback(tokens),
             sendCodeBlockNode: (codeBlock: CodeBlockNodeType) =>
-              rendererRef.current.onCodeBlock(codeBlock),
+              rendererRef.current!.onCodeBlock(codeBlock),
             onOpenTag: (tag: Tags) => rendererRef.current?.onOpenTag(tag),
             onCloseTag: (tag: Tags) => rendererRef.current?.onCloseTag(tag),
-            onTextContent: (text: Tags) =>
+            onTextContent: (text: string) =>
               rendererRef.current?.onTextContent(text),
+            setCurrentActionState(action) {
+              setCurrentLLMAction(action)
+            },
           });
         }
         function findFirstParagraphContentPosition(node: Node): number | null {
@@ -125,6 +115,8 @@ export const useSSEStream = () => {
         }
 
         const deleteNode = (nodeHash: string) => {
+          if(!fingerprintManagerRef.current || !editorView.current) return
+
           fingerprintManagerRef.current.generateEditorNodesFingerprints(
             editorView.current
           );
@@ -161,7 +153,7 @@ export const useSSEStream = () => {
                 deletionSuggestion
               );
 
-              const mappedPositionAfterDeletion = tr.mapping.map(nodePos);
+              const mappedPositionAfterDeletion = updatedTr.mapping.map(nodePos);
 
               let scrollTargetPosition = mappedPositionAfterDeletion;
 
@@ -197,7 +189,7 @@ export const useSSEStream = () => {
               const nextInsertionPos = tr.mapping.map(
                 nodePos + originalNode.nodeSize
               );
-              rendererRef.current.setInsertionPoint(nextInsertionPos);
+              rendererRef.current!.setInsertionPoint(nextInsertionPos);
             } else {
               console.warn(
                 "Attempted to delete node with hash",
@@ -215,14 +207,16 @@ export const useSSEStream = () => {
           }
         };
 
-        const editorDocNodes = editorView.current.state.doc.content;
-        let validContentNodes = [];
-        fingerprintManagerRef.current.clearHashCollisionCounter()
+
+
+        const editorDocNodes = editorView.current!.state.doc.content;
+        const validContentNodes: {id: string, content: {type: string, content: string}}[] = [];
+        fingerprintManagerRef.current!.clearHashCollisionCounter()
         editorDocNodes.content.forEach((node: Node) => {
           console.log("NODE is: ", node)
           // if (node.content.size > 0) {
-            const content = fingerprintManagerRef.current.normalizeNodeTextContent(node);
-            const hash = fingerprintManagerRef.current.getUniqueHash(content);
+            const content = fingerprintManagerRef.current!.normalizeNodeTextContent(node);
+            const hash = fingerprintManagerRef.current!.getUniqueHash(content);
             const contentNode = {
               type: node.type.name,
               content: node.textContent
@@ -234,42 +228,21 @@ export const useSSEStream = () => {
         console.log("CONTENT NODESSSSSSSS: ", validContentNodes);
 
         async function insertAfterThisNode(nodeHash: string) {
-        //   const pNode =
-        //     editorView.current.state.schema.nodes.paragraph.create();
-        //   const lastRange =
-        //     editorActionsManagerRef.current.findTrailingEmptyRange();
-        //   console.log("LAST RANGE IS: ", lastRange);
-        //   if (lastRange !== null) {
-        //     editorActionsManagerRef.current.replaceRange(
-        //       lastRange.from,
-        //       lastRange.to,
-        //       pNode
-        //     );
-        //   }
-
-        //   const range = editorActionsManagerRef.current.findInitialEmptyRange();
-        //   console.log("inital RANGEEEE: ", range);
-        //   if (range !== null) {
-        //     editorActionsManagerRef.current.replaceRange(
-        //       range.from,
-        //       range.to,
-        //       pNode
-        //     );
-        //   }
-          fingerprintManagerRef.current.clearHashCollisionCounter()
-          fingerprintManagerRef.current.generateEditorNodesFingerprints(
-            editorView.current
+          fingerprintManagerRef.current!.clearHashCollisionCounter()
+          console.log("ADD NODE found so generating hashes for editor content")
+          fingerprintManagerRef.current!.generateEditorNodesFingerprints(
+            editorView.current!
           );
           const matchedNode =
-            fingerprintManagerRef.current.matchFingerprint(nodeHash);
+            fingerprintManagerRef.current!.matchFingerprint(nodeHash);
           console.log("ADDITION NODE FOUND IS: ", matchedNode);
           if (matchedNode) {
-            rendererRef.current.setInsertionPoint(matchedNode.insertPosition);
+            rendererRef.current!.setInsertionPoint(matchedNode.insertPosition);
           } else {
             // todo: need smart and intelligent fallback method to partial match the node
             // fallback to document size
-            const insertPos = editorView.current.state.doc.content.size
-            rendererRef.current.setInsertionPoint(insertPos)
+            const insertPos = editorView.current!.state.doc.content.size
+            rendererRef.current!.setInsertionPoint(insertPos)
           }
         }
 
@@ -300,72 +273,58 @@ export const useSSEStream = () => {
           `${BASE_URL}/api/generate/stream?streamID=${streamId}`
         );
 
+        function preProcessIncomingTokens(tokens: string){
+          return tokens.replace(/\\n/g, "\n").replace(/\\r/g, "\r").replace(/\\t/g, "\t");
+        }
+
         // Handle messages
         eventSourceRef.current.onmessage = (event) => {
-          const token = event.data;
+          const tokens = event.data;
 
           console.log("CURRENT PARSER IS: ", getCurrentParser());
+          console.log("TOKEN IS: ", tokens);
 
-          console.log("TOKEN IS: ", token);
-
-          switch (token.trim()) {
+          switch (tokens.trim()) {
             case "[DONE]":
             case "END_STREAM":
-              getCurrentParser()?.current.stopStreaming();
-              rendererRef.current.updateSuccessfulGenerations();
+              getCurrentParser()?.current!.stopStreaming();
+              rendererRef.current!.updateSuccessfulGenerations();
               setIsStreaming(false);
-              eventSourceRef.current?.close();
-              const editsLength = window.suggestionsManager.totalEdits();
-              console.log("total EDITS are:", editsLength);
-              if (editsLength > 0) {
+              eventSourceRef.current!.close();
+              if (window.suggestionsManager!.totalEdits() > 0) {
                 setAcceptRejectDialog(true);
               }
               return;
 
             case "START_STREAM":
-              getCurrentParser()?.current.startStreaming();
+              getCurrentParser()?.current!.startStreaming();
 
-              // Check if editor is empty
-              const docContent = editorView.current.state.doc;
-              const isEmpty = docContent.textContent.trim().length === 0;
-
-              console.log(
-                "EDITOR EMPTY STATUS:",
-                isEmpty,
-                "Text length:",
-                docContent.textContent.length
-              );
-
-              if (isEmpty) {
-                rendererRef.current.setHighlight(false);
+              if (editorView.current!.state.doc.textContent.trim().length === 0) {
+                rendererRef.current!.setHighlight(false);
               } else {
-                rendererRef.current.setHighlight(true);
+                rendererRef.current!.setHighlight(true);
               }
-
-              rendererRef.current.setMode(chatMode);
 
               return;
 
             default:
-              const decodedToken = token
-                .replace(/\\n/g, "\n")
-                .replace(/\\r/g, "\r")
-                .replace(/\\t/g, "\t");
-              setContent((prev) => prev + decodedToken);
-              getCurrentParser()?.current.processChunk(decodedToken);
+              setContent((prev) => prev + preProcessIncomingTokens(tokens));
+              getCurrentParser()?.current!.processChunk(preProcessIncomingTokens(tokens));
           }
         };
 
         // Handle errors
-        eventSourceRef.current.onerror = (err) => {
+        eventSourceRef.current!.onerror = (err) => {
           console.error("SSE Error:", err);
           setError(new Error("Stream error occurred"));
-          getCurrentParser()?.current.stopStreaming();
-          eventSourceRef.current?.close();
+          getCurrentParser()?.current!.stopStreaming();
+          eventSourceRef.current!.close();
           setIsStreaming(false);
         };
-      } catch (error: any) {
-        setError(error);
+      } catch (error: unknown) {
+        if(error instanceof Error){
+          setError(error);
+        }
         setIsStreaming(false);
       }
     },
@@ -373,10 +332,10 @@ export const useSSEStream = () => {
   );
 
   const stopStreaming = useCallback(() => {
-    getCurrentParser().current?.stopStreaming();
-    rendererRef.current.cleanupAfterStreamStop();
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
+    getCurrentParser().current!.stopStreaming();
+    rendererRef.current!.cleanupAfterStreamStop();
+    if (eventSourceRef.current!) {
+      eventSourceRef.current!.close();
       eventSourceRef.current = null;
     }
 

@@ -1,120 +1,92 @@
-// Fix for the CheckBoxes NodeView class
-import type { Node } from "prosemirror-model";
+import type { Node as ProseMirrorNode } from "prosemirror-model"; // Renamed import to avoid conflict
 import type { EditorView, NodeView } from "prosemirror-view";
 
 export class CheckBoxes implements NodeView {
-    public node: Node;
+    public node: ProseMirrorNode; // Use the renamed type
     public view: EditorView;
     public getPos: () => number | undefined;
 
-    dom: HTMLElement;
-    contentDOM: HTMLElement;
+    // --- FIX: Change type to match NodeView interface ---
+    public dom!: Node;
+    public contentDOM:  HTMLElement | null | undefined = null
+    // --- End Fix ---
 
-    private boxElement: HTMLSpanElement;
+    private boxElement: HTMLElement | null = null
 
-    constructor(node: Node, view: EditorView, getPos: () => number | undefined) {
+    constructor(node: ProseMirrorNode, view: EditorView, getPos: () => number | undefined) {
+
         this.node = node;
         this.view = view;
         this.getPos = getPos;
 
+        // Create the DOM structure - this assigns valid HTMLElements (which are Nodes)
+        // to this.dom, this.contentDOM, and this.boxElement
         this.createCheckboxNode();
-        
-        // Set checked attribute based on node's attrs
-        this.dom.setAttribute("data-checked", String(node.attrs.checked));
-        this.boxElement.setAttribute("checked", String(node.attrs.checked));
-        
+
+        // Now this.dom is typed as Node, but holds an HTMLElement.
+        // If you need HTMLElement specific methods, use a type assertion:
+        (this.dom as HTMLElement).setAttribute("data-checked", String(node.attrs.checked));
+
+        // this.boxElement is already HTMLElement
+        this.boxElement!.setAttribute("checked", String(node.attrs.checked));
+
         // Add click handler
-        this.boxElement.addEventListener("click", this.handleClick.bind(this));
+        this.boxElement!.addEventListener("click", this.handleClick.bind(this));
     }
 
-    createCheckboxNode() {
+    createCheckboxNode(): void { // Explicit return type
         // Create container
-        this.dom = document.createElement('div');
-        this.dom.classList.add("checkbox-container");
-        
+        const container = document.createElement('div'); // This is an HTMLElement
+        container.classList.add("checkbox-container");
+        // Assign the HTMLElement to this.dom (which expects Node). This is valid!
+        this.dom = container;
+
         // Create checkbox
-        this.boxElement = document.createElement('span');
-        this.boxElement.classList.add("checkbox-box");
-        
+        const box = document.createElement('span'); // HTMLElement
+        box.classList.add("checkbox-box");
+        this.boxElement = box; // Assign HTMLElement to HTMLElement
+
         // Create content wrapper
-        this.contentDOM = document.createElement("p");
-        this.contentDOM.classList.add("checkbox-paragraph");
-        
+        const content = document.createElement("p"); // HTMLElement
+        content.classList.add("checkbox-paragraph");
+        // Assign HTMLElement to this.contentDOM (which expects Node | null). Valid!
+        this.contentDOM = content;
+
         // Assemble structure
-        this.dom.appendChild(this.boxElement);
-        this.dom.appendChild(this.contentDOM);
-    }
-    
-    handleClick(e: MouseEvent) {
-        e.preventDefault();
-        
-        const pos = this.getPos();
-        if (typeof pos !== "number") return;
-        
-        // Toggle checked state
-        const { checked } = this.node.attrs;
-        const transaction = this.view.state.tr.setNodeAttribute(
-            pos, 
-            "checked", 
-            !checked
-        );
-        
-        this.view.dispatch(transaction);
+        this.dom.appendChild(this.boxElement); // Appending Node to Node (valid)
+        this.dom.appendChild(this.contentDOM); // Appending Node | null (which is Node here) to Node (valid)
     }
 
-    update(node: Node) {
+    // ... (rest of the class remains largely the same, but use assertions like
+    // (this.dom as HTMLElement) if needed in update() etc.)
+
+    update(node: ProseMirrorNode): boolean { // Add return type
         if (node.type !== this.node.type) return false;
-        
-        // Update checked state if it changed
+
         if (node.attrs.checked !== this.node.attrs.checked) {
-            this.dom.setAttribute("data-checked", String(node.attrs.checked));
-            this.boxElement.setAttribute("checked", String(node.attrs.checked));
+            // Use type assertion if calling HTMLElement specific methods
+            (this.dom as HTMLElement).setAttribute("data-checked", String(node.attrs.checked));
+            this.boxElement!.setAttribute("checked", String(node.attrs.checked));
         }
-        
-        this.node = node;
+
+        this.node = node; // Update internal ProseMirror node
         return true;
     }
-}
 
-export function createCheckboxSpec() {
-    return {
-        content: "inline*",
-        group: "block",
-        draggable: false,
-        attrs: {
-            checked: {
-                default: false
-            }
-        },
-        toDOM(node) {
-            return [
-                "div",
-                {
-                    "data-checked": String(node.attrs.checked),
-                    "class": "checkbox-container"
-                },
-                [
-                    "span",
-                    {
-                        checked: String(node.attrs.checked),
-                        class: "checkbox-box",
-                    },
-                ],
-                [
-                    "p",
-                    {
-                        class: "checkbox-paragraph"
-                    },
-                    0
-                ]
-            ]
-        },
-        parseDOM: [{
-            tag: "div.checkbox-container",
-            getAttrs(dom: HTMLElement) {
-                return { checked: dom.dataset.checked === "true" }
-            },
-            contentElement: "p.checkbox-paragraph"
-        }]
+     // Ensure handleClick uses the renamed ProseMirrorNode type if necessary
+     handleClick(e: MouseEvent): void { // Add return type
+        e.preventDefault();
+
+        const pos = this.getPos();
+        if (typeof pos !== "number") return;
+
+        const { checked } = this.node.attrs; // this.node is ProseMirrorNode
+        const transaction = this.view.state.tr.setNodeAttribute(
+            pos,
+            "checked",
+            !checked
+        );
+
+        this.view.dispatch(transaction);
     }
 }

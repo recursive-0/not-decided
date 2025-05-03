@@ -77,13 +77,6 @@ export function getClient(env: Env): GoogleGenAI {
           };
   
           console.log("INSIDE GEMOINI TEMP SETTTTT")
-  
-          // const streamResult = await model.generateContentStream({
-          //   contents: [{ role: "user", parts: [{ text: prompt }] }],
-          //   generationConfig: generationConfig,
-            
-          // });
-
           console.log("Stream result is: ", streamResult)
   
           for await (const chunk of streamResult) {

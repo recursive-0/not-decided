@@ -1,6 +1,5 @@
-import { EditsSuggestionsManager } from './../services/suggestion-manager';
 import type { Node } from "prosemirror-model";
-import type { Decoration, DecorationSource, EditorView, NodeView } from "prosemirror-view";
+import type { EditorView, NodeView } from "prosemirror-view";
 
 export class DeletionSuggestion implements NodeView {
     dom: HTMLElement;
@@ -46,7 +45,7 @@ export class DeletionSuggestion implements NodeView {
             view.dispatch(tr);
             
             // Remove the edit from the manager after accepting
-            window.suggestionsManager.removeEdit(this.nodeId, "deletion_suggestion");
+            window.suggestionsManager!.removeEdit(this.nodeId, "deletion_suggestion");
         });
         
         const rejectButton = document.createElement('button');
@@ -76,7 +75,7 @@ export class DeletionSuggestion implements NodeView {
             }
             
             // Remove the edit from the manager after rejecting
-            window.suggestionsManager.removeEdit(this.nodeId, "deletion_suggestion");
+            window.suggestionsManager!.removeEdit(this.nodeId, "deletion_suggestion");
         });
         
         controlsContainer.appendChild(acceptButton);
@@ -86,8 +85,8 @@ export class DeletionSuggestion implements NodeView {
         this.dom.appendChild(controlsContainer);
 
           // Store the position callbacks along with id in suggestion manager service
-          window.suggestionsManager.addPositionCallback(this.nodeId, getPos);
-          window.suggestionsManager.addPositionId(this.nodeId, "deletion_suggestion");
+          window.suggestionsManager!.addPositionCallback(this.nodeId, getPos);
+          window.suggestionsManager!.addPositionId(this.nodeId, "deletion_suggestion");
     }
 
     update(node: Node) {
@@ -98,6 +97,6 @@ export class DeletionSuggestion implements NodeView {
     
     destroy() {
         // Clean up when the node view is removed from the document
-        window.suggestionsManager.removeEdit(this.nodeId, "deletion_suggestion");
+        window.suggestionsManager!.removeEdit(this.nodeId, "deletion_suggestion");
     }
 }

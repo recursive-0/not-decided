@@ -2,6 +2,7 @@ import { Env } from '../../worker-configuration';
 import { handleClaudeStream } from '../ai-models/claude';
 import { handleDeepseekStream } from '../ai-models/deepseek';
 import { handleGeminiStream } from '../ai-models/gemini';
+import { simpleStaticStream } from '../lib/simple-static-stream';
 
 export async function generateStream(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 	const url = new URL(req.url);

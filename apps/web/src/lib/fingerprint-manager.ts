@@ -1,4 +1,4 @@
-import type { Fragment, Node } from "prosemirror-model";
+import type { Node } from "prosemirror-model";
 import type { EditorView } from "prosemirror-view";
 
 export class FingerprintManager {
@@ -59,7 +59,7 @@ export class FingerprintManager {
 
     const editorNodes = editor.state.doc.content;
 
-    editorNodes.content.forEach((node: Node, index) => {
+    editorNodes.content.forEach((node: Node) => {
       const normalizedContent = this.normalizeNodeTextContent(node);
       const uniqueHash = this.getUniqueHash(normalizedContent);
       console.log("HASH IS: ", uniqueHash);
@@ -74,7 +74,7 @@ export class FingerprintManager {
     console.log("CURRENT HASHES IN EDITOR", this.nodeFingerprints);
 
     const matchedNode = this.nodeFingerprints.get(hash);
-    if (!matchedNode || matchedNode.type.name === "deletion_suggestion") return null;
+    if (!matchedNode || (matchedNode.type.name === "deletion_suggestion" && matchedNode.content.size === 0)) return null;
 
     // This gives us node's start position in the document
     const pos = this.findNodePosition(matchedNode);
@@ -92,7 +92,7 @@ export class FingerprintManager {
   private findNodePosition(targetNode: Node): number {
     let foundPos = -1;
 
-    this.editorView.state.doc.descendants((node, pos) => {
+    this.editorView!.state.doc.descendants((node, pos) => {
       if (node === targetNode) {
         foundPos = pos;
         return false; // Stop traversal

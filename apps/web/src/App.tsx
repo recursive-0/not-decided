@@ -1,10 +1,10 @@
 import "./index.css";
 import { ResizablePanel, ResizablePanelGroup, ResizableHandle } from "@/components/ui/resizable";
-import { EditorContainer } from "./features/editor/editor-container";
-import AIChat from "./features/ai-chat/ai-chat";
+import { EditorContainer } from "../../web/src/features/editor/editor-container";
+import AIChat from "../../web/src/features/ai-chat/ai-chat";
 import { EditorProvider } from "@/providers/editor-context-provider"
 import { Toaster } from "./components/ui/sonner";
-import { ChatHandlerProvider } from "./hooks/use-chat-handler";
+import { ChatHandlerProvider } from "../../web/src/hooks/use-chat-handler";
 
 export function App() {
   return (

@@ -12,19 +12,19 @@ export class EditorActionsManager {
 
   private isEmptyParagraph(node: Node): boolean {
     return (
-      node.type === this.editorSchema.nodes.paragraph &&
+      node.type === this.editorSchema!.nodes.paragraph &&
       node.textContent.trim() === ""
     );
   }
 
   public findTrailingEmptyRange(): { from: number; to: number } | null {
-    const endPos = this.editorViewInstance.state.doc.content.size;
+    const endPos = this.editorViewInstance!.state.doc.content.size;
     let currentPos = endPos;
 
     let rangeStartPos: number = -1;
 
     while (currentPos > 0) {
-      const resolvedPos = this.editorViewInstance.state.doc.resolve(currentPos);
+      const resolvedPos = this.editorViewInstance!.state.doc.resolve(currentPos);
       const nodeBeforeCurrentPos = resolvedPos.nodeBefore;
 
       if (nodeBeforeCurrentPos) {
@@ -55,11 +55,11 @@ export class EditorActionsManager {
   public findInitialEmptyRange(): { from: number; to: number } | null {
     let curentPos = 0;
     let endPos = curentPos;
-    const doc = this.editorViewInstance.state.doc;
+    const doc = this.editorViewInstance!.state.doc;
 
     while (endPos < doc.content.size) {
       const nodeAtPos = doc.nodeAt(curentPos);
-      if (this.isEmptyParagraph(nodeAtPos)) {
+      if (this.isEmptyParagraph(nodeAtPos!)) {
         endPos = curentPos + nodeAtPos!.nodeSize;
         curentPos = endPos;
       } else {
@@ -78,11 +78,11 @@ export class EditorActionsManager {
   }
 
   public replaceRange(from: number, to: number, node: Node) {
-    const tr = this.editorViewInstance.state.tr.replaceRangeWith(
+    const tr = this.editorViewInstance!.state.tr.replaceRangeWith(
       from,
       to,
       node
     );
-    this.editorViewInstance.dispatch(tr);
+    this.editorViewInstance!.dispatch(tr);
   }
 }

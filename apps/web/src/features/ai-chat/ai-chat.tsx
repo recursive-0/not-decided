@@ -10,7 +10,6 @@ import {
   Bot,
   BrainCircuit,
   CornerDownLeft,
-  Square,
   AlertTriangle,
   X,
 } from "lucide-react";
@@ -18,10 +17,12 @@ import {
 import { cn } from "@/lib/utils";
 import { ChatMessages } from "./chat-messages";
 import { useChatHandler } from "@/hooks/use-chat-handler";
-import { useSSEStream } from "@/hooks/use-sse-stream";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import PendingChangesWarning from "./pending-changes-warning-popup";
 import { useEditorStore } from "@/store/editor";
+import { useChatStore } from "@/store/chat";
+import { ActionIndicator } from "./action-indicator";
+import { ChatMode } from "@/types/messages";
 
 // Thinking loader component
 const ThinkingLoader = () => {
@@ -101,6 +102,8 @@ const AIChat = () => {
     setPendingChangesPopup,
   } = useChatHandler();
 
+  const { currentLLMAction} = useChatStore()
+
   const localScrollAreaRef = useRef<HTMLDivElement | null>(null);
 
   const { totalCurrentEdits } = useEditorStore()
@@ -135,10 +138,6 @@ const AIChat = () => {
       e.preventDefault();
       setShowStreamWarning(true);
       return;
-    }
-
-    if(isPendingChangesPopupOpen){
-
     }
     
     // If key is enter, allow normal behavior (newline)
@@ -278,7 +277,7 @@ const AIChat = () => {
       <Tabs
         autoFocus
         value={currentChatMode}
-        onValueChange={() => setCurrentChatMode(currentChatMode)}
+        onValueChange={(value) => setCurrentChatMode(value as ChatMode)}
         className="flex flex-col h-full"
       >
         {renderHeader()}
@@ -305,7 +304,8 @@ const AIChat = () => {
               {chatMessages.length ? (
                 <div className="px-2 min-w-0">
                   <ChatMessages messages={chatMessages} />
-                  {isThinking && <ThinkingLoader />}
+                  {isStreaming && <ActionIndicator action={currentLLMAction} />}
+
                 </div>
               ) : (
                 <div className="p-4 space-y-4 text-[#073642]">
@@ -334,6 +334,7 @@ const AIChat = () => {
                     (e.g., "Summarize the previous section", "Write an
                     introduction about X")
                   </div>
+
                 </div>
               )}
             </ScrollArea>
@@ -350,17 +351,6 @@ export default AIChat;
 
 
 const StreamingIndicator = ({ isStreaming = true, onStopStreaming = () => {} }) => {
-  const [isPulsing, setIsPulsing] = useState(false);
-  
-  // useEffect(() => {
-  //   if (!isStreaming) return;
-    
-  //   const interval = setInterval(() => {
-  //     setIsPulsing(prev => !prev);
-  //   }, 1500);
-    
-  //   return () => clearInterval(interval);
-  // }, [isStreaming]);
   
   if (!isStreaming) return null;
   

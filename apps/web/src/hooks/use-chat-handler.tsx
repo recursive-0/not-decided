@@ -13,17 +13,18 @@ import { useSSEStream } from "@/hooks/use-sse-stream";
 import { useChatStore } from "@/store/chat"; 
 import { useEditor } from "@/providers/editor-context-provider"; 
 import { useEditorStore } from "@/store/editor"; 
+import { ChatMode, Message } from "@/types/messages";
 
 
 interface ChatHandlerContextType {
   isThinking: boolean;
   isStreaming: boolean;
   stopStreaming: () => void;
-  chatMessages:  any[]; 
+  chatMessages:  Message[]; 
   currentChatMode: string; 
   registerScrollAreaRef: (element: HTMLDivElement | null) => void; 
   handleSendMessage: (messageText: string) => void;
-  setCurrentChatMode: (mode: string) => void; 
+  setCurrentChatMode: (mode: ChatMode) => void; 
   handleSelectionQuery: (selectedText: string, prompt: string) => void;
   isPendingChangesPopupOpen: boolean;
   setPendingChangesPopup: (isOpen: boolean) => void;
@@ -90,14 +91,10 @@ export const ChatHandlerProvider: React.FC<ChatHandlerProviderProps> = ({ childr
             "scrollHeight:",
             scrollViewport.scrollHeight
           );
-        } else {
-          
         }
       });
     } else if (!scrollViewport) {
        console.log("Scroll skipped: scrollViewport not found (is scrollAreaElement registered correctly?).");
-    } else if (!autoScrollRef.current) {
-      
     }
   }, [scrollAreaElement]); 
 

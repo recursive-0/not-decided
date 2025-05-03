@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { useEditor } from "@/providers/editor-context-provider";
+
 
 interface AcceptAllRejectAllDialogProps {
   position: { left: number; bottom: number };
@@ -8,22 +8,21 @@ interface AcceptAllRejectAllDialogProps {
 export const AcceptAllRejectAllDialog = ({
   position,
 }: AcceptAllRejectAllDialogProps) => {
-  const { setAcceptRejectDialog } = useEditor();
 
   const onAcceptAll = () => {
     const suggestionsManagerInstance = window.suggestionsManager;
-    suggestionsManagerInstance.acceptAll();
-    if (suggestionsManagerInstance.totalEdits() > 0) {
-    } else {
+    if (!suggestionsManagerInstance) {
+      throw new Error("Suggestion manager instance doesn't exist!!!");
     }
+    suggestionsManagerInstance.acceptAll();
   };
 
   const onRejectAll = () => {
     const suggestionsManagerInstance = window.suggestionsManager;
-    suggestionsManagerInstance.rejectAll();
-    if (suggestionsManagerInstance.totalEdits() > 0) {
-    } else {
+    if (!suggestionsManagerInstance) {
+      throw new Error("Suggestion manager instance doesn't exist!!!");
     }
+    suggestionsManagerInstance.rejectAll();
   };
 
   return (

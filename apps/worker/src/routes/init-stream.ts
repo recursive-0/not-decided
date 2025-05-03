@@ -36,8 +36,6 @@ export async function initializeStream(request: Request, env: Env, ctx: Executio
 
     const { prompt, chatMode, contentNodes } = validation.data
     console.log("CONTENT NODES are: ", contentNodes)
-    // now we need to store this prompt, cotnent nodes and the chatmode against this streamID somehow because we will need to access them when we generate the resonse for the actual serevr side event request
-    // 
     const streamId = crypto.randomUUID()
     await env.STREAM_CONTEXT_STORE.put(streamId, JSON.stringify({prompt: prompt, chatMode: chatMode, contentNodes: contentNodes}))
     return Response.json({streamId})

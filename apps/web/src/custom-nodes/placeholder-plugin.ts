@@ -75,7 +75,7 @@ export const placeholderPlugin = new Plugin({
 // Helper function to scan the document and create decorations
 function getDecorations(state) {
   const { doc, selection } = state;
-  const decorations = [];
+  const decorations: Decoration[] = [];
   
   // Scan all top-level paragraphs in the document
   doc.forEach((node, pos) => {

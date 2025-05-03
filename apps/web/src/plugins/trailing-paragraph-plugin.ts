@@ -3,7 +3,7 @@ import { Plugin } from "prosemirror-state";
 
 
 export const ensureTrailingParagraphPlugin = new Plugin({
-    appendTransaction: (transactions, oldState, newState) => {
+    appendTransaction: (transactions, _, newState) => {
       // Only check if content was modified
       if (!transactions.some(tr => tr.docChanged)) return null;
       

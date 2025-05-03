@@ -1,9 +1,9 @@
 
 import React, { createContext, useContext, useState, useRef } from 'react';
 import { EditorView } from 'prosemirror-view';
-import { Schema, type MarkSpec } from 'prosemirror-model';
-import { schema } from 'prosemirror-schema-basic';
+import { Schema} from 'prosemirror-model';
 import { finalMarks, finalNodes } from '@/lib/config-schema';
+import { Transaction } from 'prosemirror-state';
 
 console.log("FInal marks are: ", finalMarks)
 
@@ -24,7 +24,7 @@ interface EditorContextType {
   insertTextAtCursor: (text: string) => void;
   replaceText: (from: number, to: number, text: string) => void;
   getCurrentContent: () => string | null;
-  customDispatchTransaction: (tr: any) => void
+  customDispatchTransaction: (tr: Transaction) => void
   isAcceptRejectDialogOpen: boolean
   setAcceptRejectDialog: (flag: boolean) => void
 }
@@ -69,7 +69,7 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return content;
   };
 
-  const customDispatchTransaction = (tr: any) => {
+  const customDispatchTransaction = (tr: Transaction) => {
     if(!editorView.current) return
 
     editorView.current.dispatch(tr)

@@ -75,7 +75,11 @@ export async function handleDeepseekStream(props: HandleDeepseekStreamProps) {
                 for await (const chunk of streamedCompletion) {
                     const content = chunk.choices[0]?.delta?.content;
                     if (content) {
-                        const sseMessage = `data: ${content}\n\n`;
+                      const safeText = content
+                      .replace(/\n/g, "\\n")
+                      .replace(/\r/g, "\\r")
+                      .replace(/\t/g, "\\t");
+                        const sseMessage = `data: ${safeText}\n\n`;
                         controller.enqueue(encoder.encode(sseMessage));
                         console.log(`Raw content chunk: "${content.replace(/\n/g, "\\n")}"`);
                     }

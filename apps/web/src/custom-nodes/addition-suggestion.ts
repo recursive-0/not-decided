@@ -1,6 +1,5 @@
-import { EditsSuggestionsManager } from './../services/suggestion-manager';
 import type { Node } from "prosemirror-model";
-import type { Decoration, DecorationSource, EditorView, NodeView } from "prosemirror-view";
+import type { EditorView, NodeView } from "prosemirror-view";
 
 export class AdditionSuggestion implements NodeView {
     dom: HTMLElement;
@@ -34,6 +33,9 @@ export class AdditionSuggestion implements NodeView {
         acceptButton.title = 'Accept addition';
         acceptButton.textContent = 'Accept';
 
+        
+        if(!window.suggestionsManager) return
+
         acceptButton.addEventListener('click', () => {
             const pos = this.getPos();
             if (pos === undefined) return;
@@ -58,7 +60,7 @@ export class AdditionSuggestion implements NodeView {
             }
             
             // Remove the edit from the manager after accepting
-            window.suggestionsManager.removeEdit(this.nodeId, "addition_suggestion");
+            window.suggestionsManager!.removeEdit(this.nodeId, "addition_suggestion");
         });
         
         const rejectButton = document.createElement('button');
@@ -81,7 +83,7 @@ export class AdditionSuggestion implements NodeView {
             }
             
             // Remove the edit from the manager after rejecting
-            window.suggestionsManager.removeEdit(this.nodeId, "addition_suggestion");
+            window.suggestionsManager!.removeEdit(this.nodeId, "addition_suggestion");
         });
         
         controlsContainer.appendChild(acceptButton);
@@ -103,6 +105,6 @@ export class AdditionSuggestion implements NodeView {
     
     destroy() {
         // Clean up when the node view is removed from the document
-        window.suggestionsManager.removeEdit(this.nodeId, "addition_suggestion");
+        window.suggestionsManager!.removeEdit(this.nodeId, "addition_suggestion");
     }
 }
