@@ -24,8 +24,7 @@ export async function generateStream(req: Request, env: Env, ctx: ExecutionConte
 	console.log('Content nodes are: ', contentNodes);
 
 	try {
-		console.log("Right before actual gemini call")
-		return await handleClaudeStream({ prompt, chatMode: chatMode as 'CHAT' | 'COMPOSER', contentNodes: contentNodes, env: env });
+		return await handleDeepseekStream({ prompt, chatMode: chatMode as 'CHAT' | 'COMPOSER', contentNodes: contentNodes, env: env });
 		// return await simpleStaticStream()
 	} catch (error) {
 		console.log("Stringify Error: ", JSON.stringify(error))

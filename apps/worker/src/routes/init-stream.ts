@@ -1,5 +1,8 @@
 import { z } from "zod"
 import { Env } from "../../worker-configuration";
+import { drizzle } from "drizzle-orm/d1";
+import { messages } from "../db/schema";
+
 
 
 interface InitializeStreamBodyType {
@@ -20,7 +23,7 @@ const initializeStreamBodySchema = z.object({
 
 export async function initializeStream(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 
-    console.log("inside init stream")
+    console.log("ENVs re: ", env)
     let rawBody: InitializeStreamBodyType | null;
     try{
         rawBody = await request.json()
@@ -37,6 +40,33 @@ export async function initializeStream(request: Request, env: Env, ctx: Executio
     const { prompt, chatMode, contentNodes } = validation.data
     console.log("CONTENT NODES are: ", contentNodes)
     const streamId = crypto.randomUUID()
-    await env.STREAM_CONTEXT_STORE.put(streamId, JSON.stringify({prompt: prompt, chatMode: chatMode, contentNodes: contentNodes}))
+
+    try{
+        await env.STREAM_CONTEXT_STORE.put(streamId, JSON.stringify({prompt: prompt, chatMode: chatMode, contentNodes: contentNodes}))
+    } catch (error){
+        console.error("KV Error: Failed to put init stream data into kv store")
+        return Response.json({
+            status: "error",
+            error: "Error storing message. Please try again later!"
+        })
+    }
+    const db = drizzle(env.DB_DEV)
+
+    const userMessagePersistencePromise = db.insert(messages).values({
+        messageId: crypto.randomUUID(),
+        documentId: crypto.randomUUID(),
+        timestamp: new Date(),
+        mode: chatMode,
+        role: 'user',
+        content: prompt,
+    }).execute().catch(error => {
+        console.error("BACKGROUND D1 ERROR: Failed to insert initial user message:", error);
+        return Response.json({
+            status: "error",
+            error: "Error storing message. Please try again later!"
+        })
+    })
+    ctx.waitUntil(userMessagePersistencePromise)
+
     return Response.json({streamId})
 }

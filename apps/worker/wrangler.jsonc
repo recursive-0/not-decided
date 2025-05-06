@@ -11,9 +11,17 @@
 		"enabled": true
 	},
 	"kv_namespaces": [
+		{
+			"binding": "STREAM_CONTEXT_STORE",
+			"id": "128acbbde6ea464886b2b73b5cbe1454"
+		}
+	],
+	"d1_databases": [
     {
-      "binding": "STREAM_CONTEXT_STORE",
-      "id": "128acbbde6ea464886b2b73b5cbe1454"
+      "binding": "DB_DEV",
+      "database_name": "db_dev",
+      "database_id": "48a586ac-bb0a-43e5-acc2-b51f2997b996",
+	  "migrations_dir": "drizzle"
     }
   ],
 	"env": {
@@ -35,13 +43,13 @@
 				{
 					"binding": "STREAM_CONTEXT_STORE",
 					"id": "839c5b18f2d0476ea5c7971c920a0e40"
-				  }
+				}
 			],
 			"vars": {
 				"ENVIRONMENT": "PROD"
 			}
 		}
-	},
+	}
 	/**
 	 * Smart Placement
 	 * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
