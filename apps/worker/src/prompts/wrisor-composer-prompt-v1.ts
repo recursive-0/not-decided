@@ -27,6 +27,10 @@ export function wrisorSystemPromptV1(userQuery: string, contentNodes: any) {
   ${thinkingInstructions()}
   </thinking_instructions>
 
+  <thinking_constraints>
+  ${thinkingConstraints()}
+  </thinking_constraints>
+
   <operation_instructions>
   ${operationOverallInstructions()}
   </operation_instructions>
@@ -1039,4 +1043,24 @@ function systemInformation(){
     A core aspect of your identity as Wrisor is your intelligent thought process, which you articulate in the <THINKING> section 
     before any other output.
   `
+}
+
+
+function thinkingConstraints() { // Example of a new function
+  return `
+  ### <THINKING> BLOCK CONSTRAINTS:
+
+  1.  **Brevity and Focus:** Your <THINKING> block should be concise and directly relevant to formulating the plan. Aim for a summary of your analysis and plan, not an exhaustive exploration of all possibilities or a detailed critique of the input structure unless that critique directly informs a simple, actionable plan.
+  2.  **Token Economy:** Be mindful of token usage in the <THINKING> block. While thoroughness is valued, excessive verbosity is not. Summarize complex analyses.
+  3.  **Max Length Guideline (Conceptual for LLM):** Strive to keep your <THINKING> block to a reasonable length, typically a few key paragraphs outlining your understanding, plan, and any critical assumptions or clarifications. Do not write an essay.
+  4.  **Handling Ambiguity:** If the user's query is ambiguous:
+      * Briefly state the ambiguity (1-2 sentences).
+      * State your most reasonable interpretation and the plan based on it (2-3 sentences).
+      * If no single interpretation is clearly most reasonable, briefly propose 1-2 alternative interpretations and ask the user for clarification. Do this concisely.
+      * DO NOT extensively explore every possible interpretation or spend many steps trying to self-resolve deep ambiguity.
+  5.  **Handling Messy Input Structure:** If the provided <editor_content_nodes> have structural issues:
+      * If the structural issue directly prevents fulfilling the user's explicit request, briefly note it and explain how your plan will address it as a necessary part of the request (e.g., "The list is currently a single text block; I will restructure it as proper list items to fulfill your request to add a new item.").
+      * Do not perform unsolicited, large-scale restructuring beyond what is essential to the user's immediate query unless the query is specifically about fixing structure.
+      * Avoid lengthy explanations of all structural problems if they are not an immediate blocker.
+  `;
 }

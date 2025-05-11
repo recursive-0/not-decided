@@ -1,14 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  PlusCircle,
-  Clock,
   Bot,
-  BrainCircuit,
   CornerDownLeft,
   AlertTriangle,
   X,
@@ -24,6 +19,8 @@ import { useChatStore } from "@/store/chat";
 import { ActionIndicator } from "./action-indicator";
 import { ChatMode } from "@/types/messages";
 import { useEditor } from "@/providers/editor-context-provider";
+import { ChatModeEmptyContent } from "./chat-mode-empty-content";
+import { ComposerModeEmptyContent } from "./composer-mode-empty-content";
 
 // Thinking loader component
 const ThinkingLoader = () => {
@@ -183,22 +180,6 @@ const AIChat = () => {
             </TabsTrigger>
           </TabsList>
         </div>
-        <div className="ml-auto flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-muted-foreground hover:text-[#073642]"
-          >
-            <PlusCircle className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-muted-foreground hover:text-[#073642]"
-          >
-            <Clock className="h-4 w-4" />
-          </Button>
-        </div>
       </div>
     </div>
   );
@@ -316,10 +297,10 @@ const AIChat = () => {
             className="flex-1 flex flex-col p-0 m-0 overflow-hidden h-full"
           >
             <ScrollArea className="w-full flex-1 h-0" ref={localScrollAreaRef}>
-              <div className="px-2 min-w-0">
+              {chatMessages.length ? (<div className="px-2 min-w-0">
                 <ChatMessages messages={chatMessages} />
                 {isThinking && <ThinkingLoader />}
-              </div>
+              </div>) : <ChatModeEmptyContent />}
             </ScrollArea>
             {renderInputArea()}
           </TabsContent>
@@ -335,36 +316,7 @@ const AIChat = () => {
                   {isStreaming && <ActionIndicator action={currentLLMAction} />}
 
                 </div>
-              ) : (
-                <div className="p-4 space-y-4 text-[#073642]">
-                  <div className="pb-2">
-                    <div className="text-xl font-semibold mb-1 flex items-center gap-2">
-                      <BrainCircuit className="w-5 h-5 text-primary" />
-                      How can I help with the document?
-                    </div>
-                  </div>
-                  <Card className="bg-palette-beige-1 border-border">
-                    <CardContent className="p-3">
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <div className="bg-primary/10 text-primary px-2 py-0.5 rounded-sm text-xs font-medium">
-                          Composer Mode
-                        </div>
-                      </div>
-                      <p className="text-muted-foreground text-xs">
-                        Composer edits your document directly and knows its
-                        current content. Ask it to write, edit, or summarize.
-                      </p>
-                    </CardContent>
-                  </Card>
-                  <div className="text-center text-muted-foreground pt-6 text-sm">
-                    Use the input below to instruct the Composer.
-                    <br />
-                    (e.g., "Summarize the previous section", "Write an
-                    introduction about X")
-                  </div>
-
-                </div>
-              )}
+              ) : <ComposerModeEmptyContent />}
             </ScrollArea>
             {renderInputArea()}
           </TabsContent>
