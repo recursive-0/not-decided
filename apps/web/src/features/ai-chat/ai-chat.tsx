@@ -212,9 +212,9 @@ const AIChat = () => {
           style={{
             backgroundColor: "var(--color-palette-gold-light)",
           }}
-          className="flex-1 text-sm rounded-md resize-none overflow-hidden border border-[var(--color-palette-gold-dark)]
+          className="flex-1 text-sm rounded-md resize-none border border-[var(--color-palette-gold-dark)]
             text-[var(--color-palette-dark)] placeholder:text-muted-foreground
-            pr-8 py-2 min-h-[38px] max-h-[150px]"
+            pr-8 py-2 min-h-[38px] max-h-[100px] overflow-y-scroll"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => handleKeyDown(e)}
