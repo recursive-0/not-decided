@@ -22,7 +22,7 @@ export const massAcceptRejectPlugin = new Plugin({
         currentSuggestionCount: getSuggestionCount(editorState),
       };
     },
-    apply(tr, pluginInternalState, oldEditorState, newEditorState) {
+    apply(__, pluginInternalState, _, newEditorState) {
       // Apply should primarily update this plugin's own internal state if needed.
       // In this case, we update our tracked count.
       const newCount = getSuggestionCount(newEditorState);
