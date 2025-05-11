@@ -38,6 +38,7 @@ import { ensureNodeIdPlugin } from "@/plugins/ensure-nodeid-plugin";
 import { suggestionHighlightPlugin } from "@/plugins/suggestion-highlight-plugin";
 import { ensureTrailingParagraphPlugin } from "@/plugins/trailing-paragraph-plugin";
 import { massAcceptRejectPlugin } from "@/plugins/mass-accept-reject-plugin";
+import { suggestionNavigatorPlugin } from "@/plugins/suggestion-navigator-plugin";
 
 const debounce = (func, delay) => {
   let timer;
@@ -80,6 +81,7 @@ const plugins = [
   slashOpenCommandDialog,
   suggestionHighlightPlugin,
   massAcceptRejectPlugin,
+  suggestionNavigatorPlugin,
   ensureTrailingParagraphPlugin,
   ensureNodeIdPlugin,
   placeholderPlugin,
@@ -460,7 +462,7 @@ const FloatingCommandDialog = ({
       }}
     >
       <div className="p-2">
-        <div className="relative flex items-start">
+        <div className="relative flex flex-col items-start">
           <Textarea
             autoFocus
             ref={textareaRef}

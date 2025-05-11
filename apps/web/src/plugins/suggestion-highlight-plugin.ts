@@ -58,18 +58,16 @@ export const suggestionHighlightPluginKey =
           const nodeId = suggestionNode.nodeId;
           let nodeFoundAndRangeAdded = false;
           doc.descendants((node: Node, pos: number) => {
-            if (nodeFoundAndRangeAdded) return false; // Stop searching for this nodeId if already processed
+            if (nodeFoundAndRangeAdded) return false; 
   
             if (node.attrs.nodeId === nodeId) {
               rangesToDelete.push({ from: pos, to: pos + node.nodeSize });
               nodeFoundAndRangeAdded = true;
-              return false; // Stop descendants search for this specific nodeId
+              return false; 
             }
-            return true; // Continue searching
+            return true; 
           });
         }
-        // If suggestionNode.type === "deletion", rejecting it means doing nothing to the document content.
-        // The highlight will be removed by the plugin state update (empty metaData).
       });
     }
   
@@ -198,18 +196,11 @@ export const suggestionHighlightPlugin = new Plugin({
         }
       }
 
-      // Process adding new individual suggestion metadata
-      // (This logic is usually triggered when a new suggestion is created, not from accept/reject all)
       if (
-        trMeta.metaData && // Check if this is for adding a *new* suggestion
+        trMeta.metaData && 
         trMeta.metaData.nodeId != null
       ) {
-        // Avoid adding if it's just part of an action meta without actual new data
-        if (trMeta.metaData.type !== "addition" && trMeta.metaData.type !== "deletion" && trMeta.metaData.type !== "replace") {
-           // Potentially filter out if it's not a real suggestion type
-        }
 
-        // Duplicate check
         if (value.metaData.some(
             (item) =>
               item.nodeId === trMeta.metaData.nodeId && // Ensure trMeta.metaData is MetaDataType here

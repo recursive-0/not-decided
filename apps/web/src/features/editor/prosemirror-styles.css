@@ -453,3 +453,17 @@ pre code.inline-code {
   animation: fadeInHighlight 0.4s ease-in-out forwards;
   transition: background-color 0.4s ease-in-out;
 }
+
+
+.suggestion-navigated-active {
+  background-color: var(--color-palette-gold-light);
+  outline: 2px solid var(--color-card-foreground);
+  /* box-shadow: 0 0px 40px 5px var(--color-palette-gold); */
+}
+
+.current-node-dot {
+  height: 20px;
+  width: 20px;
+  border-radius: 30%;
+  background-color: #073642;
+}
