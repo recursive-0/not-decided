@@ -150,7 +150,7 @@ export const AcceptAllRejectAllDialog = ({
       },
     });
 
-    if (tr.docChanged) {
+    if (tr.docChanged || pluginState.metaData) {
       console.log(`[Dialog:onRejectAll] Dispatching transaction. docChanged: ${tr.docChanged}, steps: ${tr.steps.length}`);
       editorView.current.dispatch(tr);
     } else {
