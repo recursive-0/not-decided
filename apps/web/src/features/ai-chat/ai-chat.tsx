@@ -23,6 +23,7 @@ import { useEditorStore } from "@/store/editor";
 import { useChatStore } from "@/store/chat";
 import { ActionIndicator } from "./action-indicator";
 import { ChatMode } from "@/types/messages";
+import { useEditor } from "@/providers/editor-context-provider";
 
 // Thinking loader component
 const ThinkingLoader = () => {
@@ -103,6 +104,7 @@ const AIChat = () => {
   } = useChatHandler();
 
   const { currentLLMAction} = useChatStore()
+  const { editorView } = useEditor()
 
   const localScrollAreaRef = useRef<HTMLDivElement | null>(null);
 
@@ -159,16 +161,6 @@ const AIChat = () => {
     }
   }
 
-  useEffect(() => {
-    if (localScrollAreaRef.current) {
-      registerScrollAreaRef(localScrollAreaRef.current);
-    }
-    // Optional: Cleanup function to unregister if the component unmounts
-    // return () => {
-    //   registerScrollAreaRef(null);
-    // };
-  }, [registerScrollAreaRef]);
-
   const renderHeader = () => (
     <div className="border-b border-border bg-[var(--color-palette-beige-2)] flex-shrink-0">
       <div className="h-10 flex items-center px-3 py-1.5">
@@ -216,7 +208,7 @@ const AIChat = () => {
       <div className="relative flex items-start">
         <Textarea
           ref={textareaRef}
-          placeholder="Ask anything (⌘L), @ to mention code blocks"
+          placeholder="Ask anything (⌘k), @ to mention code blocks"
           style={{
             backgroundColor: "var(--color-palette-gold-light)",
           }}
@@ -267,10 +259,46 @@ const AIChat = () => {
   
 
   useEffect(() => {
+    if (localScrollAreaRef.current) {
+      registerScrollAreaRef(localScrollAreaRef.current);
+    }
+  }, [registerScrollAreaRef]);
+
+  useEffect(() => {
     if(!isStreaming){
       setShowStreamWarning(false)
     } 
   },[isStreaming])
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === 'k') {
+        const isModifierPressed = e.metaKey || e.ctrlKey; 
+  
+        if (isModifierPressed) {
+          e.preventDefault(); 
+  
+          // Focus the text area
+          if (textareaRef.current) {
+            textareaRef.current.focus();
+            console.log('Cmd/Ctrl+K pressed, focusing textarea.');
+          }
+        }
+      } else if(e.key.toLowerCase() === 'm'){
+        const isModifierPressed = e.metaKey || e.ctrlKey; 
+  
+        if (isModifierPressed) {
+          e.preventDefault(); 
+          editorView.current.focus()
+        }
+      }
+    };
+    document.addEventListener("keydown", onKeyDown)
+
+    return () => {
+      document.removeEventListener("keydown", onKeyDown)
+    }
+  },[textareaRef, editorView])
 
   return (
     <div className="w-full flex flex-col h-full bg-[var(--color-palette-beige-2)] text-[#073642]">

@@ -1,0 +1,49 @@
+
+.actions-container {
+    display: flex;
+    position: absolute;
+    justify-content: center;
+    align-items: center;
+    gap: 1;
+  right: 25px;
+  translate: 0% -100%;  
+  z-index: 10; 
+}
+
+.accept-action-button {
+    border: none;
+    height: 20px;
+    width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 10px;
+    padding: 4px 2px;
+    border-top-left-radius: 4px;
+    background-color: var(--color-forest-teal);
+    color: white;
+}
+
+.accept-action-button &:hover {
+    opacity: 0.2;
+}
+
+.reject-action-button {
+    border: none;
+    height: 20px;
+    width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 10px;
+    padding: 4px 2px;
+    border-top-right-radius: 4px;
+    background-color: var(--color-olive-green);
+    color: white;  
+}
+
+.reject-action-button &:hover{
+    opacity: 0.2;
+}

@@ -13,12 +13,15 @@ import {
 } from "@/lib/composer-mode-parser";
 import { useChatStore } from "@/store/chat";
 import { FingerprintManager } from "@/lib/fingerprint-manager";
-import type { Node } from "prosemirror-model";
 import { EditorActionsManager } from "@/lib/editor-actions-manager";
-import { TextSelection } from "prosemirror-state";
-import { Tags } from "@/types/editor";
+import { OperationType, Tags } from "@/types/editor";
+import {
+  defaultActionData,
+  SuggestionHighlightMetaDataType,
+  suggestionHighlightPluginKey,
+} from "@/plugins/suggestion-highlight-plugin";
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8787"
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8787";
 // const BASE_URL = "https://wrisor-dev-worker.itsrecursive-l.workers.dev"
 
 export const useSSEStream = () => {
@@ -28,7 +31,7 @@ export const useSSEStream = () => {
   const [error, setError] = useState<Error | null>(null);
   const [currentStreamId, setCurrentStreamId] = useState<string>("");
   const { editorView, setAcceptRejectDialog } = useEditor();
-  const { setCurrentLLMAction} = useChatStore()
+  const { setCurrentLLMAction } = useChatStore();
 
   const editorActionsManagerRef = useRef<EditorActionsManager | null>(null);
   const userInteractedRef = useRef<boolean>(false);
@@ -45,6 +48,85 @@ export const useSSEStream = () => {
       return composerParserRef;
     }
   };
+
+  const executeOperation = useCallback(
+    (operationData: OperationType) => {
+      if (!editorView.current) return;
+
+      const { action, nodeIds } = operationData;
+
+      if (action === "delete") {
+        nodeIds.forEach((id) => {
+          if (!editorView.current) return;
+          const currentTr = editorView.current.state.tr;
+          const metaForPlugin: SuggestionHighlightMetaDataType = {
+            action: defaultActionData,
+            metaData: {
+              type: "deletion",
+              nodeId: id,
+            },
+          };
+          currentTr.setMeta(suggestionHighlightPluginKey, metaForPlugin);
+          editorView.current.dispatch(currentTr);
+          console.log(
+            "Dispatched TR for DELETION highlight operation for nodeId:",
+            id
+          );
+        });
+        return;
+      }
+
+      if (action === "add") {
+        const nodeId = nodeIds[0];
+        if (!nodeId) return;
+        console.log(
+          "Dispatched TR for ADDITION highlight operation for nodeId:",
+          nodeId
+        );
+
+        if (rendererRef.current) {
+          editorView.current.state.doc.descendants((node, pos) => {
+            if (nodeId === node.attrs.nodeId) {
+              const endPos = pos + node.nodeSize;
+              rendererRef.current!.setInsertionPoint(endPos);
+              return false;
+            }
+          });
+        }
+        return;
+      }
+
+      if (action === "replace") {
+        const nodeId = nodeIds[0];
+        if (!nodeId || !editorView.current) return;
+
+        const currentTr = editorView.current.state.tr;
+
+        const deleteNodeMetadata: SuggestionHighlightMetaDataType = {
+          action: defaultActionData,
+          metaData: {
+            type: "deletion",
+            nodeId: nodeId,
+          },
+        };
+        currentTr.setMeta(suggestionHighlightPluginKey, deleteNodeMetadata);
+        editorView.current.dispatch(currentTr);
+
+        if (rendererRef.current) {
+          editorView.current.state.doc.descendants((node, pos) => {
+            if (nodeId === node.attrs.nodeId) {
+              console.log("NODE found in replace is: ", node);
+              const endPos = pos + node.nodeSize;
+              rendererRef.current!.setInsertionPoint(endPos);
+              return false;
+            }
+          });
+        }
+        return;
+      }
+    },
+    [editorView, rendererRef]
+  );
 
   const startStreaming = useCallback(
     async (
@@ -88,8 +170,10 @@ export const useSSEStream = () => {
           );
 
           composerParserRef.current = new ComposerModeParser({
-            sendJsonNode: async (node: string) => await insertAfterThisNode(node),
-            sendNodeToDelete: (node: string) => deleteNode(node),
+            onOperation(operation) {
+              console.log("Operation DATA is: ", operation);
+              executeOperation(operation);
+            },
             sendTokensCallback: (tokens: string) => sendTokensCallback(tokens),
             sendCodeBlockNode: (codeBlock: CodeBlockNodeType) =>
               rendererRef.current!.onCodeBlock(codeBlock),
@@ -98,169 +182,42 @@ export const useSSEStream = () => {
             onTextContent: (text: string) =>
               rendererRef.current?.onTextContent(text),
             setCurrentActionState(action) {
-              setCurrentLLMAction(action)
+              setCurrentLLMAction(action);
             },
           });
         }
-        function findFirstParagraphContentPosition(node: Node): number | null {
-          let firstParagraphPos: number | null = null;
 
-          node.descendants((node, pos) => {
-            if (node.type.name === "paragraph" && node.content.size > 0) {
-              firstParagraphPos = pos + 1;
-              return false;
-            }
-          });
-          return firstParagraphPos;
-        }
+        const editorDoc = editorView.current!.state.doc;
+        console.log("EDitor Doc nodes are: ", editorDoc);
+        const validContentNodes: {
+          id: string;
+          content: { type: string; content: string };
+        }[] = [];
+        fingerprintManagerRef.current!.clearHashCollisionCounter();
+        editorDoc.descendants((node) => {
+          const nodeId = node.attrs.nodeId;
 
-        const deleteNode = (nodeHash: string) => {
-          console.log("Delete node called with hash: ", nodeHash)
-          if(!fingerprintManagerRef.current || !editorView.current) return
-
-          fingerprintManagerRef.current.generateEditorNodesFingerprints(
-            editorView.current
-          );
-
-          const matchedNode =
-            fingerprintManagerRef.current.matchFingerprint(nodeHash);
-
-          console.log("DELETION NODE MATCHED:", matchedNode);
-
-          if (matchedNode && editorView.current) {
-            const { state } = editorView.current;
-            let tr = state.tr;
-
-            const nodePos = matchedNode.startPos;
-            const originalNode = state.doc.nodeAt(nodePos);
-
-            if (originalNode) {
-              const deletionSuggestion =
-                state.schema.nodes.deletion_suggestion.create(
-                  {
-                    id: `deletion-${Date.now()}`,
-                    originalNodeType: originalNode.type.name,
-                    originalAttrs: JSON.stringify(originalNode.attrs),
-                  },
-                  originalNode
-                );
-
-              // 4. Replace the original node with the deletion suggestion
-              tr.setSelection(TextSelection.create(editorView.current.state.doc, nodePos))
-              tr.scrollIntoView()
-              const updatedTr = tr.replaceWith(
-                nodePos,
-                nodePos + originalNode.nodeSize,
-                deletionSuggestion
-              );
-
-              const mappedPositionAfterDeletion = updatedTr.mapping.map(nodePos);
-
-              let scrollTargetPosition = mappedPositionAfterDeletion;
-
-              const testPos = findFirstParagraphContentPosition(
-                matchedNode.node
-              );
-
-              if (testPos !== null) {
-                console.log(
-                  "DEBUG SCROLL TEST: Found first paragraph content at position:",
-                  testPos
-                );
-
-                scrollTargetPosition = testPos;
-
-                console.log(
-                  `DEBUG SCROLL TEST: Using test position ${scrollTargetPosition} for scrolling.`
-                );
-              } else {
-                console.log(
-                  "DEBUG SCROLL TEST: Could not find a paragraph content position for test. Using mapped deletion position."
-                );
-              }
-
-              tr = tr.setSelection(
-                TextSelection.create(tr.doc, scrollTargetPosition)
-              );
-
-              tr = tr.scrollIntoView();
-
-              editorView.current.dispatch(tr);
-
-              const nextInsertionPos = tr.mapping.map(
-                nodePos + originalNode.nodeSize
-              );
-              rendererRef.current!.setInsertionPoint(nextInsertionPos);
-            } else {
-              console.warn(
-                "Attempted to delete node with hash",
-                nodeHash,
-                "but could not find it in the document at original pos",
-                nodePos
-              );
-            }
-          } else {
-            console.warn(
-              "Attempted to delete node with hash",
-              nodeHash,
-              "but no match found in the document."
-            );
-          }
-        };
-
-
-
-        const editorDocNodes = editorView.current!.state.doc.content;
-        const validContentNodes: {id: string, content: {type: string, content: string}}[] = [];
-        fingerprintManagerRef.current!.clearHashCollisionCounter()
-        editorDocNodes.content.forEach((node: Node) => {
-          console.log("NODE is: ", node)
-          // if (node.content.size > 0) {
-            const content = fingerprintManagerRef.current!.normalizeNodeTextContent(node);
-            const hash = fingerprintManagerRef.current!.getUniqueHash(content);
+          if (nodeId) {
             const contentNode = {
               type: node.type.name,
-              content: node.textContent
+              content: node.textContent,
             };
-            validContentNodes.push({ id: hash, content: contentNode });
-          // }
+            validContentNodes.push({ id: nodeId, content: contentNode });
+          }
         });
 
         console.log("CONTENT NODESSSSSSSS: ", validContentNodes);
 
-        async function insertAfterThisNode(nodeHash: string) {
-          fingerprintManagerRef.current!.clearHashCollisionCounter()
-          console.log("ADD NODE found so generating hashes for editor content")
-          fingerprintManagerRef.current!.generateEditorNodesFingerprints(
-            editorView.current!
-          );
-          const matchedNode =
-            fingerprintManagerRef.current!.matchFingerprint(nodeHash);
-          console.log("ADDITION NODE FOUND IS: ", matchedNode);
-          if (matchedNode) {
-            rendererRef.current!.setInsertionPoint(matchedNode.insertPosition);
-          } else {
-            // todo: need smart and intelligent fallback method to partial match the node
-            // fallback to document size
-            const insertPos = editorView.current!.state.doc.content.size
-            rendererRef.current!.setInsertionPoint(insertPos)
-          }
-        }
-
-
         // Initialize stream
-        const response = await fetch(
-          `${BASE_URL}/api/init/stream`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              prompt: prompt,
-              chatMode: chatMode,
-              contentNodes: validContentNodes,
-            }),
-          }
-        );
+        const response = await fetch(`${BASE_URL}/api/init/stream`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            prompt: prompt,
+            chatMode: chatMode,
+            contentNodes: validContentNodes,
+          }),
+        });
 
         if (!response.ok) {
           throw new Error("Failed to initialize stream!");
@@ -274,8 +231,11 @@ export const useSSEStream = () => {
           `${BASE_URL}/api/generate/stream?streamID=${streamId}`
         );
 
-        function preProcessIncomingTokens(tokens: string){
-          return tokens.replace(/\\n/g, "\n").replace(/\\r/g, "\r").replace(/\\t/g, "\t");
+        function preProcessIncomingTokens(tokens: string) {
+          return tokens
+            .replace(/\\n/g, "\n")
+            .replace(/\\r/g, "\r")
+            .replace(/\\t/g, "\t");
         }
 
         // Handle messages
@@ -291,7 +251,7 @@ export const useSSEStream = () => {
               getCurrentParser()?.current!.stopStreaming();
               rendererRef.current!.updateSuccessfulGenerations();
               setIsStreaming(false);
-              setCurrentLLMAction(CurrentActionType.NORMAL)
+              setCurrentLLMAction(CurrentActionType.NORMAL);
               eventSourceRef.current!.close();
               if (window.suggestionsManager!.totalEdits() > 0) {
                 setAcceptRejectDialog(true);
@@ -300,18 +260,14 @@ export const useSSEStream = () => {
 
             case "START_STREAM":
               getCurrentParser().current!.startStreaming();
-              setCurrentLLMAction(CurrentActionType.NORMAL)
-              if (editorView.current!.state.doc.textContent.trim().length === 0) {
-                rendererRef.current!.setHighlight(false);
-              } else {
-                rendererRef.current!.setHighlight(true);
-              }
-
+              setCurrentLLMAction(CurrentActionType.NORMAL);
               return;
 
             default:
               setContent((prev) => prev + preProcessIncomingTokens(tokens));
-              getCurrentParser()?.current!.processChunk(preProcessIncomingTokens(tokens));
+              getCurrentParser()?.current!.processChunk(
+                preProcessIncomingTokens(tokens)
+              );
           }
         };
 
@@ -324,7 +280,7 @@ export const useSSEStream = () => {
           setIsStreaming(false);
         };
       } catch (error: unknown) {
-        if(error instanceof Error){
+        if (error instanceof Error) {
           setError(error);
         }
         setIsStreaming(false);
@@ -333,7 +289,7 @@ export const useSSEStream = () => {
     [editorView, chatMode]
   );
 
-  const stopStreaming = useCallback(() => {
+  const stopStreaming = () => {
     getCurrentParser().current!.stopStreaming();
     rendererRef.current!.cleanupAfterStreamStop();
     if (eventSourceRef.current!) {
@@ -343,7 +299,7 @@ export const useSSEStream = () => {
 
     setIsStreaming(false);
     setContent("");
-  }, []);
+  };
 
   return {
     content,
@@ -354,6 +310,6 @@ export const useSSEStream = () => {
     currentStreamId,
     setCurrentStreamId,
     userInteractedRef,
-    fingerprintManagerRef
+    fingerprintManagerRef,
   };
 };

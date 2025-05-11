@@ -50,23 +50,23 @@ export async function initializeStream(request: Request, env: Env, ctx: Executio
             error: "Error storing message. Please try again later!"
         })
     }
-    const db = drizzle(env.DB_DEV)
+    // const db = drizzle(env.DB_DEV)
 
-    const userMessagePersistencePromise = db.insert(messages).values({
-        messageId: crypto.randomUUID(),
-        documentId: crypto.randomUUID(),
-        timestamp: new Date(),
-        mode: chatMode,
-        role: 'user',
-        content: prompt,
-    }).execute().catch(error => {
-        console.error("BACKGROUND D1 ERROR: Failed to insert initial user message:", error);
-        return Response.json({
-            status: "error",
-            error: "Error storing message. Please try again later!"
-        })
-    })
-    ctx.waitUntil(userMessagePersistencePromise)
+    // const userMessagePersistencePromise = db.insert(messages).values({
+    //     messageId: crypto.randomUUID(),
+    //     documentId: crypto.randomUUID(),
+    //     timestamp: new Date(),
+    //     mode: chatMode,
+    //     role: 'user',
+    //     content: prompt,
+    // }).execute().catch(error => {
+    //     console.error("BACKGROUND D1 ERROR: Failed to insert initial user message:", error);
+    //     return Response.json({
+    //         status: "error",
+    //         error: "Error storing message. Please try again later!"
+    //     })
+    // })
+    // ctx.waitUntil(userMessagePersistencePromise)
 
     return Response.json({streamId})
 }

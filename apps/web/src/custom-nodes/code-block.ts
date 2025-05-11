@@ -19,8 +19,6 @@ export class CodeBlock implements NodeView {
         public getPos: () => number | undefined
     ){
         const language = this.node.attrs.language || "plaintext"; 
-
-        console.log("NODE CODE BLOCK IS:", node)
         
         this.dom = document.createElement('div');
         this.dom.classList.add("custom-code-block");

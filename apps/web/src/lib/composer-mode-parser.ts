@@ -1,3 +1,8 @@
+
+import type { OperationType } from '@/types/editor';
+import { MODE, Tags } from "@/types/editor";
+
+
 enum ParserState {
   normal = "normal",
   thought = "thought",
@@ -12,38 +17,14 @@ enum ParserState {
   inside_editor_content_tag = "inside_editor_content_tag",
 }
 
-type MODE = "THOUGHT" | "EDITOR_CONTENT" | "NORMAL" | "ADD" | "NODE" | "DELETE" | "CODE"
-
-export enum Tags {
-  "H1" = "H1",
-  "H2" = "H2",
-  "H3" = "H3",
-  "P" = "P",
-  "B" = "B",
-  "I" = "I",
-  "UL" = "UL",
-  "OL" = "OL",
-  "LI" = "LI",
-  "CODE" = "CODE",
-  "LANG" = "LANG",
-  "CONTENT" = "CONTENT",
-  "ICODE" = "ICODE",
-  "QUOTE" = "QUOTE",
-  "ADD" = "ADD",
-  "CHECKBOX" = "CHECKBOX",
-  "NODE" = "NODE",
-  "DELETE" = "DELETE",
-}
-
 interface ParserCallbacks {
-  sendJsonNode: (node: string) => void;
-  sendNodeToDelete: (node: string) => void;
+  onOperation: (operation: OperationType) => void;
   sendTokensCallback: (tokens: string) => void;
   sendCodeBlockNode: (codeBlock: CodeBlockNodeType) => void;
   onOpenTag: (tag: Tags) => void;
   onCloseTag: (tag: Tags) => void;
   onTextContent: (txt: string) => void;
-  setCurrentActionState: (action: CurrentActionType) => void
+  setCurrentActionState: (action: CurrentActionType) => void;
 }
 
 const all_tags = [
@@ -55,6 +36,8 @@ const all_tags = [
   "<P>",
   "<CODE>",
   "<LANG>",
+  "<VAL>",
+  "</VAL>",
   "<CONTENT>",
   "<ICODE>",
   "<UL>",
@@ -62,46 +45,41 @@ const all_tags = [
   "<QUOTE>",
   "<OL>",
   "<CHECKBOX>",
-  "<THOUGHT>",
-  "</THOUGHT>",
-  "<EDITOR_CONTENT>",
-  "</EDITOR_CONTENT>",
-  "<ADD>",
-  "</ADD>",
-  "<NODE>",
-  "</NODE>",
-  "<DELETE>",
-  "</DELETE>",
+  "<THINKING>",
+  "</THINKING>",
+  "<OPERATION>",
+  "</OPERATION>",
 ];
 
 const ALLOWED_TAGS = [
   "H1",
   "H2",
   "H3",
+  "P",
   "B",
   "I",
-  "P",
+  "UL",
+  "OL",
+  "LI",
   "CODE",
   "LANG",
-  "CONTENT",
-  "UL",
-  "LI",
-  "QUOTE",
-  "OL",
-  "CHECKBOX",
+  "VAL",
+"CONTENT",
   "ICODE",
-  "THOUGHT",
-  "EDITOR_CONTENT",
+  "QUOTE",
   "ADD",
+  "CHECKBOX",
   "NODE",
   "DELETE",
+  "OPERATION",
+  "THINKING",
 ];
 
 export enum CurrentActionType {
   THINKING = "THINKING",
   DELETING = "DELETING",
   ADDING = "ADDING",
-  NORMAL = "NORMAL"
+  NORMAL = "NORMAL",
 }
 
 const isValidTag = (tag: string) => {
@@ -124,8 +102,7 @@ export class ComposerModeParser {
   private currentTagName: string = "";
   private tagStack: string[] = [];
   private isActive: boolean = false;
-  private jsonNode: string = "";
-  private deleteNode: string = "";
+  private operationDataJsonString: string = "";
   private codeBlockNode: CodeBlockNodeType = {
     lang: "",
     content: "",
@@ -141,38 +118,27 @@ export class ComposerModeParser {
   private flushTextBuffer() {
     if (this.textBuffer.length === 0) return;
 
-    console.log("CURRNT text buffer is: ", this.textBuffer)
+    console.log("CURRNT text buffer is: ", this.textBuffer);
 
     if (this.state === ParserState.normal) {
-      if (this.mode === "THOUGHT") {
+      if (this.mode === Tags.THINKING) {
         this.callbacks.sendTokensCallback(this.textBuffer);
-      } else if (this.mode === "EDITOR_CONTENT") {
+      } else if (this.mode === Tags.OPERATION) {
+        this.operationDataJsonString += this.textBuffer;
+      } else if (this.mode === Tags.CONTENT) {
         this.callbacks.onTextContent(this.textBuffer);
-      } else if(this.mode === "CODE"){
-        const topTag = this.tagStack[this.tagStack.length - 1]
-        if(topTag === "LANG"){
-          this.codeBlockNode.lang += this.textBuffer
-        } else if(topTag === "CONTENT"){
-          console.log("CURRENT CONTENT IN COD BLOCK IS: ", JSON.stringify(this.codeBlockNode))
-          this.codeBlockNode.content += this.textBuffer
-          this.callbacks.onTextContent(this.textBuffer)
-        }
-      } else if (this.mode === "ADD") {
-        // this.jsonNode += this.textBuffer
-      } else if (this.mode === "NODE") {
-        console.log("inside node mode when flushing text buffer");
-        if (this.tagStack[this.tagStack.length - 2] === "ADD") {
-          this.jsonNode += this.textBuffer;
-        } else if (this.tagStack[this.tagStack.length - 2] === "DELETE") {
-          this.deleteNode += this.textBuffer;
-        } else {
+      } else if (this.mode === Tags.CODE) {
+        const topTag = this.tagStack[this.tagStack.length - 1];
+        if (topTag === "LANG") {
+          this.codeBlockNode.lang += this.textBuffer;
+        } else if (topTag === "VAL") {
           console.log(
-            "strange we couldn't find ADD or DELETE while the mode is NODE"
+            "CURRENT CONTENT IN COD BLOCK IS: ",
+            JSON.stringify(this.codeBlockNode)
           );
+          this.codeBlockNode.content += this.textBuffer;
+          this.callbacks.onTextContent(this.textBuffer);
         }
-      } else if (this.mode === "DELETE") {
-        // do nothing here
-        console.log("Emitting the LRTC event when there's nothing");
       } else {
         console.warn("FLUSHING TEXT BUFFER BUT MODE IS NORMAL!!!");
         this.callbacks.sendTokensCallback(this.textBuffer);
@@ -191,17 +157,20 @@ export class ComposerModeParser {
     this.state = ParserState.normal;
     this.clearTextBuffer();
     this.currentTagName = "";
-    this.jsonNode = "";
-    this.deleteNode = "";
+    this.operationDataJsonString = "";
     this.tagStack = [];
     this.isActive = false;
   }
 
-  private resetCodeBlockNode(){
+  private resetCodeBlockNode() {
     this.codeBlockNode = {
       lang: "",
       content: "",
-    }
+    };
+  }
+
+  private resetOperationData() {
+    this.operationDataJsonString = "";
   }
 
   processChunk(chunk: string) {
@@ -210,7 +179,7 @@ export class ComposerModeParser {
       throw new Error("Can't processs a dead stream");
     }
 
-    console.log("CHUNK to process is: ", chunk)
+    console.log("CHUNK to process is: ", chunk);
 
     for (let i = 0; i < chunk.length; i++) {
       const char = chunk[i];
@@ -221,7 +190,6 @@ export class ComposerModeParser {
 
     this.flushTextBuffer();
   }
-
 
   private openTag() {
     const tagName = this.currentTagName.toUpperCase();
@@ -235,9 +203,9 @@ export class ComposerModeParser {
       return;
     }
 
-    if (tagName === "THOUGHT") {
-      this.mode = "THOUGHT";
-      this.callbacks.setCurrentActionState(CurrentActionType.THINKING)
+    if (tagName === Tags.THINKING) {
+      this.mode = Tags.THINKING;
+      this.callbacks.setCurrentActionState(CurrentActionType.THINKING);
       this.tagStack.push(tagName);
       this.clearTextBuffer();
       this.state = ParserState.normal;
@@ -245,9 +213,9 @@ export class ComposerModeParser {
       return;
     }
 
-    if (tagName === "EDITOR_CONTENT") {
-      this.mode = "EDITOR_CONTENT";
-      this.callbacks.setCurrentActionState(CurrentActionType.ADDING)
+    if (tagName === Tags.OPERATION) {
+      this.mode = Tags.OPERATION;
+      this.resetOperationData();
       this.tagStack.push(tagName);
       this.clearTextBuffer();
       this.state = ParserState.normal;
@@ -255,8 +223,10 @@ export class ComposerModeParser {
       return;
     }
 
-    if (tagName === "ADD") {
-      this.mode = "ADD";
+    if (tagName === Tags.CONTENT) {
+      this.mode = Tags.CONTENT;
+      this.callbacks.setCurrentActionState(CurrentActionType.ADDING);
+      this.callbacks.onOpenTag(tagName)
       this.tagStack.push(tagName);
       this.clearTextBuffer();
       this.state = ParserState.normal;
@@ -264,72 +234,33 @@ export class ComposerModeParser {
       return;
     }
 
-    if (tagName === "NODE") {
-      this.mode = "NODE";
-      this.jsonNode = "";
-      this.deleteNode = "";
-      this.tagStack.push(tagName);
-      this.clearTextBuffer();
-      this.state = ParserState.normal;
-      this.currentTagName = "";
-      return;
-    }
-
-    if (tagName === "DELETE") {
-      console.log("FOUND OPENING DELETE tag");
-      this.mode = "DELETE";
-      this.callbacks.setCurrentActionState(CurrentActionType.DELETING)
-      this.tagStack.push(tagName);
-      this.clearTextBuffer();
-      this.deleteNode = "";
-      this.state = ParserState.normal;
-      this.currentTagName = "";
-      return;
-    }
-
-    if (tagName === "CODE") {
-      const topTag = this.tagStack[this.tagStack.length - 1]
-      console.log("FOUND CODE opening tag")
-      console.log("TOP TAG IS: ", topTag)
-      if(topTag === "THOUGHT"){
-        console.log("Found CODE tag in thought mode so emitting text for thought mode")
-        this.callbacks.sendTokensCallback(this.textBuffer)
-        return
+    if (tagName === Tags.CODE) {
+      const topTag = this.tagStack[this.tagStack.length - 1];
+      console.log("FOUND CODE opening tag");
+      console.log("TOP TAG IS: ", topTag);
+      if (topTag === Tags.THINKING) {
+        console.log(
+          "Found CODE tag in thought mode so emitting text for thought mode"
+        );
+        this.callbacks.sendTokensCallback(this.textBuffer);
+        return;
       } else {
-      this.mode = "CODE"
-      this.tagStack.push(tagName)
-      this.clearTextBuffer()
-      this.resetCodeBlockNode()
-      this.state = ParserState.normal
-      this.currentTagName = ""
-      return
+        this.mode = Tags.CODE;
+        this.tagStack.push(tagName);
+        this.clearTextBuffer();
+        this.resetCodeBlockNode();
+        this.state = ParserState.normal;
+        this.currentTagName = "";
+        return;
       }
     }
 
-    // if(tagName === "LANG"){
-    //   console.log("FOUND LANG opening tag")
-    //   this.tagStack.push(tagName)
-    //   this.clearTextBuffer()
-    //   this.resetCodeBlockNode()
-    //   this.state = ParserState.normal
-    //   this.currentTagName = ""
-    //   return
-    // }
-
-    if (this.mode === "THOUGHT") {
+    if (this.mode === Tags.THINKING) {
       this.callbacks.sendTokensCallback(this.textBuffer);
-    } else if (this.mode === "EDITOR_CONTENT") {
+    } else if (this.mode === Tags.CONTENT) {
       this.callbacks.onOpenTag(tagName as Tags);
       this.tagStack.push(tagName);
-    } else if(this.mode === 'CODE') {
-      if(tagName === "CONTENT"){
-        this.callbacks.sendCodeBlockNode(this.codeBlockNode)
-      }
-      this.tagStack.push(tagName)
-    } else if (this.mode === "ADD") {
-      this.tagStack.push(tagName);
-    } else if (this.mode === "DELETE") {
-      console.log("PUSHING NODE onto stakc");
+    } else if (this.mode === Tags.CODE) {
       this.tagStack.push(tagName);
     } else {
       this.flushTextBuffer();
@@ -352,12 +283,12 @@ export class ComposerModeParser {
       return;
     }
 
-    if (closingTag === "THOUGHT") {
+    if (closingTag === Tags.THINKING) {
       const topTagInStack = this.tagStack[this.tagStack.length - 1];
       if (topTagInStack === closingTag) {
         this.tagStack.pop();
         this.mode = "NORMAL";
-        this.callbacks.setCurrentActionState(CurrentActionType.NORMAL)
+        this.callbacks.setCurrentActionState(CurrentActionType.NORMAL);
         this.clearTextBuffer();
         this.currentTagName = "";
         this.state = ParserState.normal;
@@ -371,12 +302,17 @@ export class ComposerModeParser {
       return;
     }
 
-    if (closingTag === "EDITOR_CONTENT") {
+    if(closingTag === Tags.OPERATION){
       const topTagInStack = this.tagStack[this.tagStack.length - 1];
       if (topTagInStack === closingTag) {
         this.tagStack.pop();
         this.mode = "NORMAL";
-        this.callbacks.setCurrentActionState(CurrentActionType.NORMAL)
+        const validOperationJson = JSON.parse(this.operationDataJsonString)
+        if(validOperationJson){
+          this.callbacks.onOperation(validOperationJson)
+        } else {
+          throw new Error(`Error parsing the operation data: ", ${this.operationDataJsonString}`)
+        }
         this.clearTextBuffer();
         this.currentTagName = "";
         this.state = ParserState.normal;
@@ -390,43 +326,17 @@ export class ComposerModeParser {
       return;
     }
 
-    if (closingTag === "NODE") {
-      const topTagInStack = this.tagStack[this.tagStack.length - 1];
-      if (topTagInStack === closingTag) {
-        const parentTag = this.tagStack[this.tagStack.length - 2];
-        if (parentTag === "ADD") {
-          this.tagStack.pop();
-          this.mode = "NORMAL";
-          this.clearTextBuffer();
-          this.callbacks.sendJsonNode(this.jsonNode);
-          this.jsonNode = "";
-          this.currentTagName = "";
-          this.state = ParserState.normal;
-        } else if (parentTag === "DELETE") this.tagStack.pop();
-        this.mode = "NORMAL";
-        this.clearTextBuffer();
-        this.callbacks.sendNodeToDelete(this.deleteNode);
-        this.deleteNode = "";
-        this.currentTagName = "";
-        this.state = ParserState.normal;
-      } else {
-        console.warn(`EXPECTED ${closingTag} TAG but Found ${topTagInStack}`);
-        throw new Error(
-          `EXPECTED ${closingTag} TAG but Found ${topTagInStack}`
-        );
-      }
-
-      return;
-    }
-
-    if (closingTag === "ADD") {
+    if (closingTag === Tags.CONTENT) {
+      console.log("CLOSING TAG: ", closingTag)
       const topTagInStack = this.tagStack[this.tagStack.length - 1];
       if (topTagInStack === closingTag) {
         this.tagStack.pop();
         this.mode = "NORMAL";
-        this.clearTextBuffer();
+        this.callbacks.setCurrentActionState(CurrentActionType.NORMAL);
+        this.callbacks.onCloseTag(closingTag)
         this.currentTagName = "";
         this.state = ParserState.normal;
+        this.clearTextBuffer();
       } else {
         console.warn(`EXPECTED ${closingTag} TAG but Found ${topTagInStack}`);
         throw new Error(
@@ -437,13 +347,14 @@ export class ComposerModeParser {
       return;
     }
 
-    if (closingTag === "DELETE") {
+    if (closingTag === Tags.CODE) {
       const topTagInStack = this.tagStack[this.tagStack.length - 1];
       if (topTagInStack === closingTag) {
         this.tagStack.pop();
-        this.mode = "NORMAL";
-        this.callbacks.setCurrentActionState(CurrentActionType.NORMAL)
+        this.mode = Tags.CONTENT;
         this.clearTextBuffer();
+        this.resetCodeBlockNode();
+        this.callbacks.onCloseTag(Tags.CODE);
         this.currentTagName = "";
         this.state = ParserState.normal;
       } else {
@@ -456,59 +367,26 @@ export class ComposerModeParser {
       return;
     }
 
-    if(closingTag === "CODE"){
-      const topTagInStack = this.tagStack[this.tagStack.length - 1];
-      if (topTagInStack === closingTag) {
-        this.tagStack.pop();
-        this.mode = "EDITOR_CONTENT";
-        this.clearTextBuffer();
-        this.resetCodeBlockNode()
-        this.callbacks.onCloseTag(Tags.CODE)
-        this.currentTagName = "";
-        this.state = ParserState.normal;
-      } else {
-        console.warn(`EXPECTED ${closingTag} TAG but Found ${topTagInStack}`);
-        throw new Error(
-          `EXPECTED ${closingTag} TAG but Found ${topTagInStack}`
-        );
-      }
-
-      return;
-    }
-
-    if (this.mode === "THOUGHT") {
+    if (this.mode === Tags.THINKING) {
       this.callbacks.sendTokensCallback(this.textBuffer);
-    } else if (this.mode === "EDITOR_CONTENT") {
+    } else if (this.mode === Tags.CONTENT) {
+      console.log("Current tag stack is: ", this.tagStack)
+      console.log("Inside content mode", closingTag)
       if (topTagInStack === closingTag) {
         this.callbacks.onCloseTag(closingTag as Tags);
         this.tagStack.pop();
       } else {
         this.callbacks.onTextContent(this.textBuffer);
       }
-    } else if(this.mode === "CODE"){
-      if(closingTag === "LANG" && topTagInStack === "LANG"){
-        this.tagStack.pop()
-      } else if(closingTag === "CONTENT"){
-        this.tagStack.pop()
-      } else if(closingTag === "CODE" && topTagInStack === "CODE"){
-        this.tagStack.pop()
-        this.mode = "NORMAL"
-      }
-    } else if (this.mode === "ADD") {
-      if (topTagInStack === closingTag) {
+    } else if (this.mode === Tags.CODE) {
+      if (closingTag === Tags.LANG && topTagInStack === Tags.LANG) {
+        this.callbacks.sendCodeBlockNode(this.codeBlockNode)
         this.tagStack.pop();
-      } else {
-        console.log(
-          `We were expecting ${closingTag} but found ${topTagInStack}`
-        );
-      }
-    } else if (this.mode === "DELETE") {
-      if (topTagInStack === closingTag) {
+      } else if (closingTag === Tags.VAL) {
         this.tagStack.pop();
-      } else {
-        console.log(
-          `We were expecting ${closingTag} but found ${topTagInStack}`
-        );
+      } else if (closingTag === Tags.CODE && topTagInStack === Tags.CODE) {
+        this.tagStack.pop();
+        this.mode = "NORMAL";
       }
     } else {
       this.flushTextBuffer();

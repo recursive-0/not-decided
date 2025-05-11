@@ -1,4 +1,5 @@
 import type { NodeSpec } from "prosemirror-model";
+import { v4 as uuidv4 } from "uuid"
 
 
 export function createCheckboxSpec(): NodeSpec{
@@ -10,6 +11,9 @@ export function createCheckboxSpec(): NodeSpec{
         attrs: {
             checked: {
                 default: false
+            },
+            nodeId: {
+              default: uuidv4()
             }
         },
         toDOM(node) {
@@ -103,7 +107,7 @@ export function createDeletionSuggestionSpec(): NodeSpec {
     group: "block",
     draggable: false,
     attrs: {
-      id: { default: "" }, // Unique identifier for the suggestion
+      nodeId: { default: uuidv4() }, // Unique identifier for the suggestion
       originalNodeType: { default: "" },
       originalAttrs: { default: "{}" }   
     },
@@ -163,7 +167,7 @@ export function createAdditionSuggestionSpec(): NodeSpec {
     group: "block",
     draggable: true,
     attrs: {
-      id: { default: "" }, // Unique identifier for the suggestion
+      nodeId: { default: uuidv4() }, // Unique identifier for the suggestion
       originalNodeType: { default: "" },
       originalAttrs: { default: "{}" }   
     },
