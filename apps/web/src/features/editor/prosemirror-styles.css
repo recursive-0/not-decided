@@ -467,3 +467,11 @@ pre code.inline-code {
   border-radius: 30%;
   background-color: #073642;
 }
+
+.autocomplete-ghost-text {
+  color: grey; /* A common default */
+  opacity: 0.6; /* Adjust between 0.4 and 0.7 usually works well */
+  pointer-events: none; 
+  display: inline-block; /* Or just inline, depending on how ProseMirror widgets are handled */
+  vertical-align: baseline; /* Or as needed to match editor text */
+}

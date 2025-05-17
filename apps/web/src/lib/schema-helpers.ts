@@ -51,9 +51,6 @@ export function createCheckboxSpec(): NodeSpec{
 }
 
 
-
-
-
 export function createInlineCodeSpec(): NodeSpec {
   return {
     

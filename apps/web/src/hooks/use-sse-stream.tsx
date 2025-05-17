@@ -16,13 +16,13 @@ import { FingerprintManager } from "@/lib/fingerprint-manager";
 import { EditorActionsManager } from "@/lib/editor-actions-manager";
 import { OperationType, Tags } from "@/types/editor";
 import {
-  defaultActionData,
   SuggestionHighlightMetaDataType,
   suggestionHighlightPluginKey,
 } from "@/plugins/suggestion-highlight-plugin";
+import { getContentNodes } from "@/lib/misc-editor-helpers";
+import { suggestionNavigatorPluginKey } from "@/plugins/suggestion-navigator-plugin";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8787";
-// const BASE_URL = "https://wrisor-dev-worker.itsrecursive-l.workers.dev"
 
 export const useSSEStream = () => {
   const [content, setContent] = useState<string>("");
@@ -56,13 +56,12 @@ export const useSSEStream = () => {
       const { action, nodeIds } = operationData;
 
       if (action === "delete") {
+        const currentTr = editorView.current.state.tr
         nodeIds.forEach((id) => {
           if (!editorView.current) return;
-          const currentTr = editorView.current.state.tr;
           const metaForPlugin: SuggestionHighlightMetaDataType = {
-            action: defaultActionData,
             metaData: {
-              type: "deletion",
+              type: "deletion-suggestion",
               nodeId: id,
             },
           };
@@ -103,9 +102,8 @@ export const useSSEStream = () => {
         const currentTr = editorView.current.state.tr;
 
         const deleteNodeMetadata: SuggestionHighlightMetaDataType = {
-          action: defaultActionData,
           metaData: {
-            type: "deletion",
+            type: "deletion-suggestion",
             nodeId: nodeId,
           },
         };
@@ -187,24 +185,8 @@ export const useSSEStream = () => {
           });
         }
 
-        const editorDoc = editorView.current!.state.doc;
-        console.log("EDitor Doc nodes are: ", editorDoc);
-        const validContentNodes: {
-          id: string;
-          content: { type: string; content: string };
-        }[] = [];
-        fingerprintManagerRef.current!.clearHashCollisionCounter();
-        editorDoc.descendants((node) => {
-          const nodeId = node.attrs.nodeId;
-
-          if (nodeId) {
-            const contentNode = {
-              type: node.type.name,
-              content: node.textContent,
-            };
-            validContentNodes.push({ id: nodeId, content: contentNode });
-          }
-        });
+        console.log("getting content nodes")
+        const validContentNodes = getContentNodes(editorView.current)
 
         console.log("CONTENT NODESSSSSSSS: ", validContentNodes);
 
@@ -261,6 +243,7 @@ export const useSSEStream = () => {
             case "START_STREAM":
               getCurrentParser().current!.startStreaming();
               setCurrentLLMAction(CurrentActionType.NORMAL);
+              editorView.current!.state.tr.setMeta(suggestionNavigatorPluginKey, { navigateToIndex: null, action: "reset"})
               return;
 
             default:

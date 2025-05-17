@@ -52,16 +52,12 @@ export function getClient(env: Env): GoogleGenAI {
           controller.enqueue(encoder.encode(`data: START_STREAM \n\n`));
   
           const streamResult = await genAIClient!.models.generateContentStream({
-            model: "gemini-2.5-pro-preview-03-25",
+            model: "gemini-2.5-flash-preview-04-17",
             contents: {
               role: "user",
               parts: [{text: prompt}]
             },
             config: {
-              temperature: 0.7,
-              thinkingConfig: {
-                thinkingBudget: 1024,
-              },
               systemInstruction: {
                 role: "system",
                 parts: [{ text: systemInstructionContent }],
@@ -69,12 +65,6 @@ export function getClient(env: Env): GoogleGenAI {
             }
           });
   
-          const generationConfig = {
-            temperature: 0.7,
-              thinkingConfig: {
-                thinkingBudget: 1024,
-              },
-          };
   
           console.log("INSIDE GEMOINI TEMP SETTTTT")
           console.log("Stream result is: ", streamResult)

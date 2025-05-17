@@ -11,7 +11,7 @@ console.log("FINAL NODES: ", finalNodes)
 
 export const extendedProseMirrorSchema = new Schema({
      nodes: finalNodes,
-     marks: finalMarks
+     marks: finalMarks,
 });
 
 console.log("PROSEMIRROR EXTENDED: ", extendedProseMirrorSchema)

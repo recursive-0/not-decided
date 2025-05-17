@@ -22,6 +22,7 @@ export const documents = sqliteTable(
 	})
 );
 
+
 export const messages = sqliteTable(
 	'Messages',
 	{
@@ -39,3 +40,5 @@ export const messages = sqliteTable(
 		docTimeIdx: index('idx_messages_doc_timestamp').on(table.documentId, table.timestamp),
 	})
 );
+
+

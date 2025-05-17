@@ -1,152 +1,42 @@
-import { Plugin, PluginKey, EditorState, Transaction } from "prosemirror-state";
+import { Plugin, PluginKey, EditorState } from "prosemirror-state";
 import { Decoration, DecorationSet, EditorView } from "prosemirror-view";
 import type { Node } from "prosemirror-model";
+import { useEditorStore } from "@/store/editor";
 
 export interface MetaDataType {
-  type: "addition" | "deletion" | "normal" | "replace";
-  nodeId: string | null;
+  type: "addition-suggestion" | "deletion-suggestion";
+  nodeId: string;
 }
 
 interface HighlightNodeActionType {
   type:
-    | "removeNode"
+    | "removeNodeFromMetadata"
     | "removeDecoration"
-    | "normal"
-    | "acceptAll"
-    | "rejectAll"
-    | "clearAllSuggestionHighlights"
-  nodeId: string | null;
+    | "applyAllSuggestions"
+    | "rejectAllSuggestions"
+    | "startAcceptAll"
+    | "startRejectAll"
+  nodeId: string | null
+  nodesToRemove?: string[]
+  nodesToUndecorate?: string[]
 }
 
 export interface SuggestionHighlightPluginState {
-  action: HighlightNodeActionType;
-  metaData: MetaDataType[];
+  currentAction: "applyAllSuggestions" | "rejectAllSuggestions" | "nothing"
+  suggestionMetaData: MetaDataType[];
 }
 
 export interface SuggestionHighlightMetaDataType {
-  action: HighlightNodeActionType;
-  metaData: MetaDataType;
+
+  action?: HighlightNodeActionType;
+  metaData?: MetaDataType;
 }
 
-export const defaultActionData: HighlightNodeActionType = {
-  type: "normal",
-  nodeId: null,
-};
-
-export const defaultMetaData: HighlightNodeActionType = {
-  type: "normal",
-  nodeId: null,
-};
 
 export const suggestionHighlightPluginKey =
   new PluginKey<SuggestionHighlightPluginState>(
     "suggestion-highlight-plugin-key"
   );
-
-  export const handleRejectAllAction = (
-    tr: Transaction,
-    editorState: EditorState,
-    currentSuggestions: MetaDataType[]
-  ): Transaction => {
-    const doc = editorState.doc;
-    const rangesToDelete: { from: number; to: number }[] = [];
-  
-    if (currentSuggestions && currentSuggestions.length > 0) {
-      currentSuggestions.forEach((suggestionNode) => {
-        // For "rejectAll", an "addition" suggestion is deleted
-        if (suggestionNode.type === "addition") {
-          const nodeId = suggestionNode.nodeId;
-          let nodeFoundAndRangeAdded = false;
-          doc.descendants((node: Node, pos: number) => {
-            if (nodeFoundAndRangeAdded) return false; 
-  
-            if (node.attrs.nodeId === nodeId) {
-              rangesToDelete.push({ from: pos, to: pos + node.nodeSize });
-              nodeFoundAndRangeAdded = true;
-              return false; 
-            }
-            return true; 
-          });
-        }
-      });
-    }
-  
-    // Sort ranges in reverse order to avoid position conflicts during deletion
-    rangesToDelete.sort((a, b) => b.from - a.from);
-  
-    // Apply deletions
-    rangesToDelete.forEach(range => {
-      tr.deleteRange(range.from, range.to);
-    });
-  
-    return tr;
-  };
-  
-  export const handleAcceptAllAction = (
-    tr: Transaction,
-    editorState: EditorState,
-    currentSuggestions: MetaDataType[]
-  ): Transaction => {
-    console.log('[AcceptAll] Initial currentSuggestions:', JSON.parse(JSON.stringify(currentSuggestions))); // Deep copy for logging
-    const doc = editorState.doc;
-    const rangesToDelete: { from: number; to: number; nodeId?: string | null }[] = []; // Added nodeId for logging
-  
-    if (currentSuggestions && currentSuggestions.length > 0) {
-      currentSuggestions.forEach((suggestionNode) => {
-        console.log('[AcceptAll] Processing suggestionNode:', JSON.parse(JSON.stringify(suggestionNode)));
-        // For "acceptAll", a "deletion" suggestion is applied (node is deleted)
-        if (suggestionNode.type === "deletion") {
-          console.log('[AcceptAll] Suggestion is of type "deletion", nodeId:', suggestionNode.nodeId);
-          const nodeId = suggestionNode.nodeId;
-          let nodeFoundAndRangeAdded = false;
-          doc.descendants((node: Node, pos: number) => {
-            if (nodeFoundAndRangeAdded) return false;
-  
-            // Log the node being checked and its attrs
-            // console.log('[AcceptAll] Checking doc node:', node.type.name, 'at pos', pos, 'with attrs:', JSON.stringify(node.attrs));
-  
-            if (node.attrs.nodeId === nodeId) {
-              console.log(`[AcceptAll] Matched nodeId "${nodeId}" at pos ${pos}. Adding to rangesToDelete.`);
-              rangesToDelete.push({ from: pos, to: pos + node.nodeSize, nodeId: nodeId });
-              nodeFoundAndRangeAdded = true;
-              return false; // Stop descendants search for this specific nodeId
-            }
-            return true; // Continue searching
-          });
-          if (!nodeFoundAndRangeAdded) {
-              console.warn(`[AcceptAll] NodeId "${nodeId}" of type "deletion" NOT FOUND in document.`);
-          }
-        } else {
-          console.log('[AcceptAll] Suggestion type is not "deletion", skipping delete for nodeId:', suggestionNode.nodeId);
-        }
-      });
-    } else {
-      console.log('[AcceptAll] No currentSuggestions to process or array is empty.');
-    }
-  
-    console.log('[AcceptAll] Collected rangesToDelete (before sort):', JSON.parse(JSON.stringify(rangesToDelete)));
-  
-    if (rangesToDelete.length === 0 && currentSuggestions.some(s => s.type === 'deletion')) {
-      console.warn('[AcceptAll] There were "deletion" suggestions, but no ranges were collected for deletion. Check nodeId matching.');
-    }
-  
-    rangesToDelete.sort((a, b) => b.from - a.from);
-    console.log('[AcceptAll] Sorted rangesToDelete:', JSON.parse(JSON.stringify(rangesToDelete)));
-  
-  
-    rangesToDelete.forEach(range => {
-      console.log(`[AcceptAll] Applying tr.deleteRange from ${range.from} to ${range.to} for nodeId "${range.nodeId}"`);
-      try {
-        tr.deleteRange(range.from, range.to);
-      } catch (e) {
-        console.error(`[AcceptAll] Error during tr.deleteRange for nodeId "${range.nodeId}":`, e);
-        console.error('[AcceptAll] State at error: tr.doc size:', tr.doc.content.size, 'Range:', range);
-      }
-    });
-  
-    console.log(`[AcceptAll] Transaction docChanged after deletions: ${tr.docChanged}`);
-    return tr;
-  };
 
 export const suggestionHighlightPlugin = new Plugin({
   key: suggestionHighlightPluginKey,
@@ -154,94 +44,133 @@ export const suggestionHighlightPlugin = new Plugin({
     init(): SuggestionHighlightPluginState {
       console.log("Init suggestion higlight plugiun");
       return {
-        action: defaultActionData,
-        metaData: [],
+        currentAction: "nothing",
+        suggestionMetaData: [],
       };
     },
     apply(
       tr,
-      value: SuggestionHighlightPluginState,
+      value: SuggestionHighlightPluginState
     ): SuggestionHighlightPluginState {
-      const trMeta: SuggestionHighlightMetaDataType | undefined =
-        tr.getMeta(suggestionHighlightPluginKey);
-
+      const trMeta: SuggestionHighlightMetaDataType | undefined = tr.getMeta(
+        suggestionHighlightPluginKey
+      );
+    
       if (!trMeta) return value;
-
-      // Process actions
-      if (trMeta.action) {
-        const actionType = trMeta.action.type;
-        console.log("[PluginApply] Received action:", actionType, trMeta.action.nodeId);
-
-        if (actionType === "clearAllSuggestionHighlights") {
-          console.log("[PluginApply] Clearing all suggestion metadata.");
-          // Returning a new state object is important
-          return { action: defaultActionData, metaData: [] };
-        }
-
-        // Handle individual decoration removal (if triggered from widget clicks)
-        if (
-          actionType === "removeDecoration" &&
-          trMeta.action.nodeId !== null
-        ) {
-          const nodeIdToRemove = trMeta.action.nodeId;
-          const newMetaData = value.metaData.filter(
-            (node) => node.nodeId !== nodeIdToRemove
-          );
-          console.log("[PluginApply] Removing decoration for nodeId:", nodeIdToRemove, "New metaData count:", newMetaData.length);
+    
+      if(trMeta.action){
+        // Handle individual node removals
+        if(trMeta.action.type === "removeNodeFromMetadata" || trMeta.action.type === "removeDecoration"){
+          const targetNodeId = trMeta.action.nodeId
+          const updatedSuggestionMetaData = value.suggestionMetaData.filter(
+            (suggestionNode) => suggestionNode.nodeId !== targetNodeId
+          )
+          const { setTotalCurrentEdits } = useEditorStore.getState()
+          setTotalCurrentEdits(updatedSuggestionMetaData.length)
           return {
-            ...value, // retain other parts of value if any
-            action: defaultActionData,
-            metaData: newMetaData,
-          };
+            currentAction: "nothing",
+            suggestionMetaData: updatedSuggestionMetaData
+          }
+        }
+    
+        // Handle the start of batch operations
+        if(trMeta.action.type === "startAcceptAll"){
+          return {
+            currentAction: "applyAllSuggestions",
+            suggestionMetaData: value.suggestionMetaData
+          }
+        }
+    
+        if(trMeta.action.type === "startRejectAll"){
+          return {
+            currentAction: "rejectAllSuggestions",
+            suggestionMetaData: value.suggestionMetaData
+          }
+        }
+    
+        // Handle the completion of batch operations
+        if(trMeta.action.type === "applyAllSuggestions" || trMeta.action.type === "rejectAllSuggestions"){
+          const { nodesToRemove = [], nodesToUndecorate = [] } = trMeta.action;
+          
+          // Filter out nodes that were removed
+          const updatedMetaData = value.suggestionMetaData.filter(
+            item => !nodesToRemove.includes(item.nodeId)
+          );
+          
+          // For nodes that should be undecorated, we need to remove them from metadata too
+          const finalMetaData = updatedMetaData.filter(
+            item => !nodesToUndecorate.includes(item.nodeId)
+          );
+
+          const { setTotalCurrentEdits } = useEditorStore.getState()
+          setTotalCurrentEdits(finalMetaData.length)
+          
+          return {
+            currentAction: "nothing", // Reset the action
+            suggestionMetaData: finalMetaData
+          }
         }
       }
-
-      if (
-        trMeta.metaData && 
-        trMeta.metaData.nodeId != null
-      ) {
-
-        if (value.metaData.some(
+    
+      // Handle adding new suggestions
+      if (trMeta.metaData && trMeta.metaData.nodeId != null) {
+        // Existing code for handling new suggestions...
+        if (
+          value.suggestionMetaData.some(
             (item) =>
-              item.nodeId === trMeta.metaData.nodeId && // Ensure trMeta.metaData is MetaDataType here
-              item.type === trMeta.metaData.type
+              item.nodeId === trMeta.metaData!.nodeId &&
+              item.type === trMeta.metaData!.type
           )
         ) {
-          console.log("[PluginApply] Duplicate metadata, not adding:", trMeta.metaData);
+          console.log(
+            "[PluginApply] Duplicate metadata, not adding:",
+            trMeta.metaData
+          );
           return value;
         }
-
+    
         const newSuggestion: MetaDataType = {
           type: trMeta.metaData.type,
           nodeId: trMeta.metaData.nodeId,
         };
-
-        const newMetaDataList = [...value.metaData, newSuggestion];
-        console.log("[PluginApply] Adding new metadata:", newSuggestion, "New metaData count:", newMetaDataList.length);
+    
+        const newMetaDataList = [...value.suggestionMetaData, newSuggestion];
+        console.log(
+          "[PluginApply] Adding new metadata:",
+          newSuggestion,
+          "New metaData count:",
+          newMetaDataList.length
+        );
+        const { setTotalCurrentEdits } = useEditorStore.getState()
+        setTotalCurrentEdits(newMetaDataList.length)
         return {
-          action: defaultActionData,
-          metaData: newMetaDataList,
+          currentAction: "nothing",
+          suggestionMetaData: newMetaDataList,
         };
       }
-      
-      console.log("[PluginApply] No specific action handled, returning current value.");
+    
       return value;
-    },
+    }
   },
   props: {
     decorations(state: EditorState): DecorationSet | null | undefined {
       const pluginState = suggestionHighlightPluginKey.getState(state);
       console.log("PLUGIN STATE IS: ", pluginState);
 
-      if (!pluginState || pluginState.metaData.length === 0) {
+      if (!pluginState || pluginState.suggestionMetaData.length === 0) {
         return DecorationSet.empty;
       }
 
-      const doc = state.doc;
+      if (pluginState.currentAction === "applyAllSuggestions" || 
+        pluginState.currentAction === "rejectAllSuggestions") {
+      return DecorationSet.empty;
+    }
 
+      const doc = state.doc;
       const decorations: Decoration[] = [];
 
-      pluginState.metaData.forEach((highlightInfo: MetaDataType) => {
+
+      pluginState.suggestionMetaData.forEach((highlightInfo: MetaDataType) => {
         const { type, nodeId } = highlightInfo;
 
         let nodeFound = false;
@@ -256,15 +185,20 @@ export const suggestionHighlightPlugin = new Plugin({
               const acceptButton = document.createElement("button");
               acceptButton.classList.add("accept-action-button");
               acceptButton.innerText = "Accept";
+
               acceptButton.addEventListener("click", () => {
-                console.log("Clicked on accpet");
                 const tr = state.tr;
-                if (type === "deletion") {
+                if (type === "deletion-suggestion") {
                   tr.deleteRange(from, to);
+                  tr.setMeta(suggestionHighlightPluginKey, {
+                    action: {
+                      type: "removeNodeFromMetadata",
+                      nodeId: node.attrs.nodeId,
+                    },
+                  });
                   view.dispatch(tr);
                 } else {
                   tr.setMeta(suggestionHighlightPluginKey, {
-                    metaData: defaultMetaData,
                     action: {
                       type: "removeDecoration",
                       nodeId: node.attrs.nodeId,
@@ -279,9 +213,8 @@ export const suggestionHighlightPlugin = new Plugin({
               rejectButton.innerText = "Reject";
               rejectButton.addEventListener("click", () => {
                 const tr = state.tr;
-                if (type === "deletion") {
+                if (type === "deletion-suggestion") {
                   tr.setMeta(suggestionHighlightPluginKey, {
-                    metaData: defaultMetaData,
                     action: {
                       type: "removeDecoration",
                       nodeId: node.attrs.nodeId,
@@ -290,6 +223,12 @@ export const suggestionHighlightPlugin = new Plugin({
                   view.dispatch(tr);
                 } else {
                   tr.deleteRange(from, to);
+                  tr.setMeta(suggestionHighlightPluginKey, {
+                    action: {
+                      type: "removeNodeFromMetadata",
+                      nodeId: node.attrs.nodeId,
+                    },
+                  });
                   view.dispatch(tr);
                 }
                 view.focus();
@@ -299,15 +238,8 @@ export const suggestionHighlightPlugin = new Plugin({
               return actionsContainerElement;
             };
 
-            let classType = "normal";
-            if (type === "addition") {
-              classType = "addition-suggestion";
-            } else if (type === "deletion") {
-              classType = "deletion-suggestion";
-            }
-
             const decoration = Decoration.node(from, to, {
-              class: classType,
+              class: type,
             });
 
             const widgetDecoration = Decoration.widget(
@@ -331,3 +263,246 @@ export const suggestionHighlightPlugin = new Plugin({
     },
   },
 });
+
+
+
+export function handleSuggestionBatch(
+  view: EditorView, 
+  action: 'applyAllSuggestions' | 'rejectAllSuggestions'
+) {
+  const state = view.state;
+  const pluginState = suggestionHighlightPluginKey.getState(state);
+  
+  if (!pluginState || pluginState.suggestionMetaData.length === 0) {
+    return;
+  }
+
+  // First, set the action in the plugin state so decorations know to hide
+  const tr = state.tr;
+  tr.setMeta(suggestionHighlightPluginKey, {
+    action: {
+      type: action === 'applyAllSuggestions' ? 'startAcceptAll' : 'startRejectAll'
+    }
+  });
+  view.dispatch(tr);
+  
+  // Get the updated state and create a new transaction
+  const updatedState = view.state;
+  const newTr = updatedState.tr;
+  
+  const nodesToRemove: string[] = [];
+  const nodesToUndecorate: string[] = [];
+  
+  // Determine which nodes to remove/undecorate based on action
+  pluginState.suggestionMetaData.forEach((highlightInfo: MetaDataType) => {
+    const { type, nodeId } = highlightInfo;
+    
+    if (action === 'applyAllSuggestions') {
+      if (type === "deletion-suggestion") {
+        nodesToRemove.push(nodeId);
+      } else if (type === "addition-suggestion") {
+        nodesToUndecorate.push(nodeId);
+      }
+    } else { // rejectAllSuggestions
+      if (type === "addition-suggestion") {
+        nodesToRemove.push(nodeId);
+      } else if (type === "deletion-suggestion") {
+        nodesToUndecorate.push(nodeId);
+      }
+    }
+  });
+  
+  // Create an array to store positions that need to be deleted
+  // This avoids issues with position changes during traversal
+  const positionsToDelete: {from: number, to: number}[] = [];
+  
+  // First pass: collect all positions to delete
+  updatedState.doc.descendants((node: Node, pos: number) => {
+    if (nodesToRemove.includes(node.attrs.nodeId)) {
+      positionsToDelete.push({
+        from: pos,
+        to: pos + node.nodeSize
+      });
+    }
+    // Always return true to continue traversal
+    return true;
+  });
+  
+  // Sort positions in reverse order (delete from end to beginning to avoid position shifts)
+  positionsToDelete.sort((a, b) => b.from - a.from);
+  
+  // Second pass: delete all collected positions
+  positionsToDelete.forEach(({from, to}) => {
+    newTr.deleteRange(from, to);
+  });
+  
+  // Set final metadata update
+  newTr.setMeta(suggestionHighlightPluginKey, {
+    action: {
+      type: action,
+      nodeId: null,
+      nodesToRemove,
+      nodesToUndecorate
+    }
+  });
+  
+  // Only dispatch if there are changes
+  if (newTr.docChanged || nodesToUndecorate.length > 0) {
+    view.dispatch(newTr);
+  }
+}
+
+
+
+
+
+
+// export const handleRejectAllAction = (
+//   tr: Transaction,
+//   editorState: EditorState,
+//   currentSuggestions: MetaDataType[]
+// ): Transaction => {
+//   const doc = editorState.doc;
+//   const rangesToDelete: { from: number; to: number }[] = [];
+
+//   if (currentSuggestions && currentSuggestions.length > 0) {
+//     currentSuggestions.forEach((suggestionNode) => {
+//       // For "rejectAll", an "addition" suggestion is deleted
+//       if (suggestionNode.type === "addition") {
+//         const nodeId = suggestionNode.nodeId;
+//         let nodeFoundAndRangeAdded = false;
+//         doc.descendants((node: Node, pos: number) => {
+//           if (nodeFoundAndRangeAdded) return false;
+
+//           if (node.attrs.nodeId === nodeId) {
+//             rangesToDelete.push({ from: pos, to: pos + node.nodeSize });
+//             nodeFoundAndRangeAdded = true;
+//             return false;
+//           }
+//           return true;
+//         });
+//       }
+//     });
+//   }
+
+//   // Sort ranges in reverse order to avoid position conflicts during deletion
+//   rangesToDelete.sort((a, b) => b.from - a.from);
+
+//   // Apply deletions
+//   rangesToDelete.forEach((range) => {
+//     tr.deleteRange(range.from, range.to);
+//   });
+
+//   return tr;
+// };
+
+// export const handleAcceptAllAction = (
+//   tr: Transaction,
+//   editorState: EditorState,
+//   currentSuggestions: MetaDataType[]
+// ): Transaction => {
+//   console.log(
+//     "[AcceptAll] Initial currentSuggestions:",
+//     JSON.parse(JSON.stringify(currentSuggestions))
+//   ); // Deep copy for logging
+//   const doc = editorState.doc;
+//   const rangesToDelete: { from: number; to: number; nodeId?: string | null }[] =
+//     []; // Added nodeId for logging
+
+//   if (currentSuggestions && currentSuggestions.length > 0) {
+//     currentSuggestions.forEach((suggestionNode) => {
+//       console.log(
+//         "[AcceptAll] Processing suggestionNode:",
+//         JSON.parse(JSON.stringify(suggestionNode))
+//       );
+//       // For "acceptAll", a "deletion" suggestion is applied (node is deleted)
+//       if (suggestionNode.type === "deletion") {
+//         console.log(
+//           '[AcceptAll] Suggestion is of type "deletion", nodeId:',
+//           suggestionNode.nodeId
+//         );
+//         const nodeId = suggestionNode.nodeId;
+//         let nodeFoundAndRangeAdded = false;
+//         doc.descendants((node: Node, pos: number) => {
+//           if (nodeFoundAndRangeAdded) return false;
+
+//           // Log the node being checked and its attrs
+//           // console.log('[AcceptAll] Checking doc node:', node.type.name, 'at pos', pos, 'with attrs:', JSON.stringify(node.attrs));
+
+//           if (node.attrs.nodeId === nodeId) {
+//             console.log(
+//               `[AcceptAll] Matched nodeId "${nodeId}" at pos ${pos}. Adding to rangesToDelete.`
+//             );
+//             rangesToDelete.push({
+//               from: pos,
+//               to: pos + node.nodeSize,
+//               nodeId: nodeId,
+//             });
+//             nodeFoundAndRangeAdded = true;
+//             return false; // Stop descendants search for this specific nodeId
+//           }
+//           return true; // Continue searching
+//         });
+//         if (!nodeFoundAndRangeAdded) {
+//           console.warn(
+//             `[AcceptAll] NodeId "${nodeId}" of type "deletion" NOT FOUND in document.`
+//           );
+//         }
+//       } else {
+//         console.log(
+//           '[AcceptAll] Suggestion type is not "deletion", skipping delete for nodeId:',
+//           suggestionNode.nodeId
+//         );
+//       }
+//     });
+//   } else {
+//     console.log(
+//       "[AcceptAll] No currentSuggestions to process or array is empty."
+//     );
+//   }
+
+//   console.log(
+//     "[AcceptAll] Collected rangesToDelete (before sort):",
+//     JSON.parse(JSON.stringify(rangesToDelete))
+//   );
+
+//   if (
+//     rangesToDelete.length === 0 &&
+//     currentSuggestions.some((s) => s.type === "deletion")
+//   ) {
+//     console.warn(
+//       '[AcceptAll] There were "deletion" suggestions, but no ranges were collected for deletion. Check nodeId matching.'
+//     );
+//   }
+
+//   rangesToDelete.sort((a, b) => b.from - a.from);
+//   console.log(
+//     "[AcceptAll] Sorted rangesToDelete:",
+//     JSON.parse(JSON.stringify(rangesToDelete))
+//   );
+
+//   rangesToDelete.forEach((range) => {
+//     console.log(
+//       `[AcceptAll] Applying tr.deleteRange from ${range.from} to ${range.to} for nodeId "${range.nodeId}"`
+//     );
+//     try {
+//       tr.deleteRange(range.from, range.to);
+//     } catch (e) {
+//       console.error(
+//         `[AcceptAll] Error during tr.deleteRange for nodeId "${range.nodeId}":`,
+//         e
+//       );
+//       console.error(
+//         "[AcceptAll] State at error: tr.doc size:",
+//         tr.doc.content.size,
+//         "Range:",
+//         range
+//       );
+//     }
+//   });
+
+//   console.log(
+//     `[AcceptAll] Transaction docChanged after deletions: ${tr.docChanged}`
+//   );
+//   return tr;
+// };

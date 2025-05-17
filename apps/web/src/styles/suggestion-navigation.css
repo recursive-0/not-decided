@@ -1,0 +1,73 @@
+.highlighted-suggestion-node {
+    position: relative;
+    background-color: var(--color-sidebar-primary);
+    transition: background-color 0.3s ease;
+  }
+  
+  /* Left border accent line with palette-gold/salmon colors */
+  .highlighted-suggestion-node::before {
+    content: "";
+    position: absolute;
+    left: -2px;
+    top: 0;
+    height: 0%; 
+    width: 3px;
+    background-color: var(--palette-salmon, #d99982); /* Salmon accent color from your theme */
+    border-radius: 1.5px;
+    animation: grow-border 0.4s ease forwards;
+    z-index: 5;
+  }
+  
+  /* Animation for the growing border */
+  @keyframes grow-border {
+    0% {
+      height: 0%;
+    }
+    100% {
+      height: 100%;
+    }
+  }
+  
+  /* Subtle glow effect with gold accent */
+  .highlighted-suggestion-node::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    box-shadow: inset 0 0 0 1px rgba(217, 197, 137, 0.3); /* Subtle gold inner glow (--palette-gold) */
+    border-radius: 3px;
+    pointer-events: none;
+    z-index: 2;
+  }
+  
+  /* Dark mode adjustments using your theme colors */
+  .dark .highlighted-suggestion-node {
+    background-color: var(--color-sidebar-background);
+  }
+  
+  .dark .highlighted-suggestion-node::before {
+    background-color: var(--palette-salmon, #d99982); /* Keep salmon accent in dark mode */
+  }
+  
+  .dark .highlighted-suggestion-node::after {
+    box-shadow: inset 0 0 0 1px rgba(217, 197, 137, 0.35); /* Slightly stronger gold glow in dark mode */
+  }
+  
+  /* Optional: Add a very subtle pulse to the border for attention */
+  @keyframes subtle-pulse {
+    0% {
+      opacity: 0.8;
+    }
+    50% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0.8;
+    }
+  }
+  
+  .highlighted-suggestion-node::before {
+    animation: grow-border 0.4s ease forwards, subtle-pulse 2s ease-in-out infinite;
+  }

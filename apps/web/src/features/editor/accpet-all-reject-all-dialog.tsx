@@ -1,9 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { MetaDataType, suggestionHighlightPluginKey, SuggestionHighlightPluginState } from "@/plugins/suggestion-highlight-plugin";
+import { handleSuggestionBatch, suggestionHighlightPluginKey } from "@/plugins/suggestion-highlight-plugin";
 import { suggestionNavigatorPluginKey } from "@/plugins/suggestion-navigator-plugin";
 import { useEditor } from "@/providers/editor-context-provider";
-import { Node } from "prosemirror-model";
 import { TextSelection } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
 
@@ -22,209 +21,112 @@ export const AcceptAllRejectAllDialog = ({
 
   const onAcceptAll = () => {
     if (!editorView.current) return;
-
-    const { state } = editorView.current;
-    const tr = state.tr; 
-
-    const pluginState: SuggestionHighlightPluginState | undefined =
-      suggestionHighlightPluginKey.getState(state);
-
-    if (pluginState && pluginState.metaData && pluginState.metaData.length > 0) {
-      const currentSuggestions: MetaDataType[] = pluginState.metaData;
-      const doc = state.doc;
-      const rangesToDelete: { from: number; to: number; nodeId?: string | null }[] = [];
-
-      console.log('[Dialog:onAcceptAll] Initial currentSuggestions:', JSON.parse(JSON.stringify(currentSuggestions)));
-
-      currentSuggestions.forEach((suggestionNode) => {
-        if (suggestionNode.type === "deletion") {
-          const nodeId = suggestionNode.nodeId;
-          let nodeFoundAndRangeAdded = false;
-          doc.descendants((node: Node, pos: number) => {
-            if (nodeFoundAndRangeAdded) return false;
-
-            if (node.attrs.nodeId === nodeId) {
-              console.log(`[Dialog:onAcceptAll] Matched nodeId "${nodeId}" (type "deletion") for deletion at pos ${pos}.`);
-              rangesToDelete.push({ from: pos, to: pos + node.nodeSize, nodeId: nodeId });
-              nodeFoundAndRangeAdded = true;
-              return false;
-            }
-            return true;
-          });
-          if (!nodeFoundAndRangeAdded) {
-            console.warn(`[Dialog:onAcceptAll] NodeId "${nodeId}" (type "deletion") NOT FOUND in document.`);
-          }
-        }
-      });
-
-      console.log('[Dialog:onAcceptAll] Collected rangesToDelete:', JSON.parse(JSON.stringify(rangesToDelete)));
-
-      if (rangesToDelete.length > 0) {
-        // Sort ranges in reverse order to delete from the end, avoiding position shifts
-        rangesToDelete.sort((a, b) => b.from - a.from);
-        rangesToDelete.forEach(range => {
-          console.log(`[Dialog:onAcceptAll] Applying tr.deleteRange from ${range.from} to ${range.to} for nodeId "${range.nodeId}"`);
-          try {
-            tr.deleteRange(range.from, range.to);
-          } catch (e) {
-            console.error(`[Dialog:onAcceptAll] Error during tr.deleteRange for nodeId "${range.nodeId}":`, e);
-          }
-        });
-      }
-    }
-
-    // tell the plugin to clear its state
-    tr.setMeta(suggestionHighlightPluginKey, {
-      action: {
-        type: "clearAllSuggestionHighlights", 
-        nodeId: null, 
-      },
-    });
-
-    // Only dispatch if the transaction actually does something
-    if (tr.docChanged || pluginState.metaData) {
-      console.log(`[Dialog:onAcceptAll] Dispatching transaction. docChanged: ${tr.docChanged}, steps: ${tr.steps.length}`);
-      editorView.current.dispatch(tr);
-    } else {
-      console.log("[Dialog:onAcceptAll] No document changes or meta to dispatch.");
-    }
-    editorView.current.focus();
+    handleSuggestionBatch(editorView.current, "applyAllSuggestions")
   };
 
   const onRejectAll = () => {
     if (!editorView.current) return;
-
-    const { state } = editorView.current;
-    const tr = state.tr;
-
-    const pluginState: SuggestionHighlightPluginState | undefined =
-      suggestionHighlightPluginKey.getState(state);
-
-    if (pluginState && pluginState.metaData && pluginState.metaData.length > 0) {
-      const currentSuggestions: MetaDataType[] = pluginState.metaData;
-      const doc = state.doc;
-      const rangesToDelete: { from: number; to: number; nodeId?: string | null }[] = [];
-
-      console.log('[Dialog:onRejectAll] Initial currentSuggestions:', JSON.parse(JSON.stringify(currentSuggestions)));
-
-      currentSuggestions.forEach((suggestionNode) => {
-        // For "Reject All", we delete nodes marked as "addition" type suggestions
-        if (suggestionNode.type === "addition") {
-          const nodeId = suggestionNode.nodeId;
-          let nodeFoundAndRangeAdded = false;
-          doc.descendants((node: Node, pos: number) => {
-            if (nodeFoundAndRangeAdded) return false;
-            if (node.attrs.nodeId === nodeId) {
-              console.log(`[Dialog:onRejectAll] Matched nodeId "${nodeId}" (type "addition") for deletion at pos ${pos}.`);
-              rangesToDelete.push({ from: pos, to: pos + node.nodeSize, nodeId: nodeId });
-              nodeFoundAndRangeAdded = true;
-              return false;
-            }
-            return true;
-          });
-          if (!nodeFoundAndRangeAdded) {
-            console.warn(`[Dialog:onRejectAll] NodeId "${nodeId}" (type "addition") NOT FOUND in document.`);
-          }
-        }
-      });
-      
-      console.log('[Dialog:onRejectAll] Collected rangesToDelete:', JSON.parse(JSON.stringify(rangesToDelete)));
-
-      if (rangesToDelete.length > 0) {
-        rangesToDelete.sort((a, b) => b.from - a.from);
-        rangesToDelete.forEach(range => {
-          console.log(`[Dialog:onRejectAll] Applying tr.deleteRange from ${range.from} to ${range.to} for nodeId "${range.nodeId}"`);
-           try {
-            tr.deleteRange(range.from, range.to);
-          } catch (e) {
-            console.error(`[Dialog:onRejectAll] Error during tr.deleteRange for nodeId "${range.nodeId}":`, e);
-          }
-        });
-      }
-    }
-
-    tr.setMeta(suggestionHighlightPluginKey, {
-      action: {
-        type: "clearAllSuggestionHighlights",
-        nodeId: null,
-      },
-    });
-
-    if (tr.docChanged || pluginState.metaData) {
-      console.log(`[Dialog:onRejectAll] Dispatching transaction. docChanged: ${tr.docChanged}, steps: ${tr.steps.length}`);
-      editorView.current.dispatch(tr);
-    } else {
-      console.log("[Dialog:onRejectAll] No changes to dispatch.");
-    }
-    editorView.current.focus();
+    handleSuggestionBatch(editorView.current, "rejectAllSuggestions")
   };
 
 
-const navigateToSuggestion = (view: EditorView, action: "next" | "previous") => {
-  console.log("Inside navigate sugegstion")
-  const { state } = view;
-  const tr = state.tr;
-
-  // 1. Get current suggestions and navigator state to calculate the *target* index
-  const currentNavigatorState = suggestionNavigatorPluginKey.getState(state);
-  const suggestionsData = suggestionHighlightPluginKey.getState(state);
-  const suggestions = suggestionsData?.metaData || [];
-  const totalSuggestions = suggestions.length;
-
-  if (totalSuggestions === 0) return; // No suggestions
-
-  let targetIndex = currentNavigatorState?.currentIndex ?? null;
-
-  if (action === "previous") {
-      if (targetIndex === null) targetIndex = totalSuggestions - 1;
-      else if (targetIndex === 0) targetIndex = totalSuggestions - 1; // Or stay at 0
-      else targetIndex--;
-  } else { // "next"
-      if (targetIndex === null) targetIndex = 0;
-      else if (targetIndex >= totalSuggestions - 1) targetIndex = 0; // Or stay at last
-      else targetIndex++;
-  }
+  const navigateToSuggestion = (view: EditorView, action: "next" | "previous") => {
+    if (!view) return;
+    
+    const { state } = view;
+    const tr = state.tr;
   
-  // Ensure targetIndex is valid (can be omitted if wrapping is guaranteed)
-  if (targetIndex < 0 || targetIndex >= totalSuggestions) {
-      console.warn("Calculated targetIndex is out of bounds:", targetIndex);
-      return; // Or clamp/reset appropriately
-  }
-
-  // 2. Set metadata for the navigator plugin to update its currentIndex
-  // It's better to tell the plugin WHICH index to go to, rather than just "next"/"previous"
-  // if the calculation is done here. Or, keep "next"/"previous" and let plugin calculate.
-  // For simplicity with your current plugin structure:
-  tr.setMeta(suggestionNavigatorPluginKey, { action });
-  // OR, if you change plugin meta to accept an index:
-  // tr.setMeta(suggestionNavigatorPluginKey, { action: "goto", index: targetIndex });
-  // Then the plugin's `apply` would be simpler: just set `currentIndex = meta.index`.
-
-  // 3. Find the node for the targetIndex and set selection/scroll
-  const suggestionToFocus = suggestions[targetIndex];
-  if (suggestionToFocus && suggestionToFocus.nodeId) {
-      let nodePosTo: number | null = null;
-      state.doc.descendants((node, pos) => {
-          if (node.attrs.nodeId === suggestionToFocus.nodeId) {
-              nodePosTo = pos + node.nodeSize;
-              return false; // Stop searching
-          }
-          return true;
-      });
-
-      if (nodePosTo !== null) {
-          tr.setSelection(TextSelection.create(state.doc, nodePosTo));
-          tr.scrollIntoView();
+    // Get current suggestions and navigator state
+    const navigatorState = suggestionNavigatorPluginKey.getState(state);
+    const suggestionsState = suggestionHighlightPluginKey.getState(state);
+    
+    if (!suggestionsState || !suggestionsState.suggestionMetaData) {
+      console.warn("No suggestion metadata available");
+      return;
+    }
+    
+    const suggestions = suggestionsState.suggestionMetaData;
+    const totalSuggestions = suggestions.length;
+  
+    if (totalSuggestions === 0) {
+      console.info("No suggestions to navigate");
+      return;
+    }
+  
+    // Calculate the target index based on current index and action
+    let targetIndex = navigatorState?.currentIndex ?? null;
+  
+    if (action === "previous") {
+      if (targetIndex === null || targetIndex <= 0) {
+        // Wrap around to the end if at beginning or uninitialized
+        targetIndex = totalSuggestions - 1;
       } else {
-          console.warn(`Node with ID ${suggestionToFocus.nodeId} for index ${targetIndex} not found.`);
+        targetIndex--;
       }
-  }
-
-  if (tr.docChanged || tr.steps.length > 0 || tr.selectionSet || tr.scrolledIntoView) {
-    view.dispatch(tr);
-  }
-  view.focus();
-};
+    } else { // "next"
+      if (targetIndex === null || targetIndex >= totalSuggestions - 1) {
+        // Wrap around to the beginning if at end or uninitialized
+        targetIndex = 0;
+      } else {
+        targetIndex++;
+      }
+    }
+  
+    // Set the new target index in the navigator plugin
+    tr.setMeta(suggestionNavigatorPluginKey, { 
+      navigateToIndex: targetIndex 
+    });
+  
+    // Find the node for the target suggestion
+    const targetSuggestion = suggestions[targetIndex];
+    if (targetSuggestion && targetSuggestion.nodeId) {
+      // Find the position of the node in the document
+      let nodePos: number | null = null;
+      let nodeSize: number = 0;
+      
+      state.doc.descendants((node, pos) => {
+        if (node.attrs.nodeId === targetSuggestion.nodeId) {
+          nodePos = pos;
+          nodeSize = node.nodeSize;
+          return false; // Stop traversal once found
+        }
+        return true;
+      });
+  
+      if (nodePos !== null) {
+        // Set selection to the start of the node
+        const from = nodePos;
+        const to = nodePos + nodeSize;
+        
+        // Create a text selection that spans the node
+        // tr.setSelection(TextSelection.create(state.doc, from, to));
+        
+        // Scroll the node into view
+        tr.scrollIntoView();
+      } else {
+        console.warn(`Node with ID ${targetSuggestion.nodeId} not found in document`);
+      }
+    }
+  
+    // Only dispatch if we've made changes
+    if (tr.docChanged || tr.steps.length > 0 || tr.selectionSet || tr.scrolledIntoView) {
+      view.dispatch(tr);
+    }
+    
+    // Focus the editor for keyboard navigation
+    view.focus();
+    
+    // Add a small delay then trigger the scrollIntoView helper to ensure visibility
+    setTimeout(() => {
+      const highlightedNode = document.querySelector('.highlighted-suggestion-node');
+      if (highlightedNode) {
+        highlightedNode.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
+        });
+      }
+    }, 50);
+  };
 
 // --- In your button's onClick ---
 // onClick={() => navigateToSuggestion(editorView.current, "next")}
@@ -258,14 +160,14 @@ const navigateToSuggestion = (view: EditorView, action: "next" | "previous") => 
       </div>
       <div className="w-fit flex justify-center items-center gap-1 pointer-events-auto">
       <Button
-          onClick={() => navigateToSuggestion(editorView.current, "previous")}
+          onClick={() => navigateToSuggestion(editorView.current!, "previous")}
           variant="ghost"
           className={`${baseClasses}`}
         >
           Previous
         </Button>
         <Button
-          onClick={() => navigateToSuggestion(editorView.current, "next")}
+          onClick={() => navigateToSuggestion(editorView.current!, "next")}
           variant="ghost"
           className={`${baseClasses}`}
         >

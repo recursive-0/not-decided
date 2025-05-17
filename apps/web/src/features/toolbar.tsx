@@ -17,10 +17,6 @@ import {
   Italic,
   Underline,
   Strikethrough,
-  AlignLeft,
-  AlignCenter,
-  AlignJustify,
-  AlignRight,
   Link,
   Sparkles,
   Heading1,
@@ -43,7 +39,6 @@ import {
   setTextColor,
   setHighlightColor,
   applyHeading,
-  setTextAlignment,
   toggleBlockquote,
   toggleList,
   insertLink
@@ -54,7 +49,6 @@ import { Button } from '@/components/ui/button';
 
 // Expanded types for all formatting options
 type TextFormatType = "bold" | "italic" | "underline" | "strikethrough" | "superscript" | "subscript";
-type AlignmentType = "alignLeft" | "alignCenter" | "alignRight" | "alignJustify";
 type BlockType = "heading1" | "heading2" | "heading3" | "paragraph" | "bulletList" | "orderedList" | "blockquote";
 
 // Format options for basic text styling
@@ -67,13 +61,13 @@ const textFormatOptions = [
   // { id: 'subscript', icon: Subscript, label: 'Subscript' },
 ];
 
-// Alignment options
-const alignmentOptions = [
-  { id: 'alignLeft', icon: AlignLeft, label: 'Align Left', shortcut: '⌘⇧L' },
-  { id: 'alignCenter', icon: AlignCenter, label: 'Align Center', shortcut: '⌘⇧E' },
-  { id: 'alignRight', icon: AlignRight, label: 'Align Right', shortcut: '⌘⇧R' },
-  { id: 'alignJustify', icon: AlignJustify, label: 'Justify', shortcut: '⌘⇧J' },
-];
+// // Alignment options
+// const alignmentOptions = [
+//   { id: 'alignLeft', icon: AlignLeft, label: 'Align Left', shortcut: '⌘⇧L' },
+//   { id: 'alignCenter', icon: AlignCenter, label: 'Align Center', shortcut: '⌘⇧E' },
+//   { id: 'alignRight', icon: AlignRight, label: 'Align Right', shortcut: '⌘⇧R' },
+//   { id: 'alignJustify', icon: AlignJustify, label: 'Justify', shortcut: '⌘⇧J' },
+// ];
 
 // Heading and block options
 const blockOptions = [
@@ -193,7 +187,6 @@ const ColorButton = ({
 
 const Toolbar = () => {
   const [activeTextFormats, setActiveTextFormats] = useState<TextFormatType[]>([]);
-  const [activeAlignment, setActiveAlignment] = useState<AlignmentType>("alignLeft");
   const [activeBlockType, setActiveBlockType] = useState<BlockType>("paragraph");
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [linkText, setLinkText] = useState("");
@@ -252,23 +245,6 @@ const Toolbar = () => {
     );
   };
 
-  // Handler for alignment options
-  const setAlignment = (alignment: AlignmentType) => {
-    // Map alignment options to ProseMirror alignment values
-    const alignmentMap = {
-      alignLeft: 'left',
-      alignCenter: 'center',
-      alignRight: 'right',
-      alignJustify: 'justify'
-    };
-    
-    // Apply alignment to editor
-    setTextAlignment(editorView.current!, alignmentMap[alignment] as 'left' | 'center' | 'right' | 'justify');
-    
-    // Update active alignment
-    setActiveAlignment(alignment);
-  };
-
   const renderActiveBlockIcon = () => {
     switch (activeBlockType){
       case "blockquote":
@@ -318,8 +294,10 @@ const Toolbar = () => {
         break;
     }
     
-    // Update active block type
     setActiveBlockType(blockType);
+    setTimeout(() => {
+      editorView.current!.focus()
+    }, 200)
   };
 
   return (
@@ -390,23 +368,6 @@ const Toolbar = () => {
             options={highlightOptions}
             onSelect={(color) => setHighlightColor(editorView.current!, color)}
           />
-        </div>
-
-        {/* Divider */}
-        <div className="w-px h-5 mx-1.5 bg-border" />
-        
-        {/* Alignment section */}
-        <div className="flex items-center gap-0.5">
-          {alignmentOptions.map((option) => (
-            <FormatButton
-              key={option.id}
-              icon={option.icon}
-              label={option.label}
-              shortcut={option.shortcut}
-              active={activeAlignment === option.id}
-              onClick={() => setAlignment(option.id as AlignmentType)}
-            />
-          ))}
         </div>
 
         {/* Divider */}

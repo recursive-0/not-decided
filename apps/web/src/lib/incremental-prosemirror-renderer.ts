@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from "uuid"
 import { suggestionHighlightPluginKey } from "@/plugins/suggestion-highlight-plugin";
 import { Tags } from "@/types/editor";
 
+
 interface NodeContextType {
   type: Tags;
   firstList?: boolean;
@@ -623,7 +624,7 @@ export class IncrementalProsemirrorRenderer {
       type: "normal",
       nodeId: null
     }
-    const metaData = { nodeId: node.attrs.nodeId, type: "addition"}
+    const metaData = { nodeId: node.attrs.nodeId, type: "addition-suggestion"}
     tr.setMeta(suggestionHighlightPluginKey, { action: action, metaData: metaData} )
 
     //toDo: make smart selection to bring the node into view
@@ -653,50 +654,6 @@ export class IncrementalProsemirrorRenderer {
       return this.editorView!.state.doc.content.size;
     } else {
       return this.nodeStack[this.nodeStack.length - 1].contentPosition;
-    }
-  }
-
-  public deleteNode(nodeHash: string) {
-    this.fingerPrintRef!.generateEditorNodesFingerprints(this.editorView!);
-    const matchedNode = this.fingerPrintRef!.matchFingerprint(nodeHash);
-    console.log("DELETION NODE MTCHED: ", matchedNode);
-    if (matchedNode && this.editorView) {
-      const { state } = this.editorView;
-      const { tr } = state;
-
-      const nodePos = matchedNode.startPos;
-      const originalNode: Node = state.doc.nodeAt(nodePos);
-
-      if (originalNode) {
-        const deletionSuggestion =
-          state.schema.nodes.deletion_suggestion.create(
-            {
-              id: `deletion-${Date.now()}`, // Generate a unique ID
-              originalNodeType: originalNode.type.name,
-              originalAttrs: JSON.stringify(originalNode.attrs),
-            },
-            originalNode
-          );
-
-        // 4. Replace the original node with the deletion  suggestion
-        const updatedTr = tr.replaceWith(
-          nodePos,
-          nodePos + originalNode.nodeSize,
-          deletionSuggestion
-        );
-        const selectionPos = updatedTr.mapping.map(nodePos);
-        updatedTr.setSelection(
-          TextSelection.create(this.editorView.state.doc, selectionPos)
-        );
-        updatedTr.scrollIntoView();
-        // 5. Apply the transaction
-        this.editorView.dispatch(updatedTr);
-
-        const nextInsertionPos = tr.mapping.map(
-          nodePos + originalNode.nodeSize
-        );
-        this.setInsertionPoint(nextInsertionPos);
-      }
     }
   }
 }

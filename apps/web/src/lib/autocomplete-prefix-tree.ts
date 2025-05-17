@@ -102,3 +102,5 @@ export class AutocompletePrefixTree {
     currentNode.isEndOfWord = true;
   }
 }
+
+export const autoCompletePrefixTree = new AutocompletePrefixTree()

@@ -45,7 +45,7 @@ export async function handleClaudeStream(props: HandleClaudeStreamProps) {
 				const tokens = await claudeClient!.messages.countTokens({
 					messages: [{ role: 'user', content: prompt }],
 					system: systemPrompt,
-					model: 'claude-3-7-sonnet-20250219',
+					model: 'claude-3-5-sonnet-20241022',
 				});
 
 				console.log('INPUT TOKENS ARE: ', tokens);
@@ -53,7 +53,7 @@ export async function handleClaudeStream(props: HandleClaudeStreamProps) {
 				const messageStream = await claudeClient!.messages.stream({
 					messages: [{ role: 'user', content: prompt }],
 					system: systemPrompt,
-					model: 'claude-3-7-sonnet-20250219',
+					model: 'claude-3-5-sonnet-20241022',
 					max_tokens: 8000,
 				});
 

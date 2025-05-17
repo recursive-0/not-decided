@@ -2,6 +2,8 @@ import { Env } from '../../worker-configuration';
 import { handleClaudeStream } from '../ai-models/claude';
 import { handleDeepseekStream } from '../ai-models/deepseek';
 import { handleGeminiStream } from '../ai-models/gemini';
+import { handleGroqStream } from '../ai-models/groq';
+import { handleOpenAIStream, streamWithOpenAI } from '../ai-models/open-ai';
 import { simpleStaticStream } from '../lib/simple-static-stream';
 
 export async function generateStream(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {

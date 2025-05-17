@@ -7,6 +7,7 @@ import {
 } from "@/providers/editor-context-provider";
 import "./prosemirror-styles.css";
 import "./external-dialogs.css";
+import "@/styles/suggestion-navigation.css"
 import "../../styles/suggestion-highlight-plugin.css";
 import {
   baseKeymap,
@@ -37,8 +38,8 @@ import { persistentHighlightPlugin } from "@/custom-nodes/persistent-highlight-p
 import { ensureNodeIdPlugin } from "@/plugins/ensure-nodeid-plugin";
 import { suggestionHighlightPlugin } from "@/plugins/suggestion-highlight-plugin";
 import { ensureTrailingParagraphPlugin } from "@/plugins/trailing-paragraph-plugin";
-import { massAcceptRejectPlugin } from "@/plugins/mass-accept-reject-plugin";
 import { suggestionNavigatorPlugin } from "@/plugins/suggestion-navigator-plugin";
+import { Node } from "prosemirror-model";
 
 const debounce = (func, delay) => {
   let timer;
@@ -47,6 +48,7 @@ const debounce = (func, delay) => {
     timer = setTimeout(() => func.apply(this, args), delay);
   };
 };
+
 
 declare global {
   interface Window {
@@ -68,7 +70,6 @@ function liftListItemOnlyAtStart(listItemType) {
 
 const listRelatedKeymap = keymap({
   Enter: splitListItem(extendedProseMirrorSchema.nodes.list_item),
-
   Backspace: chainCommands(
     deleteSelection,
     liftListItemOnlyAtStart(extendedProseMirrorSchema.nodes.list_item),
@@ -77,10 +78,11 @@ const listRelatedKeymap = keymap({
 });
 
 const plugins = [
+  // autoCompletePlugin,
   persistentHighlightPlugin,
   slashOpenCommandDialog,
   suggestionHighlightPlugin,
-  massAcceptRejectPlugin,
+  // massAcceptRejectPlugin,
   suggestionNavigatorPlugin,
   ensureTrailingParagraphPlugin,
   ensureNodeIdPlugin,
@@ -207,25 +209,13 @@ export const ProseMirrorEditor = () => {
         dispatchTransaction(tr) {
           if (!editorView.current) return;
           const originalState = editorView.current.state;
-
           const newState = originalState.apply(tr);
           editorView.current.updateState(newState);
-          const editorDocNodes = editorView.current.state.doc.content;
-          console.log("editor nodes are: ", editorDocNodes);
-          console.log("EDITOR STATE IS: ", editorView.current.state.doc);
-          console.log(
-            "JSON EDITOR SCHEMA: ",
-            editorView.current.state.doc.toJSON()
-          );
-          console.log("STATEEEEE IS: ", originalState);
 
           const slashCommandMeta = tr.getMeta(slashCommandTriggerKey);
 
-          console.log("sladhc ommands meta is: ", slashCommandMeta);
-
           if (slashCommandMeta && slashCommandMeta.isSlashCommandDialogOpen) {
             const { endPos } = slashCommandMeta;
-            console.log("end pos is: ", endPos);
 
             const coordsAtPos = editorView.current.coordsAtPos(endPos);
 
@@ -408,7 +398,7 @@ const FloatingCommandDialog = ({
     const handleClickOutside = (event: MouseEvent) => {
       if (
         event.target instanceof Node &&
-        !dialogRef.current.contains(event.target)
+        dialogRef.current!.contains(event.target)
       ) {
         onClose();
       }
