@@ -30,7 +30,7 @@ export const useSSEStream = () => {
   const [isStreaming, setIsStreaming] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
   const [currentStreamId, setCurrentStreamId] = useState<string>("");
-  const { editorView, setAcceptRejectDialog } = useEditor();
+  const { editorView } = useEditor();
   const { setCurrentLLMAction } = useChatStore();
 
   const editorActionsManagerRef = useRef<EditorActionsManager | null>(null);
@@ -147,7 +147,6 @@ export const useSSEStream = () => {
           rendererRef.current = new IncrementalProsemirrorRenderer(
             editorView.current,
             extendedProseMirrorSchema,
-            fingerprintManagerRef.current!
           );
 
           editorActionsManagerRef.current = new EditorActionsManager(
@@ -235,9 +234,6 @@ export const useSSEStream = () => {
               setIsStreaming(false);
               setCurrentLLMAction(CurrentActionType.NORMAL);
               eventSourceRef.current!.close();
-              if (window.suggestionsManager!.totalEdits() > 0) {
-                setAcceptRejectDialog(true);
-              }
               return;
 
             case "START_STREAM":

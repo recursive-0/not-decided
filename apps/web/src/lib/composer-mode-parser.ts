@@ -137,7 +137,7 @@ export class ComposerModeParser {
             JSON.stringify(this.codeBlockNode)
           );
           this.codeBlockNode.content += this.textBuffer;
-          this.callbacks.onTextContent(this.textBuffer);
+          // this.callbacks.onTextContent(this.textBuffer);
         }
       } else {
         console.warn("FLUSHING TEXT BUFFER BUT MODE IS NORMAL!!!");
@@ -353,6 +353,7 @@ export class ComposerModeParser {
         this.tagStack.pop();
         this.mode = Tags.CONTENT;
         this.clearTextBuffer();
+        this.callbacks.sendCodeBlockNode(this.codeBlockNode)
         this.resetCodeBlockNode();
         this.callbacks.onCloseTag(Tags.CODE);
         this.currentTagName = "";
@@ -380,7 +381,7 @@ export class ComposerModeParser {
       }
     } else if (this.mode === Tags.CODE) {
       if (closingTag === Tags.LANG && topTagInStack === Tags.LANG) {
-        this.callbacks.sendCodeBlockNode(this.codeBlockNode)
+        // this.callbacks.sendCodeBlockNode(this.codeBlockNode)
         this.tagStack.pop();
       } else if (closingTag === Tags.VAL) {
         this.tagStack.pop();

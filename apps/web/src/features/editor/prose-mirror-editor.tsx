@@ -20,11 +20,8 @@ import { splitListItem, liftListItem } from "prosemirror-schema-list";
 import { undo, redo, history } from "prosemirror-history";
 import { CodeBlock } from "@/custom-nodes/code-block";
 import { Textarea } from "@/components/ui/textarea";
-import { CornerDownLeft } from "lucide-react";
-import { DeletionSuggestion } from "@/custom-nodes/deletion-suggestion";
-import { AdditionSuggestion } from "@/custom-nodes/addition-suggestion";
+import { CornerDownLeft, X } from "lucide-react";
 import { AcceptAllRejectAllDialog } from "./accpet-all-reject-all-dialog";
-import { EditsSuggestionsManager } from "@/services/suggestion-manager";
 import { useChatHandler } from "@/hooks/use-chat-handler";
 import { useChatStore } from "@/store/chat";
 import { useEditorStore } from "@/store/editor";
@@ -39,7 +36,8 @@ import { ensureNodeIdPlugin } from "@/plugins/ensure-nodeid-plugin";
 import { suggestionHighlightPlugin } from "@/plugins/suggestion-highlight-plugin";
 import { ensureTrailingParagraphPlugin } from "@/plugins/trailing-paragraph-plugin";
 import { suggestionNavigatorPlugin } from "@/plugins/suggestion-navigator-plugin";
-import { Node } from "prosemirror-model";
+import { Button } from "@/components/ui/button";
+
 
 const debounce = (func, delay) => {
   let timer;
@@ -49,12 +47,6 @@ const debounce = (func, delay) => {
   };
 };
 
-
-declare global {
-  interface Window {
-    suggestionsManager: EditsSuggestionsManager | null;
-  }
-}
 
 function liftListItemOnlyAtStart(listItemType) {
   return function (state, dispatch, view) {
@@ -139,7 +131,6 @@ export const ProseMirrorEditor = () => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const { totalCurrentEdits } = useEditorStore();
   const isDialogClosingRef = useRef(false);
-  const suggestionsManagerRef = useRef<EditsSuggestionsManager | null>(null);
   const [userSelectionFromEditor, setUserSelection] = useState<string>("");
   const [dialogPosition, setDialogPosition] = useState<{
     left: number;
@@ -196,12 +187,6 @@ export const ProseMirrorEditor = () => {
         state,
 
         nodeViews: {
-          deletion_suggestion: (node, view, getPos) => {
-            return new DeletionSuggestion(node, view, getPos);
-          },
-          addition_suggestion: (node, view, getPos) => {
-            return new AdditionSuggestion(node, view, getPos);
-          },
           code_block: (node, view, getPos) => {
             return new CodeBlock(node, view, getPos);
           },
@@ -272,40 +257,52 @@ export const ProseMirrorEditor = () => {
   useEffect(() => {
     const editorElement = editorRef.current;
     if (!editorElement || !editorView) return;
-
+  
     const handleSelectionCheck = () => {
       if (isDialogClosingRef.current) return;
       let isMouseDown = true;
-
+  
       const handleMouseUp = () => {
         if (isMouseDown) {
           setTimeout(() => {
             if (!editorView.current) return;
             const { state } = editorView.current;
             const { selection } = state;
-            const { $from, $to } = selection.ranges[0];
+            const { $from, $to, head, anchor } = selection;
             const fromPos = $from.pos;
             const toPos = $to.pos;
-
+            
+            console.log("Selection from:", fromPos, "to:", toPos);
+            console.log("Selection head:", head, "anchor:", anchor);
+            
             if (toPos - fromPos > 0) {
-              const coordsAtPos = editorView.current.coordsAtPos(toPos);
-              console.log("COOOOORDS ARE: ", coordsAtPos);
-
-              const editorContainerPos =
-                containerRef.current!.getBoundingClientRect();
-              console.log("EDITOR CONTAINER POSSSS: ", editorContainerPos);
-
+              // The 'head' is where the user's cursor ended up
+              // If head === anchor, no selection (just cursor)
+              // If head > anchor, user selected forward
+              // If head < anchor, user selected backward
+              
+              const actualEndPos = head; // Always use head as the end position
+              
+              console.log("Using head as end position:", actualEndPos);
+              
+              const coordsAtPos = editorView.current.coordsAtPos(actualEndPos);
+              console.log("Coords at head:", coordsAtPos);
+  
+              const editorContainerPos = containerRef.current!.getBoundingClientRect();
+  
               const { left, top } = normalizeCommandDialogPos(
                 coordsAtPos,
                 editorContainerPos
               );
-
+  
               const textContent = editorView.current.state.doc.textBetween(
                 fromPos,
                 toPos
               );
-              console.log("TETX content is: ", textContent);
-              console.log("POSSSSSS are: ", left, top);
+              
+              console.log("Text content:", textContent);
+              console.log("Dialog position:", left, top);
+              
               setSmartAiPopupPos({
                 x: left,
                 y: top,
@@ -315,15 +312,15 @@ export const ProseMirrorEditor = () => {
           }, 100);
           isMouseDown = false;
         }
-
+  
         editorElement.removeEventListener("mouseup", handleMouseUp);
       };
-
+  
       editorElement.addEventListener("mouseup", handleMouseUp);
     };
-
+  
     editorElement.addEventListener("selectstart", handleSelectionCheck);
-
+  
     return () => {
       editorElement.removeEventListener("selectstart", handleSelectionCheck);
     };
@@ -333,11 +330,6 @@ export const ProseMirrorEditor = () => {
     if (editorView.current && isEditorReady) {
       setTimeout(() => {
         if (!editorView.current) return;
-        suggestionsManagerRef.current = new EditsSuggestionsManager(
-          editorView.current!
-        );
-
-        window.suggestionsManager = suggestionsManagerRef.current;
         const view = editorView.current;
         view.focus();
         const state = view.state;
@@ -397,8 +389,10 @@ const FloatingCommandDialog = ({
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
+        dialogRef.current &&
+        event.target &&
         event.target instanceof Node &&
-        dialogRef.current!.contains(event.target)
+        !dialogRef.current.contains(event.target as Node)
       ) {
         onClose();
       }
@@ -444,21 +438,27 @@ const FloatingCommandDialog = ({
   return (
     <div
       ref={dialogRef}
-      className="fixed z-50 bg-white rounded-md shadow-lg border border-neutral-200"
+      className="fixed z-50 bg-palette-beige-1 rounded-md shadow-lg border border-neutral-200"
       style={{
         left: `${clientX}px`,
         top: `${clientY}px`,
         width: "300px",
       }}
     >
-      <div className="p-2">
+      <div className="p-2 flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+        <span className="text-black text-sm">Prompt</span>
+        <Button onClick={onClose} variant="default" className="p-0 py-1 px-0 h-fit w-fit ">
+          <X />
+        </Button>
+        </div>
         <div className="relative flex flex-col items-start">
           <Textarea
             autoFocus
             ref={textareaRef}
             placeholder="Improve this section, rewrite this, etc."
-            className="flex-1 text-sm rounded-md resize-none overflow-hidden border border-neutral-200
-              text-neutral-800 placeholder:text-neutral-400
+            className="flex-1 text-sm rounded-md resize-none overflow-scroll border border-neutral-200
+              text-palette-dark placeholder:text-neutral-400
               pr-8 py-2 min-h-[38px] max-h-[150px]"
             value={input}
             onChange={(e) => setInput(e.target.value)}

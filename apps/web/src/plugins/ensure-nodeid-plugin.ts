@@ -1,4 +1,4 @@
-import { Plugin, PluginKey } from "prosemirror-state";
+import { Plugin, PluginKey, Transaction } from "prosemirror-state";
 import { v4 as uuidv4 } from "uuid";
 
 export const ensureNodeIdPluginKey = new PluginKey("ensureNodeIdPlugin");
@@ -7,12 +7,11 @@ export const ensureNodeIdPlugin = new Plugin({
   key: ensureNodeIdPluginKey,
   appendTransaction: (transactions, oldState, newState) => {
     const docChanged = transactions.some((tr) => tr.docChanged);
-    console.log("Doc is changed in the plugin: ", docChanged);
     if (!docChanged && oldState.doc.eq(newState.doc)) {
       return null;
     }
 
-    let newTr = null;
+    let newTr: Transaction = newState.tr
     let changesMade = false;
 
     newState.doc.descendants((node, pos) => {

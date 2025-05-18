@@ -708,20 +708,10 @@ export async function simpleStaticStream(prompt?: string) {
   
   // Test Case 4: Multiple nested lists at same level
   const chunks = [
-    "<EDITOR_CONTENT>",
-    "<QUO",
-    "TE>",
-    "lol",
-    "</",
-    "QUO",
-    "TE",
-    ">",
-    `<P>Here's a simple "Hello, World!" program in`,
-    ` Rust:</P><CODE><LANG>`,
-    `rust</LANG><CONTENT>fn main() {`,
-    `\n    println!("Hello, World!");\n}`,
-    `</CONTENT></CODE`,
-    "</EDITOR_CONTENT>"
+    `<THINKING>\nYou want me to add a code block to your document that shows how to print Hello, world!" in Rust.\n\nI will add this code block after the bulleted list detailing Rust's key`,
+    `features, as it serves as a basic example following the introduction of the language. This involves adding a new code block node after the last list item in the current list.\n</THINKING><OPERATION>{"action":"add","nodeIds":["41`,
+    `73546e-7342-491f-8110-f9291b955101"]}</OPERATION><CONTENT><CODE><LANG>rust</LANG><VAL>fn main()`,
+    `{\n    // Prints "Hello, world!" to the console\n    println!("Hello, world!");\n}</VAL></CODE></CONTENT>`
   ];
   
   // NOTE: You'll need to break the strings containing tags AND text into smaller pieces

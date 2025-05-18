@@ -270,7 +270,7 @@ const AIChat = () => {
   
         if (isModifierPressed) {
           e.preventDefault(); 
-          editorView.current.focus()
+          editorView.current!.focus()
         }
       }
     };

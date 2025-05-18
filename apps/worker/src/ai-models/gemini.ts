@@ -58,6 +58,7 @@ export function getClient(env: Env): GoogleGenAI {
               parts: [{text: prompt}]
             },
             config: {
+              // tools: [{googleSearch: {}}],
               systemInstruction: {
                 role: "system",
                 parts: [{ text: systemInstructionContent }],

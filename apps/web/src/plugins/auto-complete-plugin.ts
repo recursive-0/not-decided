@@ -34,7 +34,7 @@ export const autoCompletePlugin = new Plugin({
 
       return initState;
     },
-    apply(tr, value, oldState, newState) {
+    apply(tr, value, _, newState) {
       console.log("APPLy INSIDE Auto complete plugin");
       const resetMeta = tr.getMeta(autoCompletePluginKey); // Or suggestionAppliedMetaForKeyDown
       if (

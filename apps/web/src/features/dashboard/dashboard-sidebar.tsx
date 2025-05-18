@@ -7,7 +7,7 @@ import {
     SidebarTrigger,
   } from "@/components/ui/sidebar"; // Assuming these are styled components that can take classNames
   import { Link } from "@tanstack/react-router";
-  import { FilePlus, Settings, UserCircle } from "lucide-react"; // Added some example icons
+  import { FilePlus } from "lucide-react"; // Added some example icons
   
   // Let's make the links array more flexible for icons
   const links = [

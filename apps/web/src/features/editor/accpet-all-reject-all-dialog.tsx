@@ -3,7 +3,6 @@ import { Separator } from "@/components/ui/separator";
 import { handleSuggestionBatch, suggestionHighlightPluginKey } from "@/plugins/suggestion-highlight-plugin";
 import { suggestionNavigatorPluginKey } from "@/plugins/suggestion-navigator-plugin";
 import { useEditor } from "@/providers/editor-context-provider";
-import { TextSelection } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
 
 
@@ -12,6 +11,23 @@ interface AcceptAllRejectAllDialogProps {
 }
 
 const baseClasses = "z-20 h-fit p-1.5 px-2 text-black bg-none rounded-md hover:cursor-pointer hover:bg-palette-gold-dark"
+
+const isElementInViewport = (element: Element, threshold: number = 0.7): boolean => {
+  const rect = element.getBoundingClientRect();
+  const viewportHeight = window.innerHeight;
+  
+  // Calculate visible height of the element
+  const visibleTop = Math.max(0, rect.top);
+  const visibleBottom = Math.min(viewportHeight, rect.bottom);
+  const visibleHeight = Math.max(0, visibleBottom - visibleTop);
+  
+  // Calculate the ratio of visible area
+  const elementHeight = rect.height;
+  if (elementHeight === 0) return false;
+  
+  const visibilityRatio = visibleHeight / elementHeight;
+  return visibilityRatio >= threshold;
+};
 
 export const AcceptAllRejectAllDialog = ({
   position,
@@ -35,7 +51,7 @@ export const AcceptAllRejectAllDialog = ({
     
     const { state } = view;
     const tr = state.tr;
-  
+
     // Get current suggestions and navigator state
     const navigatorState = suggestionNavigatorPluginKey.getState(state);
     const suggestionsState = suggestionHighlightPluginKey.getState(state);
@@ -47,15 +63,15 @@ export const AcceptAllRejectAllDialog = ({
     
     const suggestions = suggestionsState.suggestionMetaData;
     const totalSuggestions = suggestions.length;
-  
+
     if (totalSuggestions === 0) {
       console.info("No suggestions to navigate");
       return;
     }
-  
+
     // Calculate the target index based on current index and action
     let targetIndex = navigatorState?.currentIndex ?? null;
-  
+
     if (action === "previous") {
       if (targetIndex === null || targetIndex <= 0) {
         // Wrap around to the end if at beginning or uninitialized
@@ -71,65 +87,33 @@ export const AcceptAllRejectAllDialog = ({
         targetIndex++;
       }
     }
-  
+
     // Set the new target index in the navigator plugin
     tr.setMeta(suggestionNavigatorPluginKey, { 
       navigateToIndex: targetIndex 
     });
-  
-    // Find the node for the target suggestion
-    const targetSuggestion = suggestions[targetIndex];
-    if (targetSuggestion && targetSuggestion.nodeId) {
-      // Find the position of the node in the document
-      let nodePos: number | null = null;
-      let nodeSize: number = 0;
-      
-      state.doc.descendants((node, pos) => {
-        if (node.attrs.nodeId === targetSuggestion.nodeId) {
-          nodePos = pos;
-          nodeSize = node.nodeSize;
-          return false; // Stop traversal once found
-        }
-        return true;
-      });
-  
-      if (nodePos !== null) {
-        // Set selection to the start of the node
-        const from = nodePos;
-        const to = nodePos + nodeSize;
-        
-        // Create a text selection that spans the node
-        // tr.setSelection(TextSelection.create(state.doc, from, to));
-        
-        // Scroll the node into view
-        tr.scrollIntoView();
-      } else {
-        console.warn(`Node with ID ${targetSuggestion.nodeId} not found in document`);
-      }
-    }
-  
-    // Only dispatch if we've made changes
-    if (tr.docChanged || tr.steps.length > 0 || tr.selectionSet || tr.scrolledIntoView) {
-      view.dispatch(tr);
-    }
-    
-    // Focus the editor for keyboard navigation
+
+    // Dispatch the change to apply the decoration
+    view.dispatch(tr);
     view.focus();
-    
-    // Add a small delay then trigger the scrollIntoView helper to ensure visibility
+
+    // After the decoration is applied, check visibility and scroll if needed
     setTimeout(() => {
       const highlightedNode = document.querySelector('.highlighted-suggestion-node');
+      
       if (highlightedNode) {
-        highlightedNode.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center'
-        });
+        // Only scroll if the element is not sufficiently visible (less than 70% visible)
+        if (!isElementInViewport(highlightedNode, 0.7)) {
+          highlightedNode.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+            inline: 'nearest'
+          });
+        }
       }
     }, 50);
   };
 
-// --- In your button's onClick ---
-// onClick={() => navigateToSuggestion(editorView.current, "next")}
 
   return (
     <div

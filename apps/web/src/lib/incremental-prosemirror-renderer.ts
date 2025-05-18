@@ -2,7 +2,6 @@ import { MarkType, Node, type Mark, type Schema } from "prosemirror-model";
 import { TextSelection, type Transaction } from "prosemirror-state";
 import type { EditorView } from "prosemirror-view";
 import type { CodeBlockNodeType } from "./composer-mode-parser";
-import type { FingerprintManager } from "./fingerprint-manager";
 import { v4 as uuidv4 } from "uuid"
 import { suggestionHighlightPluginKey } from "@/plugins/suggestion-highlight-plugin";
 import { Tags } from "@/types/editor";
@@ -29,16 +28,13 @@ export class IncrementalProsemirrorRenderer {
   private schema: Schema | null = null;
   private insertionPoint: number | null = null;
   private successfulGenerations: number = 0;
-  private fingerPrintRef: FingerprintManager | null = null;
 
   constructor(
     editorView: EditorView,
     extendedSchema: Schema,
-    fingerprintRef: FingerprintManager
   ) {
     this.editorView = editorView;
     this.schema = extendedSchema;
-    this.fingerPrintRef = fingerprintRef;
   }
 
   public updateSuccessfulGenerations() {
@@ -239,14 +235,29 @@ export class IncrementalProsemirrorRenderer {
   }
 
   onCodeBlock(codeBlock: CodeBlockNodeType) {
-    const { lang } = codeBlock;
+    const { lang, content } = codeBlock;
     console.log("LANG FOUND IS: ", lang);
+
+    const textNode = this.schema?.text(content)
 
     const codeBlocknode = this.schema!.nodes.code_block.create({
       language: lang,
       nodeId: uuidv4(),
+    }, textNode);
+
+    const pos = this.getInsertPosition();
+
+    console.log("POSITION TO INSERTTTT IS: ", pos)
+
+    const tr = this.editorView!.state.tr
+    this.insertNodeInEditor(pos, codeBlocknode, tr)
+    this.editorView!.dispatch(tr);
+
+    this.nodeStack.push({
+      type: Tags.CODE,
+      startPosition: pos,
+      contentPosition: pos + content.length,
     });
-    this.insertAndUpdateNodeContext(codeBlocknode, Tags.CODE);
   }
 
   closeListItem() {
@@ -618,6 +629,7 @@ export class IncrementalProsemirrorRenderer {
     if(this.nodeStack.length > 0){
       topNode = this.nodeStack[this.nodeStack.length - 1]
     }
+
     tr.insert(insertPos, node);
     if(node.type.name === "list_item" && (topNode.type === Tags.UL || topNode.type === Tags.OL)) return
     const action = {
@@ -646,14 +658,17 @@ export class IncrementalProsemirrorRenderer {
   private getInsertPosition(): number {
     if (this.insertionPoint !== null) {
       const insertPos = this.insertionPoint;
+      const mappedInsertPos = this.editorView!.state.tr.mapping.map(insertPos)
       this.insertionPoint = null;
-      return insertPos;
+      return mappedInsertPos;
     }
 
     if (this.nodeStack.length === 0) {
       return this.editorView!.state.doc.content.size;
     } else {
-      return this.nodeStack[this.nodeStack.length - 1].contentPosition;
+      const insertPos = this.nodeStack[this.nodeStack.length - 1].contentPosition;
+      const mappedInsertPos = this.editorView!.state.tr.mapping.map(insertPos)
+      return mappedInsertPos
     }
   }
 }

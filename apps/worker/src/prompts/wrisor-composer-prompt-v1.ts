@@ -273,68 +273,74 @@ function addActionInstructions() {
 
   **CRITICAL Guidelines for Smart Content Addition:**
 
-  1. **Rewrite/Replace Operations:**
-     - When REWRITING or REPLACING a specific node (like a paragraph, list_item, or heading), the add operation MUST use the SAME node ID that was targeted in the preceding delete operation.
-     - Example for rewriting a list item:
-       - Delete: \`{"action": "delete", "nodeIds": ["4613f6a4-17ba-4161-9115-0e6594b6e2d4"]}\`
-       - Add: \`{"action": "add", "nodeIds": ["4613f6a4-17ba-4161-9115-0e6594b6e2d4"]}\` (SAME ID)
-     - This ensures the new content replaces the old content at the exact same position in the document structure.
-  
-  2. **List Item Handling:**
-     - When adding a NEW list item to an existing list:
-       - Target the ID of the list item AFTER WHICH the new item should appear, or
-       - Target the bullet_list/ordered_list container ID if the new item should be the first in the list
-     - When REWRITING an existing list item:
-       - Target the ID of that specific list item in both delete and add operations
-  
-  3. **Content Structure Awareness:**
-     - When adding content, be aware of the required structural hierarchy:
-       - New list_item nodes can ONLY be added inside bullet_list/ordered_list containers
-       - New list items must be properly structured with <LI> tags in the <CONTENT> block
-       - New paragraph content must use <P> tags in the <CONTENT> block
+  1. **Container vs Content Node Targeting:**
+     - ALWAYS consider what type of content you're inserting and where it logically belongs
+     - When inserting BLOCK-LEVEL content (code blocks, headings, standalone paragraphs, blockquotes), target CONTAINER nodes (like bullet_list, ordered_list) to insert content AFTER the container
+     - When inserting LIST-SPECIFIC content (new list items), target specific list_item nodes to insert content within the list structure
+     - NEVER target child nodes when inserting block-level content that should appear outside the parent container
 
-  4. **Content Placement Logic:**
-     - For adding AFTER a specific section: target the last node in that section
-     - For adding BEFORE a specific section: target the node that appears just before that section
-     - For adding AT THE END of a document: target the last node in the document
-     - For adding AT THE BEGINNING: target the first node in the document
-  
-  5. **Maintaining Format Consistency:**
-     - When adding/replacing list items, maintain the same format style as existing list items
-     - If existing list items use bolded terms like "<LI><B>Term</B> - Description</LI>", follow the same pattern
-     - Match the formatting style of surrounding content for cohesion
+  2. **Block-Level Content Insertion Rules:**
+     - Code blocks, headings, paragraphs, and blockquotes are standalone block elements
+     - They CANNOT be inserted inside lists, other blockquotes, or other block containers
+     - When adding these, target the appropriate container node (bullet_list, ordered_list) to insert AFTER the container
+     - Example: To add a code block after a bullet list, target the bullet_list node ID, NOT a list_item node ID
+
+  3. **List Item Targeting Logic:**
+     - ONLY target list_item nodes when:
+       - Adding NEW list items to an existing list
+       - Rewriting/replacing existing list items
+     - When adding a new list item, target the list_item node AFTER WHICH the new item should appear
+     - When rewriting a list item, use the SAME list_item node ID for both delete and add operations
+
+  4. **Content Structure Awareness:**
+     - Understand the containment hierarchy: bullet_list contains list_item nodes
+     - Inserting after a list_item node places content INSIDE the list container
+     - Inserting after a bullet_list node places content AFTER the entire list
+     - Choose the appropriate target based on where the new content should logically appear
+
+  5. **Determining the Correct Target Node:**
+     - Ask yourself: "Where should this content appear in the document structure?"
+     - For content that should appear AFTER a list section: target the bullet_list/ordered_list container
+     - For content that should appear as a NEW list item: target an existing list_item node
+     - For content that should REPLACE a list item: use delete + add with the same list_item node ID
 
   **Implementation Examples:**
   
-  1. **Rewriting a specific bullet point:**
-     - User query: "Rewrite the bullet point about Memory Safety"
+  1. **Adding a code block after a bullet list:**
+     - User query: "Add a code block showing TypeScript example after the bullet points"
      - CORRECT approach:
-       - Delete operation: \`{"action": "delete", "nodeIds": ["4613f6a4-17ba-4161-9115-0e6594b6e2d4"]}\` (ID of the Memory Safety list item)
-       - Add operation: \`{"action": "add", "nodeIds": ["4613f6a4-17ba-4161-9115-0e6594b6e2d4"]}\` (SAME ID)
-       - Content: <LI><B>Memory Safety</B> - Achieved through Rust's innovative ownership system at compile time.</LI>
+       - Target the bullet_list container: \`{"action": "add", "nodeIds": ["dfc34c36-3992-4112-8b52-2d7c6d9e9ab0"]}\`
+       - Content: <CODE><LANG>typescript</LANG><VAL>...</VAL></CODE>
      - INCORRECT approach:
-       - Add operation: \`{"action": "add", "nodeIds": ["aa905c83-7260-4d10-81c1-1b5c6a8494dc"]}\` (ID of the bullet_list container)
-       - This would place the new item relative to the entire list container, not replacing the specific list item!
-  
-  2. **Adding a new paragraph after a specific point:**
-     - User query: "Add a paragraph about Rust's community after the bullet points"
+       - Targeting a list_item: \`{"action": "add", "nodeIds": ["19536705-b245-4971-812f-b98e325b0d0e"]}\`
+       - This would insert the code block INSIDE the list, which breaks the structure
+
+  2. **Adding a new heading after a section:**
+     - User query: "Add a new heading for 'Performance Considerations' after the current section"
      - CORRECT approach:
-       - Find the last list item or the bullet list container ID
-       - Add operation: \`{"action": "add", "nodeIds": ["67686f42-aaab-436e-bdf1-4ef9e899ca3d"]}\` (ID of last list item)
-       - Content: <P>The Rust community is known for being welcoming and supportive...</P>
-  
-  3. **Adding a new bullet point to an existing list:**
-     - User query: "Add a new bullet point about Rust's ecosystem to the list"
+       - Target the last significant block of the section (could be a paragraph or bullet_list)
+       - Content: <H2>Performance Considerations</H2>
+
+  3. **Adding a new list item to an existing list:**
+     - User query: "Add a new bullet point about error handling to the list"
      - CORRECT approach:
-       - Find the last existing list item's ID
-       - Add operation: \`{"action": "add", "nodeIds": ["67686f42-aaab-436e-bdf1-4ef9e899ca3d"]}\` (ID of last list item)
-       - Content: <LI><B>Rich Ecosystem</B> - Offers a growing collection of libraries and frameworks.</LI>
-  
+       - Target the last list_item in the list: \`{"action": "add", "nodeIds": ["19536705-b245-4971-812f-b98e325b0d0e"]}\`
+       - Content: <LI><B>Error Handling</B> - Provides robust error recovery mechanisms.</LI>
+
+  4. **Rewriting a specific list item:**
+     - User query: "Rewrite the bullet point about incremental parsing"
+     - CORRECT approach:
+       - Delete: \`{"action": "delete", "nodeIds": ["c5c17ee6-4e3e-4634-9798-61dcd65a4781"]}\`
+       - Add: \`{"action": "add", "nodeIds": ["c5c17ee6-4e3e-4634-9798-61dcd65a4781"]}\` (SAME ID)
+
+  **Quick Decision Guide:**
+  - Adding code blocks, headings, paragraphs, blockquotes → Target container nodes (bullet_list, ordered_list)
+  - Adding new list items → Target list_item nodes
+  - Rewriting existing content → Use same node ID for delete and add
+  - Always think: "Where will the content end up if I target this node?"
+
   **Critical Reminder:**
-  The <OPERATION> block for an "add" action MUST be immediately followed by a <CONTENT> block containing the new content to be inserted. If the user query implies adding content at multiple distinct locations, you MUST generate a separate pair of <OPERATION> (for "add") and <CONTENT> blocks for each location.
-  
-  **Content Formatting in List Items:**
-  When adding or replacing list items, always analyze the formatting pattern of existing list items and maintain consistency. If existing items use a pattern like "<LI><B>Term</B> - Description</LI>", your generated replacement must follow this exact same format.
+  The <OPERATION> block for an "add" action MUST be immediately followed by a <CONTENT> block containing the new content to be inserted. The choice of target node determines the structural placement of your content in the document.
   `;
 }
 
