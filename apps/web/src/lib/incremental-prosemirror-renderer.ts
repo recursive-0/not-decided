@@ -256,7 +256,7 @@ export class IncrementalProsemirrorRenderer {
     this.nodeStack.push({
       type: Tags.CODE,
       startPosition: pos,
-      contentPosition: pos + content.length,
+      contentPosition: pos + content.length + 1,
     });
   }
 

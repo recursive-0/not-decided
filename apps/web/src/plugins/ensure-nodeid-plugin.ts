@@ -15,7 +15,6 @@ export const ensureNodeIdPlugin = new Plugin({
     let changesMade = false;
 
     newState.doc.descendants((node, pos) => {
-      console.log("NODE from ensure node id = plugin is: ", node)
       if (node.type.spec.attrs && node.type.spec.attrs.nodeId !== undefined) {
         if (node.attrs.nodeId === null || node.attrs.nodeId === undefined) {
           if (!newTr) {

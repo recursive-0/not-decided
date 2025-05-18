@@ -21,6 +21,7 @@ import { ChatMode } from "@/types/messages";
 import { useEditor } from "@/providers/editor-context-provider";
 import { ChatModeEmptyContent } from "./chat-mode-empty-content";
 import { ComposerModeEmptyContent } from "./composer-mode-empty-content";
+import { SectionMentionDropdown } from "./section-mention-dropdown";
 
 // Thinking loader component
 const ThinkingLoader = () => {
@@ -107,9 +108,78 @@ const AIChat = () => {
 
   const { totalCurrentEdits } = useEditorStore()
 
+  const [showSectionMention, setShowSectionMention] = useState(false);
+  const [mentionStartIndex, setMentionStartIndex] = useState(-1);
+
+
   const [input, setInput] = useState<string>("")
   const [showStreamingWarning, setShowStreamWarning] = useState<boolean>(false)
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
+
+  // Handle input changes to detect @ mentions
+  const handleInputChange = (e) => {
+    const target = e.target;
+    const value = target.value;
+    
+    setInput(value);
+
+    // Get cursor position safely
+    const cursorPos = target.selectionStart || 0;
+    
+    // Check for @ at current cursor position
+    const textBeforeCursor = value.slice(0, cursorPos);
+    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+    
+    if (lastAtIndex !== -1 && lastAtIndex === cursorPos - 1) {
+      // @ was just typed, show section mention
+      setMentionStartIndex(lastAtIndex);
+      
+      setShowSectionMention(true);
+    } else if (lastAtIndex !== -1 && cursorPos > lastAtIndex) {
+      // Check if we're still in an @ mention
+      const textAfterAt = textBeforeCursor.slice(lastAtIndex + 1);
+      if (textAfterAt.includes(' ') || textAfterAt.includes('\n')) {
+        // Space or newline found, close mention
+        setShowSectionMention(false);
+        setMentionStartIndex(-1);
+      }
+    } else {
+      // No @ found or cursor moved away
+      setShowSectionMention(false);
+      setMentionStartIndex(-1);
+    }
+  };
+
+  // Handle section selection
+  const handleSectionSelect = (section) => {
+    if (mentionStartIndex === -1) return;
+
+    const beforeMention = input.slice(0, mentionStartIndex);
+    const afterMention = input.slice(mentionStartIndex + 1);
+    const mentionText = `@${section.text}`;
+    
+    setInput(beforeMention + mentionText + afterMention);
+    setShowSectionMention(false);
+    setMentionStartIndex(-1);
+    
+    // Focus back to textarea
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+      // Set cursor position after the mention
+      const newCursorPos = beforeMention.length + mentionText.length;
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
+        }
+      }, 0);
+    }
+  };
+
+  // Close section mention dropdown
+  const closeSectionMention = () => {
+    setShowSectionMention(false);
+    setMentionStartIndex(-1);
+  };
 
   const onStopStreaming = () => {
     console.log("Stop the stream")
@@ -132,6 +202,11 @@ const AIChat = () => {
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+
+    if (showSectionMention && ['ArrowDown', 'ArrowUp', 'Enter', 'Escape'].includes(e.key)) {
+      return; // Let SectionMentionDropdown handle these
+    }
+
     // If streaming is active, show warning and prevent default behavior
     if (isStreaming) {
       e.preventDefault();
@@ -189,7 +264,7 @@ const AIChat = () => {
       <div className="relative flex items-start">
         <Textarea
           ref={textareaRef}
-          placeholder="Ask anything (⌘k), @ to mention code blocks"
+          placeholder="Ask anything (⌘k), @ to mention sections"
           style={{
             backgroundColor: "var(--color-palette-gold-light)",
           }}
@@ -197,7 +272,7 @@ const AIChat = () => {
             text-[var(--color-palette-dark)] placeholder:text-muted-foreground
             pr-8 py-2 min-h-[38px] max-h-[100px] overflow-y-scroll"
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={handleInputChange}
           onKeyDown={(e) => handleKeyDown(e)}
           rows={1}
         />
@@ -222,6 +297,13 @@ const AIChat = () => {
             <CornerDownLeft className={`h-4 w-4 text-palette-dark`} />
           </div>
         )}
+
+          <SectionMentionDropdown
+          editorView={editorView}
+          isVisible={showSectionMention}
+          onSelect={handleSectionSelect}
+          onClose={closeSectionMention}
+        />
         
         {/* The warning message element */}
         <StreamingWarning 

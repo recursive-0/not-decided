@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { EditorView } from "prosemirror-view";
-import { EditorState, Selection } from "prosemirror-state";
+import { EditorState } from "prosemirror-state";
 import {
   extendedProseMirrorSchema,
   useEditor,
 } from "@/providers/editor-context-provider";
 import "./prosemirror-styles.css";
 import "./external-dialogs.css";
-import "@/styles/suggestion-navigation.css"
+import "@/styles/suggestion-navigation.css";
 import "../../styles/suggestion-highlight-plugin.css";
 import {
   baseKeymap,
@@ -38,7 +38,6 @@ import { ensureTrailingParagraphPlugin } from "@/plugins/trailing-paragraph-plug
 import { suggestionNavigatorPlugin } from "@/plugins/suggestion-navigator-plugin";
 import { Button } from "@/components/ui/button";
 
-
 const debounce = (func, delay) => {
   let timer;
   return (...args) => {
@@ -46,7 +45,6 @@ const debounce = (func, delay) => {
     timer = setTimeout(() => func.apply(this, args), delay);
   };
 };
-
 
 function liftListItemOnlyAtStart(listItemType) {
   return function (state, dispatch, view) {
@@ -163,7 +161,6 @@ export const ProseMirrorEditor = () => {
     debounce(calculateDialogPosition, 10)
   ).current;
 
-
   const handleDialogClose = () => {
     isDialogClosingRef.current = true;
     setSmartAiPopupPos(null);
@@ -257,52 +254,44 @@ export const ProseMirrorEditor = () => {
   useEffect(() => {
     const editorElement = editorRef.current;
     if (!editorElement || !editorView) return;
-  
+
     const handleSelectionCheck = () => {
       if (isDialogClosingRef.current) return;
       let isMouseDown = true;
-  
+
       const handleMouseUp = () => {
         if (isMouseDown) {
           setTimeout(() => {
             if (!editorView.current) return;
             const { state } = editorView.current;
             const { selection } = state;
-            const { $from, $to, head, anchor } = selection;
+            const { $from, $to, head } = selection;
             const fromPos = $from.pos;
             const toPos = $to.pos;
-            
-            console.log("Selection from:", fromPos, "to:", toPos);
-            console.log("Selection head:", head, "anchor:", anchor);
-            
+
             if (toPos - fromPos > 0) {
               // The 'head' is where the user's cursor ended up
               // If head === anchor, no selection (just cursor)
               // If head > anchor, user selected forward
               // If head < anchor, user selected backward
-              
+
               const actualEndPos = head; // Always use head as the end position
-              
-              console.log("Using head as end position:", actualEndPos);
-              
+
               const coordsAtPos = editorView.current.coordsAtPos(actualEndPos);
-              console.log("Coords at head:", coordsAtPos);
-  
-              const editorContainerPos = containerRef.current!.getBoundingClientRect();
-  
+
+              const editorContainerPos =
+                containerRef.current!.getBoundingClientRect();
+
               const { left, top } = normalizeCommandDialogPos(
                 coordsAtPos,
                 editorContainerPos
               );
-  
+
               const textContent = editorView.current.state.doc.textBetween(
                 fromPos,
                 toPos
               );
-              
-              console.log("Text content:", textContent);
-              console.log("Dialog position:", left, top);
-              
+
               setSmartAiPopupPos({
                 x: left,
                 y: top,
@@ -312,15 +301,15 @@ export const ProseMirrorEditor = () => {
           }, 100);
           isMouseDown = false;
         }
-  
+
         editorElement.removeEventListener("mouseup", handleMouseUp);
       };
-  
+
       editorElement.addEventListener("mouseup", handleMouseUp);
     };
-  
+
     editorElement.addEventListener("selectstart", handleSelectionCheck);
-  
+
     return () => {
       editorElement.removeEventListener("selectstart", handleSelectionCheck);
     };
@@ -332,13 +321,6 @@ export const ProseMirrorEditor = () => {
         if (!editorView.current) return;
         const view = editorView.current;
         view.focus();
-        const state = view.state;
-        const tr = state.tr;
-
-        const selection = Selection.atEnd(tr.doc);
-        tr.setSelection(selection);
-
-        view.dispatch(tr);
       }, 10);
     }
   }, [isEditorReady, editorView]);
@@ -447,10 +429,14 @@ const FloatingCommandDialog = ({
     >
       <div className="p-2 flex flex-col gap-2">
         <div className="flex items-center justify-between">
-        <span className="text-black text-sm">Prompt</span>
-        <Button onClick={onClose} variant="default" className="p-0 py-1 px-0 h-fit w-fit ">
-          <X />
-        </Button>
+          <span className="text-black text-sm">Prompt</span>
+          <Button
+            onClick={onClose}
+            variant="default"
+            className="p-0 py-1 px-0 h-fit w-fit "
+          >
+            <X />
+          </Button>
         </div>
         <div className="relative flex flex-col items-start">
           <Textarea

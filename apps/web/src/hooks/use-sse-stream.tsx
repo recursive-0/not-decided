@@ -67,10 +67,6 @@ export const useSSEStream = () => {
           };
           currentTr.setMeta(suggestionHighlightPluginKey, metaForPlugin);
           editorView.current.dispatch(currentTr);
-          console.log(
-            "Dispatched TR for DELETION highlight operation for nodeId:",
-            id
-          );
         });
         return;
       }
@@ -78,10 +74,6 @@ export const useSSEStream = () => {
       if (action === "add") {
         const nodeId = nodeIds[0];
         if (!nodeId) return;
-        console.log(
-          "Dispatched TR for ADDITION highlight operation for nodeId:",
-          nodeId
-        );
 
         if (rendererRef.current) {
           editorView.current.state.doc.descendants((node, pos) => {
@@ -113,7 +105,6 @@ export const useSSEStream = () => {
         if (rendererRef.current) {
           editorView.current.state.doc.descendants((node, pos) => {
             if (nodeId === node.attrs.nodeId) {
-              console.log("NODE found in replace is: ", node);
               const endPos = pos + node.nodeSize;
               rendererRef.current!.setInsertionPoint(endPos);
               return false;
@@ -132,7 +123,6 @@ export const useSSEStream = () => {
       prompt: string,
       sendTokensCallback: (token: string) => void
     ) => {
-      console.log("Inside start streaming");
       userInteractedRef.current = false;
       try {
         setIsStreaming(true);
@@ -168,7 +158,6 @@ export const useSSEStream = () => {
 
           composerParserRef.current = new ComposerModeParser({
             onOperation(operation) {
-              console.log("Operation DATA is: ", operation);
               executeOperation(operation);
             },
             sendTokensCallback: (tokens: string) => sendTokensCallback(tokens),
@@ -184,10 +173,8 @@ export const useSSEStream = () => {
           });
         }
 
-        console.log("getting content nodes")
         const validContentNodes = getContentNodes(editorView.current)
 
-        console.log("CONTENT NODESSSSSSSS: ", validContentNodes);
 
         // Initialize stream
         const response = await fetch(`${BASE_URL}/api/init/stream`, {
@@ -223,8 +210,6 @@ export const useSSEStream = () => {
         eventSourceRef.current.onmessage = (event) => {
           const tokens = event.data;
 
-          console.log("CURRENT PARSER IS: ", getCurrentParser());
-          console.log("TOKEN IS: ", tokens);
 
           switch (tokens.trim()) {
             case "[DONE]":

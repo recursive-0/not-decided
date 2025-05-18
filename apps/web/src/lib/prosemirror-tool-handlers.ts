@@ -4,7 +4,6 @@ import { liftListItem, wrapInList } from "prosemirror-schema-list";
 import { EditorState } from "prosemirror-state";
 
 export const boldText = (editorView: EditorView, apply: boolean): void => {
-  console.log("Toggling Bold, apply:", apply);
   const { state } = editorView;
   const { selection, schema, tr } = state;
   const { from, to } = selection;

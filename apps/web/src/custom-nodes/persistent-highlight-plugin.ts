@@ -9,9 +9,6 @@ export const persistentHighlightPlugin = new Plugin({
     decorations(state) {
       if (!state.selection.empty) {
         const { from, to } = state.selection;
-        console.log("sdcdfc")
-
-        console.log(`Applying persistent highlight from ${from} to ${to}`);
 
         const dec = Decoration.inline(from, to, {
           class: "persistent-selection-highlight",

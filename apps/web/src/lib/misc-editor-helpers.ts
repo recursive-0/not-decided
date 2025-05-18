@@ -65,3 +65,44 @@ export const getContentNodes = (editorView) => {
   
     return validContentNodes;
   };
+
+
+  interface SectionType {
+    id: string,
+    level: number,
+    text: string,
+    pos: number,
+    icon: string
+  }
+
+
+  export const extractSectionsFromEditor = (editorView) => {
+    if (!editorView?.current) return [];
+  
+    try {
+      const doc = editorView.current.state.doc;
+      const sections: SectionType[] = [];
+  
+      doc.descendants((node, pos) => {
+        if (node.type.name === 'heading') {
+          const level = node.attrs.level || 1;
+          const text = node.textContent.trim();
+          
+          if (text) {
+            sections.push({
+              id: `section-${pos}`,
+              level,
+              text,
+              pos,
+              icon: level === 1 ? '📄' : level === 2 ? '📝' : '📋'
+            });
+          }
+        }
+      });
+  
+      return sections;
+    } catch (error) {
+      console.error('Error extracting sections:', error);
+      return [];
+    }
+  };

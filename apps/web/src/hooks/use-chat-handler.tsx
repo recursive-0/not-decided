@@ -62,7 +62,6 @@ export const ChatHandlerProvider: React.FC<ChatHandlerProviderProps> = ({
 
   const registerScrollAreaRef = useCallback(
     (element: HTMLDivElement | null) => {
-      console.log("Registering scroll area ref:", element);
       setScrollAreaElement(element);
     },
     []
@@ -73,29 +72,13 @@ export const ChatHandlerProvider: React.FC<ChatHandlerProviderProps> = ({
       "[data-radix-scroll-area-viewport]"
     ) as HTMLDivElement | null;
 
-    console.log(
-      "Attempting scrollToBottom. autoScrollRef.current =",
-      autoScrollRef.current,
-      "scrollViewport found:",
-      !!scrollViewport
-    );
 
     if (scrollViewport && autoScrollRef.current) {
       requestAnimationFrame(() => {
         if (autoScrollRef.current && scrollViewport) {
           scrollViewport.scrollTop = scrollViewport.scrollHeight;
-          console.log(
-            "Scrolling executed inside requestAnimationFrame. New scrollTop:",
-            scrollViewport.scrollTop,
-            "scrollHeight:",
-            scrollViewport.scrollHeight
-          );
         }
       });
-    } else if (!scrollViewport) {
-      console.log(
-        "Scroll skipped: scrollViewport not found (is scrollAreaElement registered correctly?)."
-      );
     }
   }, [scrollAreaElement]);
 
@@ -114,7 +97,6 @@ export const ChatHandlerProvider: React.FC<ChatHandlerProviderProps> = ({
   const handleSendMessage = useCallback(
     (messageText: string) => {
       autoScrollRef.current = true;
-      console.log("handleSendMessage: Set autoScrollRef.current = true");
 
       if (totalCurrentEdits > 0) {
         setPendingChangesPopup(true);
@@ -158,10 +140,7 @@ export const ChatHandlerProvider: React.FC<ChatHandlerProviderProps> = ({
   );
 
   useEffect(() => {
-    console.log(
-      "useEffect[chatMessages] running. autoScrollRef:",
-      autoScrollRef.current
-    );
+   
     if (autoScrollRef.current) {
       scrollToBottom();
     }
@@ -181,9 +160,7 @@ export const ChatHandlerProvider: React.FC<ChatHandlerProviderProps> = ({
           50;
         if (!isNearBottom) {
           if (autoScrollRef.current) {
-            console.log(
-              "USER INTENT SCROLL DETECTED (wheel/touch while not near bottom)!!! Disabling auto-scroll."
-            );
+            
             autoScrollRef.current = false;
           }
         }

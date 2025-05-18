@@ -42,7 +42,6 @@ export const suggestionHighlightPlugin = new Plugin({
   key: suggestionHighlightPluginKey,
   state: {
     init(): SuggestionHighlightPluginState {
-      console.log("Init suggestion higlight plugiun");
       return {
         currentAction: "nothing",
         suggestionMetaData: [],
@@ -122,10 +121,6 @@ export const suggestionHighlightPlugin = new Plugin({
               item.type === trMeta.metaData!.type
           )
         ) {
-          console.log(
-            "[PluginApply] Duplicate metadata, not adding:",
-            trMeta.metaData
-          );
           return value;
         }
     
@@ -135,12 +130,6 @@ export const suggestionHighlightPlugin = new Plugin({
         };
     
         const newMetaDataList = [...value.suggestionMetaData, newSuggestion];
-        console.log(
-          "[PluginApply] Adding new metadata:",
-          newSuggestion,
-          "New metaData count:",
-          newMetaDataList.length
-        );
         const { setTotalCurrentEdits } = useEditorStore.getState()
         setTotalCurrentEdits(newMetaDataList.length)
         return {
@@ -155,7 +144,6 @@ export const suggestionHighlightPlugin = new Plugin({
   props: {
     decorations(state: EditorState): DecorationSet | null | undefined {
       const pluginState = suggestionHighlightPluginKey.getState(state);
-      console.log("PLUGIN STATE IS: ", pluginState);
 
       if (!pluginState || pluginState.suggestionMetaData.length === 0) {
         return DecorationSet.empty;
@@ -258,7 +246,6 @@ export const suggestionHighlightPlugin = new Plugin({
         });
       });
 
-      console.log("returning decorations: ", decorations);
       return DecorationSet.create(doc, decorations);
     },
   },
@@ -356,153 +343,3 @@ export function handleSuggestionBatch(
 
 
 
-
-// export const handleRejectAllAction = (
-//   tr: Transaction,
-//   editorState: EditorState,
-//   currentSuggestions: MetaDataType[]
-// ): Transaction => {
-//   const doc = editorState.doc;
-//   const rangesToDelete: { from: number; to: number }[] = [];
-
-//   if (currentSuggestions && currentSuggestions.length > 0) {
-//     currentSuggestions.forEach((suggestionNode) => {
-//       // For "rejectAll", an "addition" suggestion is deleted
-//       if (suggestionNode.type === "addition") {
-//         const nodeId = suggestionNode.nodeId;
-//         let nodeFoundAndRangeAdded = false;
-//         doc.descendants((node: Node, pos: number) => {
-//           if (nodeFoundAndRangeAdded) return false;
-
-//           if (node.attrs.nodeId === nodeId) {
-//             rangesToDelete.push({ from: pos, to: pos + node.nodeSize });
-//             nodeFoundAndRangeAdded = true;
-//             return false;
-//           }
-//           return true;
-//         });
-//       }
-//     });
-//   }
-
-//   // Sort ranges in reverse order to avoid position conflicts during deletion
-//   rangesToDelete.sort((a, b) => b.from - a.from);
-
-//   // Apply deletions
-//   rangesToDelete.forEach((range) => {
-//     tr.deleteRange(range.from, range.to);
-//   });
-
-//   return tr;
-// };
-
-// export const handleAcceptAllAction = (
-//   tr: Transaction,
-//   editorState: EditorState,
-//   currentSuggestions: MetaDataType[]
-// ): Transaction => {
-//   console.log(
-//     "[AcceptAll] Initial currentSuggestions:",
-//     JSON.parse(JSON.stringify(currentSuggestions))
-//   ); // Deep copy for logging
-//   const doc = editorState.doc;
-//   const rangesToDelete: { from: number; to: number; nodeId?: string | null }[] =
-//     []; // Added nodeId for logging
-
-//   if (currentSuggestions && currentSuggestions.length > 0) {
-//     currentSuggestions.forEach((suggestionNode) => {
-//       console.log(
-//         "[AcceptAll] Processing suggestionNode:",
-//         JSON.parse(JSON.stringify(suggestionNode))
-//       );
-//       // For "acceptAll", a "deletion" suggestion is applied (node is deleted)
-//       if (suggestionNode.type === "deletion") {
-//         console.log(
-//           '[AcceptAll] Suggestion is of type "deletion", nodeId:',
-//           suggestionNode.nodeId
-//         );
-//         const nodeId = suggestionNode.nodeId;
-//         let nodeFoundAndRangeAdded = false;
-//         doc.descendants((node: Node, pos: number) => {
-//           if (nodeFoundAndRangeAdded) return false;
-
-//           // Log the node being checked and its attrs
-//           // console.log('[AcceptAll] Checking doc node:', node.type.name, 'at pos', pos, 'with attrs:', JSON.stringify(node.attrs));
-
-//           if (node.attrs.nodeId === nodeId) {
-//             console.log(
-//               `[AcceptAll] Matched nodeId "${nodeId}" at pos ${pos}. Adding to rangesToDelete.`
-//             );
-//             rangesToDelete.push({
-//               from: pos,
-//               to: pos + node.nodeSize,
-//               nodeId: nodeId,
-//             });
-//             nodeFoundAndRangeAdded = true;
-//             return false; // Stop descendants search for this specific nodeId
-//           }
-//           return true; // Continue searching
-//         });
-//         if (!nodeFoundAndRangeAdded) {
-//           console.warn(
-//             `[AcceptAll] NodeId "${nodeId}" of type "deletion" NOT FOUND in document.`
-//           );
-//         }
-//       } else {
-//         console.log(
-//           '[AcceptAll] Suggestion type is not "deletion", skipping delete for nodeId:',
-//           suggestionNode.nodeId
-//         );
-//       }
-//     });
-//   } else {
-//     console.log(
-//       "[AcceptAll] No currentSuggestions to process or array is empty."
-//     );
-//   }
-
-//   console.log(
-//     "[AcceptAll] Collected rangesToDelete (before sort):",
-//     JSON.parse(JSON.stringify(rangesToDelete))
-//   );
-
-//   if (
-//     rangesToDelete.length === 0 &&
-//     currentSuggestions.some((s) => s.type === "deletion")
-//   ) {
-//     console.warn(
-//       '[AcceptAll] There were "deletion" suggestions, but no ranges were collected for deletion. Check nodeId matching.'
-//     );
-//   }
-
-//   rangesToDelete.sort((a, b) => b.from - a.from);
-//   console.log(
-//     "[AcceptAll] Sorted rangesToDelete:",
-//     JSON.parse(JSON.stringify(rangesToDelete))
-//   );
-
-//   rangesToDelete.forEach((range) => {
-//     console.log(
-//       `[AcceptAll] Applying tr.deleteRange from ${range.from} to ${range.to} for nodeId "${range.nodeId}"`
-//     );
-//     try {
-//       tr.deleteRange(range.from, range.to);
-//     } catch (e) {
-//       console.error(
-//         `[AcceptAll] Error during tr.deleteRange for nodeId "${range.nodeId}":`,
-//         e
-//       );
-//       console.error(
-//         "[AcceptAll] State at error: tr.doc size:",
-//         tr.doc.content.size,
-//         "Range:",
-//         range
-//       );
-//     }
-//   });
-
-//   console.log(
-//     `[AcceptAll] Transaction docChanged after deletions: ${tr.docChanged}`
-//   );
-//   return tr;
-// };

@@ -4,6 +4,7 @@ import { handleSuggestionBatch, suggestionHighlightPluginKey } from "@/plugins/s
 import { suggestionNavigatorPluginKey } from "@/plugins/suggestion-navigator-plugin";
 import { useEditor } from "@/providers/editor-context-provider";
 import { EditorView } from "prosemirror-view";
+import "./accept-rejet-dialog.css"
 
 
 interface AcceptAllRejectAllDialogProps {
@@ -117,14 +118,23 @@ export const AcceptAllRejectAllDialog = ({
 
   return (
     <div
-      className="flex justify-center px-0.5 py-0.5 bg-background rounded-lg items-center gap-2 z-10 pointer-events-none shadow-[0px_0_400px_10px_rgba(0,0,0,0.25)] shadow-olive-green border-[1px] border-palette-gold-light"
+      className="relative flex justify-center px-0.5 py-0.5 bg-background rounded-lg items-center gap-2 z-10 pointer-events-none border-[1px] border-palette-gold-light"
       style={{
         position: "fixed",
         left: `${position.left}px`,
         bottom: `${position.bottom}px`,
         transform: "translateX(-50%)",
+        boxShadow: `
+        0 0 40px 20px rgba(217, 197, 137, 0.2),
+        0 0 60px 40px rgba(217, 153, 130, 0.4),
+        0 0 80px 60px rgba(217, 197, 137, 0.7),
+        0 20px 80px rgba(0, 0, 0, 0.6)
+      `,
+      // Optional: Add a subtle backdrop blur
+      backdropFilter: 'blur(2px)',
       }}
     >
+
       <div className="w-fit flex justify-center items-center gap-1 pointer-events-auto">
         <Button
           onClick={onAcceptAll}

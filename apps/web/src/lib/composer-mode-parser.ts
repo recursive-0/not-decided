@@ -374,7 +374,7 @@ export class ComposerModeParser {
       console.log("Current tag stack is: ", this.tagStack)
       console.log("Inside content mode", closingTag)
       if (topTagInStack === closingTag) {
-        this.callbacks.onCloseTag(closingTag as Tags);
+        this.callbacks.onCloseTag(topTagInStack as Tags);
         this.tagStack.pop();
       } else {
         this.callbacks.onTextContent(this.textBuffer);
