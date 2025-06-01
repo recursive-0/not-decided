@@ -11,7 +11,7 @@ CREATE INDEX `user_doc_index` ON `Documents` (`user_id`,`created_at`);--> statem
 CREATE TABLE `Messages` (
 	`message_id` text PRIMARY KEY NOT NULL,
 	`document_id` text NOT NULL,
-	`timestamp` integer DEFAULT (strftime('%s', 'now') * 1000) NOT NULL,
+	`timestamp` integer NOT NULL,
 	`mode` text NOT NULL,
 	`role` text NOT NULL,
 	`content` text NOT NULL,
@@ -22,6 +22,8 @@ CREATE INDEX `idx_messages_doc_timestamp` ON `Messages` (`document_id`,`timestam
 CREATE TABLE `Users` (
 	`user_id` text PRIMARY KEY NOT NULL,
 	`email` text NOT NULL,
+	`name` text DEFAULT '' NOT NULL,
+	`picture` text,
 	`created_at` integer NOT NULL
 );
 --> statement-breakpoint

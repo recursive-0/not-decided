@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "6becf1ce-3bcc-47a9-b21b-9a86608ad792",
+  "id": "872564b9-1014-4fad-a138-014c397a7081",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "Documents": {
@@ -95,8 +95,7 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false,
-          "default": "(strftime('%s', 'now') * 1000)"
+          "autoincrement": false
         },
         "mode": {
           "name": "mode",
@@ -164,6 +163,21 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "''"
+        },
+        "picture": {
+          "name": "picture",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
           "autoincrement": false
         },
         "created_at": {

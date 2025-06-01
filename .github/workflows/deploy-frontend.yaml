@@ -11,25 +11,27 @@ jobs:
     deploy:
         runs-on: ubuntu-latest
         steps:
-
-            - run: echo "Checking out the code yo!"
-
             - name: Checkout code
               uses: actions/checkout@v4
 
-            - run: echo "Installing BUN yo!"
+            - name: Install Node.js
+              uses: actions/setup-node@v4
+              with:
+                node-version: '20'
 
-            - name: Install bun
-              uses: oven-sh/setup-bun@v1
+            - name: Install pnpm
+              uses: pnpm/action-setup@v2
+              with:
+                version: 8
 
-            - name: Install all the deps yo!
-              run: bun install
+            - name: Install dependencies
+              run: pnpm install
 
             - name: Build the project
               working-directory: ./apps/web
               env:
                 VITE_API_BASE_URL: ${{ vars.DEV_WORKER_URL }}
-              run: bun run build
+              run: pnpm run build
 
             - name: Deploy to cloudflare pages
               uses: cloudflare/pages-action@v1

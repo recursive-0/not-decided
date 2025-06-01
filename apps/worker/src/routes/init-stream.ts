@@ -2,6 +2,7 @@ import { z } from "zod"
 import { Env } from "../../worker-configuration";
 import { drizzle } from "drizzle-orm/d1";
 import { messages } from "../db/schema";
+import { DB } from "../db";
 
 
 
@@ -21,7 +22,7 @@ const initializeStreamBodySchema = z.object({
 })
 
 
-export async function initializeStream(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+export async function initializeStream(request: Request, env: Env, ctx: ExecutionContext, db: DB): Promise<Response> {
 
     console.log("ENVs re: ", env)
     let rawBody: InitializeStreamBodyType | null;

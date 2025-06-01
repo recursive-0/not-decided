@@ -4,9 +4,10 @@ import { handleDeepseekStream } from '../ai-models/deepseek';
 import { handleGeminiStream } from '../ai-models/gemini';
 import { handleGroqStream } from '../ai-models/groq';
 import { handleOpenAIStream, streamWithOpenAI } from '../ai-models/open-ai';
+import { DB } from '../db';
 import { simpleStaticStream } from '../lib/simple-static-stream';
 
-export async function generateStream(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+export async function generateStream(req: Request, env: Env, ctx: ExecutionContext, db: DB): Promise<Response> {
 	const url = new URL(req.url);
 	const streamId = url.searchParams.get('streamID');
 	if (!streamId) {

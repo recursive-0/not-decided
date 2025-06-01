@@ -4,6 +4,8 @@ import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 export const users = sqliteTable('Users', {
 	userId: text('user_id').primaryKey(),
 	email: text('email').notNull().unique(),
+	name: text('name').notNull().default(""),
+	picture: text('picture'),
 	createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
 });
 
@@ -40,5 +42,4 @@ export const messages = sqliteTable(
 		docTimeIdx: index('idx_messages_doc_timestamp').on(table.documentId, table.timestamp),
 	})
 );
-
 

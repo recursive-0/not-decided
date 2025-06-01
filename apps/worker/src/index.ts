@@ -1,11 +1,13 @@
 import { Env } from '../worker-configuration';
+import { createDB, DB } from './db';
 import { generateStream } from './routes/generate-stream';
+import { googleSignIn } from './routes/google-login';
 import { initializeStream } from './routes/init-stream';
 
 const ALLOWED_ORIGINS = ['https://wrisor-dev.pages.dev', 'http://localhost:5173'];
 
-function cors(handler: (req: Request, env: Env, ctx: ExecutionContext) => Promise<Response>) {
-	return async (req: Request, env: Env, ctx: ExecutionContext) => {
+function cors(handler: (req: Request, env: Env, ctx: ExecutionContext, db: DB) => Promise<Response>) {
+	return async (req: Request, env: Env, ctx: ExecutionContext, db: DB) => {
 		const requestOrigin = req.headers.get('Origin');
 		let responseOrigin = '';
 
@@ -35,7 +37,7 @@ function cors(handler: (req: Request, env: Env, ctx: ExecutionContext) => Promis
 			}
 		}
 
-		const response = await handler(req, env, ctx);
+		const response = await handler(req, env, ctx, db);
 
 		const finalHeaders = new Headers(response.headers);
 
@@ -59,28 +61,33 @@ function cors(handler: (req: Request, env: Env, ctx: ExecutionContext) => Promis
 
 const initializeStreamWithCors = cors(initializeStream);
 const generateStreamWithCors = cors(generateStream);
+const googleSignInWithCors = cors(googleSignIn)
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		const url = new URL(request.url);
 		const pathname = url.pathname;
+		const db = createDB(env)
 		console.log(`Request: ${request.method} ${pathname}`);
 
 		switch (pathname) {
 			case '/':
-				return cors(async () => new Response('Hello World!'))(request, env, ctx);
+				return cors(async () => new Response('Hello World!'))(request, env, ctx, db);
 
 			case '/favicon.ico':
 				return new Response(null, { status: 204 });
 
 			case '/api/init/stream':
-				return initializeStreamWithCors(request, env, ctx);
+				return initializeStreamWithCors(request, env, ctx, db);
 
 			case '/api/generate/stream':
-				return generateStreamWithCors(request, env, ctx);
+				return generateStreamWithCors(request, env, ctx, db);
+
+			case '/api/auth/google':
+				return googleSignInWithCors(request, env, ctx, db)
 
 			default:
-				return cors(async () => new Response('Not Found', { status: 404 }))(request, env, ctx);
+				return cors(async () => new Response('Not Found', { status: 404 }))(request, env, ctx, db);
 		}
 	},
 } satisfies ExportedHandler<Env>;
