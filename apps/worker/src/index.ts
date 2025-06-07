@@ -1,7 +1,9 @@
 import { Env } from '../worker-configuration';
 import { createDB, DB } from './db';
+import { createDocument } from './db/queries/document-operations';
 import { generateStream } from './routes/generate-stream';
 import { googleSignIn } from './routes/google-login';
+import { initDocument } from './routes/init-document';
 import { initializeStream } from './routes/init-stream';
 
 const ALLOWED_ORIGINS = ['https://wrisor-dev.pages.dev', 'http://localhost:5173'];
@@ -61,7 +63,8 @@ function cors(handler: (req: Request, env: Env, ctx: ExecutionContext, db: DB) =
 
 const initializeStreamWithCors = cors(initializeStream);
 const generateStreamWithCors = cors(generateStream);
-const googleSignInWithCors = cors(googleSignIn)
+const googleSignInWithCors = cors(googleSignIn);
+const createDocumentWithCors = cors(initDocument);
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -85,6 +88,9 @@ export default {
 
 			case '/api/auth/google':
 				return googleSignInWithCors(request, env, ctx, db)
+
+			case '/api/documents/create':
+				return createDocumentWithCors(request, env, ctx, db)
 
 			default:
 				return cors(async () => new Response('Not Found', { status: 404 }))(request, env, ctx, db);

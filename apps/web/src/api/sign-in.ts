@@ -20,8 +20,9 @@ export const signIn = async (props: SignInProps): Promise<SignInSuccessResponseS
 interface GoogleUserType {
 	email: string;
 	name: string;
-	picture: string;
-	googleId: string;
+	picture: string | null;
+	userId: string;
+    createdAt: Date;
 }
 
 interface SignInSuccessResponseSchema {

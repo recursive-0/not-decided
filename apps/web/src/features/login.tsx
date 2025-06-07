@@ -1,5 +1,7 @@
+import { createDocument } from "@/api/create-document";
 import { signIn } from "@/api/sign-in";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/custom-toasts";
 import { useUserStore } from "@/store/user";
 import { useGoogleLogin } from "@react-oauth/google";
 import { useMutation } from "@tanstack/react-query";
@@ -8,17 +10,39 @@ import { useNavigate } from "@tanstack/react-router";
 export const Login = () => {
   const { setIsAuthenticated, setUserDetails} = useUserStore()
   const navigate = useNavigate()
+
+  const createDocumentMutation = useMutation({
+    mutationFn: (userId: string) => createDocument({ userId }),
+    onSuccess(data) {
+      console.log("data after successfull document creation is: ", data);
+      navigate({
+        to: "/dashboard/document/$documentId",
+        params: {documentId: data.documentId}
+      })
+      toast({
+        title: "Success",
+        description: "Document created successfully",
+        variant: "success"
+      })
+    },
+    onError(error) {
+      console.log("error while creating document is: ", error);
+      toast({
+        title: "Error",
+        description: "Error while creating document",
+        variant: "error"
+      })
+    }
+  })
+
   const signInMutation = useMutation({
     mutationFn: (accessToken: string) => signIn({ accessToken }),
     onSuccess(data) {
       console.log("data after successfull login is: ", data.userDetails);
       setIsAuthenticated(true)
       setUserDetails(data.userDetails)
-      const docId = crypto.randomUUID()
-      navigate({
-        to: "/dashboard/document/$documentId",
-        params: {documentId: docId}
-      })
+
+      createDocumentMutation.mutate(data.userDetails.userId)
     },
   });
 

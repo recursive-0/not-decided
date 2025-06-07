@@ -52,21 +52,16 @@ export async function googleSignIn(request: Request, env: Env, ctx: ExecutionCon
 
 		console.log('Google user is: ', googleUser);
 
-        const userData = {
-            email: googleUser.email,
-			name: googleUser.name, 
-			picture: googleUser.picture, 
-            googleId: googleUser.googleId
-        }
 
         try{
-            await upsertUser(db, googleUser)
+            const user = await upsertUser(db, googleUser)
+            return Response.json({ userDetails: user }, { status: 200 });
         } catch(e){
             console.log("Error while upserting user: ", e)
             return Response.json({error: "Failed to upsert user in DB"})
         }
 
-		return Response.json({ userDetails: userData }, { status: 200 });
+
 	} catch (e) {
 		return new Response('Server Error', { status: 500 });
 	}

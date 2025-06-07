@@ -40,3 +40,28 @@ export async function upsertUser(db: DB, userDetails: GoogleUserType) {
     throw new Error('Failed to upsert user')
   }
 }
+
+
+export async function getUserById(db: DB, userId: string) {
+  try {
+    const user = await db
+      .select()
+      .from(users)
+      .where(eq(users.userId, userId))
+      .get()
+    
+    return user || null
+  } catch (error) {
+    console.error('Failed to get user by ID:', error)
+    throw new Error('Database error while fetching user')
+  }
+}
+
+export async function userExists(db: DB, userId: string): Promise<boolean> {
+  try {
+    const user = await getUserById(db, userId)
+    return user !== null
+  } catch (error) {
+    return false
+  }
+}

@@ -3,8 +3,9 @@ import { create } from "zustand";
 interface UserDetails {
   email: string;
   name: string;
-  googleId: string;
-  picture: string;
+  userId: string;
+  picture: string | null;
+  createdAt: Date;
 }
 
 interface UseUserStore {
@@ -20,8 +21,9 @@ export const useUserStore = create<UseUserStore>((set) => ({
   userDetails: {
     email: "",
     name: "",
-    googleId: "",
-    picture: "",
+    userId: "",
+    picture: null,
+    createdAt: new Date(),
   },
   setIsAuthenticated: (flag) => set({ isAuthenticated: flag }),
   setUserDetails(details) {
@@ -31,8 +33,9 @@ export const useUserStore = create<UseUserStore>((set) => ({
       return set({userDetails: {
         email: "",
         name: "",
-        googleId: "",
-        picture: ""
+        userId: "",
+        picture: null,
+        createdAt: new Date(),
       }})
   },
 }));
