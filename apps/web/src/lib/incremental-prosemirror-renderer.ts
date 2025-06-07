@@ -1,10 +1,10 @@
+import { suggestionHighlightPluginKey } from "@/plugins/suggestion-highlight-plugin";
+import { Tags } from "@/types/editor";
 import { MarkType, Node, type Mark, type Schema } from "prosemirror-model";
 import { TextSelection, type Transaction } from "prosemirror-state";
 import type { EditorView } from "prosemirror-view";
+import { v4 as uuidv4 } from "uuid";
 import type { CodeBlockNodeType } from "./composer-mode-parser";
-import { v4 as uuidv4 } from "uuid"
-import { suggestionHighlightPluginKey } from "@/plugins/suggestion-highlight-plugin";
-import { Tags } from "@/types/editor";
 
 
 interface NodeContextType {
@@ -17,7 +17,7 @@ interface NodeContextType {
 
 
 interface MarkContext {
-  type: Tags.B | Tags.I | Tags.ICODE;
+  type: Tags.b | Tags.i | Tags.icode | Tags.strong | Tags.em
   startPosition: number;
 }
 
@@ -45,7 +45,7 @@ export class IncrementalProsemirrorRenderer {
   public cleanupAfterStreamStop() {
     if (
       this.nodeStack.length > 0 &&
-      this.nodeStack[this.nodeStack.length - 1].type === Tags.ADD
+      this.nodeStack[this.nodeStack.length - 1].type === Tags.add
     ) {
       this.nodeStack = [];
       this.activeMarks = [];
@@ -65,7 +65,7 @@ export class IncrementalProsemirrorRenderer {
   }
 
   private isMarkTag(tag: Tags): boolean {
-    return tag === Tags.B || tag === Tags.I || tag === Tags.ICODE;
+    return tag === Tags.b || tag === Tags.i || tag === Tags.icode || tag === Tags.strong || tag === Tags.em;
   }
 
   createListNode(type: "ul" | "ol") {
@@ -88,15 +88,15 @@ export class IncrementalProsemirrorRenderer {
     if (this.isMarkTag(tag)) {
       const pos = this.getInsertPosition();
       this.activeMarks.push({
-        type: tag as Tags.B | Tags.I | Tags.ICODE,
+        type: tag as Tags.b | Tags.i | Tags.icode | Tags.strong | Tags.em,
         startPosition: pos,
       });
     } else {
 
-      if(tag === Tags.CONTENT){
+      if(tag === Tags.content){
         const insertPos = this.getInsertPosition()
         this.nodeStack.push({
-          type: Tags.CONTENT,
+          type: Tags.content,
           startPosition: insertPos,
           contentPosition: insertPos
         })
@@ -128,22 +128,22 @@ export class IncrementalProsemirrorRenderer {
 
     const lastNode = this.nodeStack[this.nodeStack.length - 1];
 
-    if (tag === Tags.QUOTE) {
+    if (tag === Tags.quote) {
       this.closeQuote();
       return;
     }
 
-    if (tag === Tags.UL) {
+    if (tag === Tags.ul) {
       this.closeUnorderedList();
       return;
     }
 
-    if (tag === Tags.OL) {
+    if (tag === Tags.ol) {
       this.closeOrderedList();
       return;
     }
 
-    if (tag === Tags.LI) {
+    if (tag === Tags.li) {
       this.closeListItem();
       return;
     }
@@ -172,7 +172,7 @@ export class IncrementalProsemirrorRenderer {
       // tr.insertText(textToInsert, insertPos)
       this.insertTextInEditor(textToInsert, insertPos, tr);
     } else {
-      if (this.nodeStack[this.nodeStack.length - 1].type !== Tags.CODE) {
+      if (this.nodeStack[this.nodeStack.length - 1].type !== Tags.code) {
         textToInsert = textToInsert.replace(/\n+/g, "");
       }
       if (textToInsert.length === 0) return;
@@ -190,15 +190,15 @@ export class IncrementalProsemirrorRenderer {
 
       const marksToAdd: Mark[] = [];
       if(!this.schema) return
-      if (currentRendererActiveMarkTypes.has(Tags.B)) {
+      if (currentRendererActiveMarkTypes.has(Tags.b) || currentRendererActiveMarkTypes.has(Tags.strong)) {
           marksToAdd.push(this.schema.marks.strong.create());
       }
 
-      if (currentRendererActiveMarkTypes.has(Tags.I)) {
+      if (currentRendererActiveMarkTypes.has(Tags.i) || currentRendererActiveMarkTypes.has(Tags.em)) {
          marksToAdd.push(this.schema.marks.em.create());
       }
 
-      if (currentRendererActiveMarkTypes.has(Tags.ICODE)) {
+      if (currentRendererActiveMarkTypes.has(Tags.icode)) {
         try {
           console.log("WILL RENDER INLINE CODE");
           
@@ -254,7 +254,7 @@ export class IncrementalProsemirrorRenderer {
     this.editorView!.dispatch(tr);
 
     this.nodeStack.push({
-      type: Tags.CODE,
+      type: Tags.code,
       startPosition: pos,
       contentPosition: pos + content.length + 1,
     });
@@ -264,7 +264,7 @@ export class IncrementalProsemirrorRenderer {
     const topNode = this.nodeStack[this.nodeStack.length - 1];
     const parentNode = this.nodeStack[this.nodeStack.length - 2];
 
-    if (topNode.type === Tags.LI) {
+    if (topNode.type === Tags.li) {
       // simple list
       const currentPos = topNode.contentPosition;
       const insertPos = currentPos + 1;
@@ -274,7 +274,7 @@ export class IncrementalProsemirrorRenderer {
       return;
     }
 
-    if (topNode.type === Tags.P) {
+    if (topNode.type === Tags.p) {
       // complex nested listing
       const currentPos = topNode.contentPosition;
       const insertPos = currentPos + 2;
@@ -292,7 +292,7 @@ export class IncrementalProsemirrorRenderer {
   closeUnorderedList() {
     const topNode = this.nodeStack[this.nodeStack.length - 1];
 
-    if (topNode.type === Tags.UL) {
+    if (topNode.type === Tags.ul) {
       const currentPos = topNode.contentPosition;
       const insertPos = currentPos + 1;
 
@@ -303,14 +303,14 @@ export class IncrementalProsemirrorRenderer {
         containerNode.contentPosition = insertPos;
       }
     } else {
-      console.warn("TAG MISMATCH: ", Tags.UL);
+      console.warn("TAG MISMATCH: ", Tags.ul);
     }
   }
 
   closeOrderedList() {
     const topNode = this.nodeStack[this.nodeStack.length - 1];
 
-    if (topNode.type === Tags.OL) {
+    if (topNode.type === Tags.ol) {
       const currentPos = topNode.contentPosition;
       const insertPos = currentPos + 1;
 
@@ -321,7 +321,7 @@ export class IncrementalProsemirrorRenderer {
         containerNode.contentPosition = insertPos;
       }
     } else {
-      console.warn("TAG MISMATCH: ", Tags.OL);
+      console.warn("TAG MISMATCH: ", Tags.ol);
     }
   }
 
@@ -329,14 +329,14 @@ export class IncrementalProsemirrorRenderer {
     const topNode = this.nodeStack[this.nodeStack.length - 1];
     const insertPos = topNode.contentPosition + 1;
 
-    if (topNode.type === Tags.QUOTE) {
+    if (topNode.type === Tags.quote) {
       this.nodeStack.pop();
       if (this.nodeStack.length > 0) {
         const parentNode = this.nodeStack[this.nodeStack.length - 1];
         parentNode.contentPosition = insertPos + 1
       }
     } else {
-      console.warn("TAG MISMATCH: ", Tags.OL);
+      console.warn("TAG MISMATCH: ", Tags.ol);
     }
   }
 
@@ -357,27 +357,27 @@ export class IncrementalProsemirrorRenderer {
     if(!this.schema) return
 
     switch (tag) {
-      case Tags.H1:
+      case Tags.h1:
         return this.schema.nodes.heading.create({ level: 1, nodeId: uuidv4() });
-      case Tags.H2:
+      case Tags.h2:
         return this.schema.nodes.heading.create({ level: 2, nodeId: uuidv4() });
-      case Tags.H3:
+      case Tags.h3:
         return this.schema.nodes.heading.create({ level: 3, nodeId: uuidv4() });
-      case Tags.P:
+      case Tags.p:
         return this.schema.nodes.paragraph.create({nodeId: uuidv4()});
-      case Tags.UL:
+      case Tags.ul:
         return this.createListNode("ul");
-      case Tags.OL:
+      case Tags.ol:
         return this.createListNode("ol");
-      case Tags.LI:
+      case Tags.li:
         return this.createListNodeItem();
-      case Tags.CODE:
+      case Tags.code:
         return this.schema.nodes.code_block.create({ language: "bash", nodeId: uuidv4() });
-      case Tags.QUOTE:
+      case Tags.quote:
         return this.createQuoteNode()
-      case Tags.CHECKBOX:
+      case Tags.checkbox:
         return this.schema.nodes.checkbox_item.create({nodeId: uuidv4()});
-      case Tags.ADD:
+      case Tags.add:
         return this.generateAdditionSuggestionContainer();
       default:
         break;
@@ -396,32 +396,32 @@ export class IncrementalProsemirrorRenderer {
   }
 
   insertAndUpdateNodeContext(node: Node, tag: Tags) {
-    if (tag === Tags.UL) {
+    if (tag === Tags.ul) {
       this.handleUnorderedListInsertion(node);
       return;
     }
 
-    if (tag === Tags.OL) {
+    if (tag === Tags.ol) {
       this.handleOrderedListInsertion(node);
       return;
     }
 
-    if (tag === Tags.LI) {
+    if (tag === Tags.li) {
       this.handleListItemInsertion(node);
       return;
     }
 
-    if (tag === Tags.QUOTE) {
+    if (tag === Tags.quote) {
       this.handleQuoteInsertion(node);
       return;
     }
 
-    if (tag === Tags.CHECKBOX) {
+    if (tag === Tags.checkbox) {
       this.handleCheckboxItemInsertion(node);
       return;
     }
 
-    if (tag === Tags.ICODE) {
+    if (tag === Tags.icode) {
       this.handleInlineCodeInsertion(node);
       return;
     }
@@ -444,7 +444,7 @@ export class IncrementalProsemirrorRenderer {
   handleUnorderedListInsertion(node: Node) {
     if (this.nodeStack.length > 0) {
       const topNode = this.nodeStack[this.nodeStack.length - 1];
-      const invalidParents = [Tags.P, Tags.CODE, Tags.ICODE];
+      const invalidParents = [Tags.p, Tags.code, Tags.icode];
 
       if(!this.editorView) return
       if (invalidParents.includes(topNode.type)) {
@@ -458,7 +458,7 @@ export class IncrementalProsemirrorRenderer {
         this.editorView.dispatch(tr);
 
         this.nodeStack.push({
-          type: Tags.UL,
+          type: Tags.ul,
           startPosition: startPos,
           contentPosition: insertPos,
         });
@@ -470,7 +470,7 @@ export class IncrementalProsemirrorRenderer {
         this.editorView.dispatch(tr);
 
         this.nodeStack.push({
-          type: Tags.UL,
+          type: Tags.ul,
           startPosition: startPos,
           contentPosition: startPos + 1,
         });
@@ -484,7 +484,7 @@ export class IncrementalProsemirrorRenderer {
       this.editorView!.dispatch(tr);
 
       this.nodeStack.push({
-        type: Tags.UL,
+        type: Tags.ul,
         startPosition: insertPos,
         contentPosition: newCursorPos,
       });
@@ -497,7 +497,7 @@ export class IncrementalProsemirrorRenderer {
 
     if (this.nodeStack.length > 0) {
       const topNode = this.nodeStack[this.nodeStack.length - 1];
-      const invalidParents = [Tags.P, Tags.CODE, Tags.ICODE];
+      const invalidParents = [Tags.p, Tags.code, Tags.icode];
       if (invalidParents.includes(topNode.type)) {
         this.nodeStack.pop(); // pop the P node
         const currentPos = topNode.contentPosition;
@@ -509,7 +509,7 @@ export class IncrementalProsemirrorRenderer {
         this.editorView.dispatch(tr);
 
         this.nodeStack.push({
-          type: Tags.UL,
+          type: Tags.ul,
           startPosition: startPos,
           contentPosition: insertPos,
         });
@@ -521,7 +521,7 @@ export class IncrementalProsemirrorRenderer {
         this.editorView.dispatch(tr);
 
         this.nodeStack.push({
-          type: Tags.UL,
+          type: Tags.ul,
           startPosition: startPos,
           contentPosition: startPos + 1,
         });
@@ -535,7 +535,7 @@ export class IncrementalProsemirrorRenderer {
       this.editorView.dispatch(tr);
 
       this.nodeStack.push({
-        type: Tags.UL,
+        type: Tags.ul,
         startPosition: insertPos,
         contentPosition: newCursorPos,
       });
@@ -557,13 +557,13 @@ export class IncrementalProsemirrorRenderer {
     this.editorView.dispatch(tr);
 
     this.nodeStack.push({
-      type: Tags.LI,
+      type: Tags.li,
       startPosition: insertPos,
       contentPosition: insertPos + 1,
     });
 
     this.nodeStack.push({
-      type: Tags.P,
+      type: Tags.p,
       startPosition: paragraphStartPos,
       contentPosition: afterParagraphPos,
     });
@@ -580,7 +580,7 @@ export class IncrementalProsemirrorRenderer {
     this.editorView.dispatch(tr);
 
     this.nodeStack.push({
-      type: Tags.QUOTE,
+      type: Tags.quote,
       startPosition: insertPos,
       contentPosition: insertPos + 2,
     });
@@ -597,7 +597,7 @@ export class IncrementalProsemirrorRenderer {
     this.editorView.dispatch(tr);
 
     this.nodeStack.push({
-      type: Tags.CHECKBOX,
+      type: Tags.checkbox,
       startPosition: insertPos,
       contentPosition: cursorPos,
     });
@@ -613,7 +613,7 @@ export class IncrementalProsemirrorRenderer {
     this.editorView.dispatch(tr);
 
     this.nodeStack.push({
-      type: Tags.ICODE,
+      type: Tags.icode,
       startPosition: insertPos,
       contentPosition: insertPos + 1,
     });
@@ -631,7 +631,7 @@ export class IncrementalProsemirrorRenderer {
     }
 
     tr.insert(insertPos, node);
-    if(node.type.name === "list_item" && (topNode.type === Tags.UL || topNode.type === Tags.OL)) return
+    if(node.type.name === "list_item" && (topNode.type === Tags.ul || topNode.type === Tags.ol)) return
     const action = {
       type: "normal",
       nodeId: null

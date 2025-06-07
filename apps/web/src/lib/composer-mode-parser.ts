@@ -28,58 +28,55 @@ interface ParserCallbacks {
 }
 
 const all_tags = [
-  "<H1>",
-  "<H2>",
-  "<H3>",
-  "<B>",
-  "<I>",
-  "<P>",
-  "<CODE>",
-  "<LANG>",
-  "<VAL>",
-  "</VAL>",
-  "<CONTENT>",
-  "<ICODE>",
-  "<UL>",
-  "<LI>",
-  "<QUOTE>",
-  "<OL>",
-  "<CHECKBOX>",
-  "<THINKING>",
-  "</THINKING>",
-  "<OPERATION>",
-  "</OPERATION>",
+  "<h1>",
+  "<h2>",
+  "<h3>",
+  "<b>",
+  "<em>",
+  "<strong>",
+  "<p>",
+  "<code>",
+  "<content>",
+  "<icode>",
+  "<ul>",
+  "<li>",
+  "<quote>",
+  "<ol>",
+  "<checkbox>",
+  "<thinking>",
+  "</thinking>",
+  "<operation>",
+  "</operation>",
 ];
 
 const ALLOWED_TAGS = [
-  "H1",
-  "H2",
-  "H3",
-  "P",
-  "B",
-  "I",
-  "UL",
-  "OL",
-  "LI",
-  "CODE",
-  "LANG",
-  "VAL",
-"CONTENT",
-  "ICODE",
-  "QUOTE",
-  "ADD",
-  "CHECKBOX",
-  "NODE",
-  "DELETE",
-  "OPERATION",
-  "THINKING",
+  "h1",
+  "h2", 
+  "h3",
+  "p",
+  "b",
+  "em",
+  "strong",
+  "ul",
+  "ol",
+  "li",
+  "code",
+  "content",
+  "icode",
+  "quote",
+  "add",
+  "checkbox",
+  "node",
+  "delete",
+  "operation",
+  "thinking",
 ];
 
 export enum CurrentActionType {
-  THINKING = "THINKING",
-  DELETING = "DELETING",
-  ADDING = "ADDING",
-  NORMAL = "NORMAL",
+  thinking = "thinking",
+  deleting = "deleting", 
+  adding = "adding",
+  normal = "normal",
 }
 
 const isValidTag = (tag: string) => {
@@ -96,7 +93,7 @@ export type CodeBlockNodeType = {
 };
 
 export class ComposerModeParser {
-  private mode: MODE = "NORMAL";
+  private mode: MODE = Tags.normal;
   private state: ParserState = ParserState.normal;
   private textBuffer: string = "";
   private currentTagName: string = "";
@@ -121,13 +118,13 @@ export class ComposerModeParser {
     console.log("CURRNT text buffer is: ", this.textBuffer);
 
     if (this.state === ParserState.normal) {
-      if (this.mode === Tags.THINKING) {
+      if (this.mode === Tags.thinking) {
         this.callbacks.sendTokensCallback(this.textBuffer);
-      } else if (this.mode === Tags.OPERATION) {
+      } else if (this.mode === Tags.operation) {
         this.operationDataJsonString += this.textBuffer;
-      } else if (this.mode === Tags.CONTENT) {
+      } else if (this.mode === Tags.content) {
         this.callbacks.onTextContent(this.textBuffer);
-      } else if (this.mode === Tags.CODE) {
+      } else if (this.mode === Tags.code) {
         const topTag = this.tagStack[this.tagStack.length - 1];
         if (topTag === "LANG") {
           this.codeBlockNode.lang += this.textBuffer;
@@ -153,7 +150,7 @@ export class ComposerModeParser {
   }
 
   private reset() {
-    this.mode = "NORMAL";
+    this.mode = Tags.normal;
     this.state = ParserState.normal;
     this.clearTextBuffer();
     this.currentTagName = "";
@@ -192,7 +189,7 @@ export class ComposerModeParser {
   }
 
   private openTag() {
-    const tagName = this.currentTagName.toUpperCase();
+    const tagName = this.currentTagName.toLowerCase()
     // const originalTagText = `[${this.currentTagName}]`;
     console.log(`Parser: Attempting to open tag: "${tagName}"`);
 
@@ -203,9 +200,9 @@ export class ComposerModeParser {
       return;
     }
 
-    if (tagName === Tags.THINKING) {
-      this.mode = Tags.THINKING;
-      this.callbacks.setCurrentActionState(CurrentActionType.THINKING);
+    if (tagName === Tags.thinking) {
+      this.mode = Tags.thinking;
+      this.callbacks.setCurrentActionState(CurrentActionType.thinking);
       this.tagStack.push(tagName);
       this.clearTextBuffer();
       this.state = ParserState.normal;
@@ -213,8 +210,8 @@ export class ComposerModeParser {
       return;
     }
 
-    if (tagName === Tags.OPERATION) {
-      this.mode = Tags.OPERATION;
+    if (tagName === Tags.operation) {
+      this.mode = Tags.operation;
       this.resetOperationData();
       this.tagStack.push(tagName);
       this.clearTextBuffer();
@@ -223,10 +220,9 @@ export class ComposerModeParser {
       return;
     }
 
-    if (tagName === Tags.CONTENT) {
-      this.mode = Tags.CONTENT;
-      this.callbacks.setCurrentActionState(CurrentActionType.ADDING);
-      this.callbacks.onOpenTag(tagName)
+    if (tagName === Tags.content) {
+      this.mode = Tags.content;
+      this.callbacks.setCurrentActionState(CurrentActionType.adding);
       this.tagStack.push(tagName);
       this.clearTextBuffer();
       this.state = ParserState.normal;
@@ -234,18 +230,18 @@ export class ComposerModeParser {
       return;
     }
 
-    if (tagName === Tags.CODE) {
+    if (tagName === Tags.code) {
       const topTag = this.tagStack[this.tagStack.length - 1];
       console.log("FOUND CODE opening tag");
       console.log("TOP TAG IS: ", topTag);
-      if (topTag === Tags.THINKING) {
+      if (topTag === Tags.thinking) {
         console.log(
           "Found CODE tag in thought mode so emitting text for thought mode"
         );
         this.callbacks.sendTokensCallback(this.textBuffer);
         return;
       } else {
-        this.mode = Tags.CODE;
+        this.mode = Tags.code;
         this.tagStack.push(tagName);
         this.clearTextBuffer();
         this.resetCodeBlockNode();
@@ -255,12 +251,12 @@ export class ComposerModeParser {
       }
     }
 
-    if (this.mode === Tags.THINKING) {
+    if (this.mode === Tags.thinking) {
       this.callbacks.sendTokensCallback(this.textBuffer);
-    } else if (this.mode === Tags.CONTENT) {
+    } else if (this.mode === Tags.content) {
       this.callbacks.onOpenTag(tagName as Tags);
       this.tagStack.push(tagName);
-    } else if (this.mode === Tags.CODE) {
+    } else if (this.mode === Tags.code) {
       this.tagStack.push(tagName);
     } else {
       this.flushTextBuffer();
@@ -272,7 +268,7 @@ export class ComposerModeParser {
   }
 
   private closeTag() {
-    const closingTag = this.currentTagName.toUpperCase();
+    const closingTag = this.currentTagName.toLowerCase()
     // const originalTagText = `[/${this.currentTagName}]`;
     const topTagInStack = this.tagStack[this.tagStack.length - 1];
 
@@ -283,12 +279,12 @@ export class ComposerModeParser {
       return;
     }
 
-    if (closingTag === Tags.THINKING) {
+    if (closingTag === Tags.thinking) {
       const topTagInStack = this.tagStack[this.tagStack.length - 1];
       if (topTagInStack === closingTag) {
         this.tagStack.pop();
-        this.mode = "NORMAL";
-        this.callbacks.setCurrentActionState(CurrentActionType.NORMAL);
+        this.mode = Tags.normal;
+        this.callbacks.setCurrentActionState(CurrentActionType.normal);
         this.clearTextBuffer();
         this.currentTagName = "";
         this.state = ParserState.normal;
@@ -302,11 +298,11 @@ export class ComposerModeParser {
       return;
     }
 
-    if(closingTag === Tags.OPERATION){
+    if(closingTag === Tags.operation){
       const topTagInStack = this.tagStack[this.tagStack.length - 1];
       if (topTagInStack === closingTag) {
         this.tagStack.pop();
-        this.mode = "NORMAL";
+        this.mode = Tags.normal;
         const validOperationJson = JSON.parse(this.operationDataJsonString)
         if(validOperationJson){
           this.callbacks.onOperation(validOperationJson)
@@ -326,13 +322,13 @@ export class ComposerModeParser {
       return;
     }
 
-    if (closingTag === Tags.CONTENT) {
+    if (closingTag === Tags.content) {
       console.log("CLOSING TAG: ", closingTag)
       const topTagInStack = this.tagStack[this.tagStack.length - 1];
       if (topTagInStack === closingTag) {
         this.tagStack.pop();
-        this.mode = "NORMAL";
-        this.callbacks.setCurrentActionState(CurrentActionType.NORMAL);
+        this.mode = Tags.normal;
+        this.callbacks.setCurrentActionState(CurrentActionType.normal);
         this.callbacks.onCloseTag(closingTag)
         this.currentTagName = "";
         this.state = ParserState.normal;
@@ -347,15 +343,15 @@ export class ComposerModeParser {
       return;
     }
 
-    if (closingTag === Tags.CODE) {
+    if (closingTag === Tags.code) {
       const topTagInStack = this.tagStack[this.tagStack.length - 1];
       if (topTagInStack === closingTag) {
         this.tagStack.pop();
-        this.mode = Tags.CONTENT;
+        this.mode = Tags.content;
         this.clearTextBuffer();
         this.callbacks.sendCodeBlockNode(this.codeBlockNode)
         this.resetCodeBlockNode();
-        this.callbacks.onCloseTag(Tags.CODE);
+        this.callbacks.onCloseTag(Tags.code);
         this.currentTagName = "";
         this.state = ParserState.normal;
       } else {
@@ -368,9 +364,9 @@ export class ComposerModeParser {
       return;
     }
 
-    if (this.mode === Tags.THINKING) {
+    if (this.mode === Tags.thinking) {
       this.callbacks.sendTokensCallback(this.textBuffer);
-    } else if (this.mode === Tags.CONTENT) {
+    } else if (this.mode === Tags.content) {
       console.log("Current tag stack is: ", this.tagStack)
       console.log("Inside content mode", closingTag)
       if (topTagInStack === closingTag) {
@@ -379,16 +375,16 @@ export class ComposerModeParser {
       } else {
         this.callbacks.onTextContent(this.textBuffer);
       }
-    } else if (this.mode === Tags.CODE) {
-      if (closingTag === Tags.LANG && topTagInStack === Tags.LANG) {
-        // this.callbacks.sendCodeBlockNode(this.codeBlockNode)
-        this.tagStack.pop();
-      } else if (closingTag === Tags.VAL) {
-        this.tagStack.pop();
-      } else if (closingTag === Tags.CODE && topTagInStack === Tags.CODE) {
-        this.tagStack.pop();
-        this.mode = "NORMAL";
-      }
+    } else if (this.mode === Tags.code) {
+      // if (closingTag === Tags && topTagInStack === Tags.) {
+      //   // this.callbacks.sendCodeBlockNode(this.codeBlockNode)
+      //   this.tagStack.pop();
+      // } else if (closingTag === Tags.VAL) {
+      //   this.tagStack.pop();
+      // } else if (closingTag === Tags.CODE && topTagInStack === Tags.CODE) {
+      //   this.tagStack.pop();
+      //   this.mode = "NORMAL";
+      // }
     } else {
       this.flushTextBuffer();
     }
@@ -452,3 +448,6 @@ export class ComposerModeParser {
     this.reset();
   }
 }
+
+
+

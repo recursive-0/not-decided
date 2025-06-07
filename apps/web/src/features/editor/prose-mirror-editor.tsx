@@ -1,42 +1,37 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { EditorView } from "prosemirror-view";
-import { EditorState } from "prosemirror-state";
+import { CodeBlock } from "@/custom-nodes/code-block";
+import { persistentHighlightPlugin } from "@/custom-nodes/persistent-highlight-plugin";
+import { placeholderPlugin } from "@/custom-nodes/placeholder-plugin";
+import { ensureNodeIdPlugin } from "@/plugins/ensure-nodeid-plugin";
+import { suggestionHighlightPlugin } from "@/plugins/suggestion-highlight-plugin";
+import { suggestionNavigatorPlugin } from "@/plugins/suggestion-navigator-plugin";
+import { ensureTrailingParagraphPlugin } from "@/plugins/trailing-paragraph-plugin";
 import {
   extendedProseMirrorSchema,
   useEditor,
 } from "@/providers/editor-context-provider";
-import "./prosemirror-styles.css";
-import "./external-dialogs.css";
+import { useEditorStore } from "@/store/editor";
 import "@/styles/suggestion-navigation.css";
-import "../../styles/suggestion-highlight-plugin.css";
 import {
   baseKeymap,
   chainCommands,
   deleteSelection,
   joinTextblockBackward,
 } from "prosemirror-commands";
+import { history, redo, undo } from "prosemirror-history";
 import { keymap } from "prosemirror-keymap";
-import { splitListItem, liftListItem } from "prosemirror-schema-list";
-import { undo, redo, history } from "prosemirror-history";
-import { CodeBlock } from "@/custom-nodes/code-block";
-import { Textarea } from "@/components/ui/textarea";
-import { CornerDownLeft, X } from "lucide-react";
-import { AcceptAllRejectAllDialog } from "./accpet-all-reject-all-dialog";
-import { useChatHandler } from "@/hooks/use-chat-handler";
-import { useChatStore } from "@/store/chat";
-import { useEditorStore } from "@/store/editor";
-import { placeholderPlugin } from "@/custom-nodes/placeholder-plugin";
+import { liftListItem, splitListItem } from "prosemirror-schema-list";
+import { EditorState } from "prosemirror-state";
+import { EditorView } from "prosemirror-view";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   slashCommandTriggerKey,
   slashOpenCommandDialog,
 } from "../../editor-input-rules/slash-command-dialog";
-import { toast } from "@/components/ui/custom-toasts";
-import { persistentHighlightPlugin } from "@/custom-nodes/persistent-highlight-plugin";
-import { ensureNodeIdPlugin } from "@/plugins/ensure-nodeid-plugin";
-import { suggestionHighlightPlugin } from "@/plugins/suggestion-highlight-plugin";
-import { ensureTrailingParagraphPlugin } from "@/plugins/trailing-paragraph-plugin";
-import { suggestionNavigatorPlugin } from "@/plugins/suggestion-navigator-plugin";
-import { Button } from "@/components/ui/button";
+import "../../styles/suggestion-highlight-plugin.css";
+import { AcceptAllRejectAllDialog } from "./accpet-all-reject-all-dialog";
+import { CommandPalette } from "./command-palette";
+import "./external-dialogs.css";
+import "./prosemirror-styles.css";
 
 const debounce = (func, delay) => {
   let timer;
@@ -129,7 +124,6 @@ export const ProseMirrorEditor = () => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const { totalCurrentEdits } = useEditorStore();
   const isDialogClosingRef = useRef(false);
-  const [userSelectionFromEditor, setUserSelection] = useState<string>("");
   const [dialogPosition, setDialogPosition] = useState<{
     left: number;
     bottom: number;
@@ -287,16 +281,10 @@ export const ProseMirrorEditor = () => {
                 editorContainerPos
               );
 
-              const textContent = editorView.current.state.doc.textBetween(
-                fromPos,
-                toPos
-              );
-
               setSmartAiPopupPos({
                 x: left,
                 y: top,
               });
-              setUserSelection(textContent);
             }
           }, 100);
           isMouseDown = false;
@@ -335,137 +323,18 @@ export const ProseMirrorEditor = () => {
         ref={editorRef}
       />
       {smartAiPopupPos !== null && (
-        <FloatingCommandDialog
+        <CommandPalette
           clientX={smartAiPopupPos.x}
           clientY={smartAiPopupPos.y}
           onClose={() => handleDialogClose()}
-          selectedText={userSelectionFromEditor}
-          setUserSelection={setUserSelection}
         />
       )}
 
       {totalCurrentEdits > 1 && dialogPosition && (
         <AcceptAllRejectAllDialog position={dialogPosition} />
       )}
-
-      {}
     </div>
   );
 };
 
-const FloatingCommandDialog = ({
-  clientX,
-  clientY,
-  onClose,
-  selectedText,
-  setUserSelection,
-}) => {
-  const [input, setInput] = useState("");
-  const dialogRef = useRef<HTMLDivElement | null>(null);
-  const textareaRef = useRef(null);
-  const setChatMode = useChatStore((state) => state.setCurrentChatMode);
 
-  const { handleSelectionQuery, isStreaming } = useChatHandler();
-  const { totalCurrentEdits } = useEditorStore();
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dialogRef.current &&
-        event.target &&
-        event.target instanceof Node &&
-        !dialogRef.current.contains(event.target as Node)
-      ) {
-        onClose();
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [onClose]);
-
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      if (totalCurrentEdits > 0) {
-        toast({
-          title: "You have pending changes!",
-          description:
-            "Please apply or discard your changes before generating a new response.",
-          variant: "warning",
-        });
-        return;
-      }
-      if (input.trim() && !isStreaming) {
-        handleSubmit();
-      }
-    } else if (e.key === "Escape") {
-      onClose();
-    }
-  };
-
-  const handleSubmit = () => {
-    if (input.trim() && !isStreaming) {
-      setChatMode("COMPOSER");
-
-      handleSelectionQuery(selectedText, input.trim());
-      setInput("");
-      setUserSelection("");
-      onClose();
-    }
-  };
-
-  return (
-    <div
-      ref={dialogRef}
-      className="fixed z-50 bg-palette-beige-1 rounded-md shadow-lg border border-neutral-200"
-      style={{
-        left: `${clientX}px`,
-        top: `${clientY}px`,
-        width: "300px",
-      }}
-    >
-      <div className="p-2 flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <span className="text-black text-sm">Prompt</span>
-          <Button
-            onClick={onClose}
-            variant="default"
-            className="p-0 py-1 px-0 h-fit w-fit "
-          >
-            <X />
-          </Button>
-        </div>
-        <div className="relative flex flex-col items-start">
-          <Textarea
-            autoFocus
-            ref={textareaRef}
-            placeholder="Improve this section, rewrite this, etc."
-            className="flex-1 text-sm rounded-md resize-none overflow-scroll border border-neutral-200
-              text-palette-dark placeholder:text-neutral-400
-              pr-8 py-2 min-h-[38px] max-h-[150px]"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={isStreaming}
-            rows={2}
-          />
-          <div
-            className={`absolute right-2 top-2 flex items-center justify-center w-6 h-6 
-              ${
-                !input.trim() || isStreaming
-                  ? "cursor-not-allowed opacity-50"
-                  : "cursor-pointer hover:text-blue-500"
-              }`}
-            onClick={input.trim() && !isStreaming ? handleSubmit : undefined}
-            aria-label="Send command"
-          >
-            <CornerDownLeft className="h-4 w-4" />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};

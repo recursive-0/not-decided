@@ -1,26 +1,23 @@
-import { useCallback, useRef, useState } from "react";
-import {
-  extendedProseMirrorSchema,
-  useEditor,
-} from "@/providers/editor-context-provider";
-import { IncrementalProsemirrorRenderer } from "@/lib/incremental-prosemirror-renderer";
-import type { ChatMode } from "@/types/messages";
 import { ChatModeIncrementalParser } from "@/lib/chat-mode-parser";
 import {
   ComposerModeParser,
   CurrentActionType,
   type CodeBlockNodeType,
 } from "@/lib/composer-mode-parser";
-import { useChatStore } from "@/store/chat";
-import { FingerprintManager } from "@/lib/fingerprint-manager";
 import { EditorActionsManager } from "@/lib/editor-actions-manager";
-import { OperationType, Tags } from "@/types/editor";
-import {
-  SuggestionHighlightMetaDataType,
-  suggestionHighlightPluginKey,
-} from "@/plugins/suggestion-highlight-plugin";
+import { FingerprintManager } from "@/lib/fingerprint-manager";
+import { IncrementalProsemirrorRenderer } from "@/lib/incremental-prosemirror-renderer";
 import { getContentNodes } from "@/lib/misc-editor-helpers";
+import { SuggestionHighlightMetaDataType, suggestionHighlightPluginKey } from "@/plugins/suggestion-highlight-plugin";
 import { suggestionNavigatorPluginKey } from "@/plugins/suggestion-navigator-plugin";
+import {
+  extendedProseMirrorSchema,
+  useEditor,
+} from "@/providers/editor-context-provider";
+import { useChatStore } from "@/store/chat";
+import { OperationType, Tags } from "@/types/editor";
+import type { ChatMode } from "@/types/messages";
+import { useCallback, useRef, useState } from "react";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8787";
 
@@ -53,6 +50,7 @@ export const useSSEStream = () => {
     (operationData: OperationType) => {
       if (!editorView.current) return;
 
+      console.log("EXECUTING OPERATION: ", operationData)
       const { action, nodeIds } = operationData;
 
       if (action === "delete") {
@@ -217,13 +215,13 @@ export const useSSEStream = () => {
               getCurrentParser()?.current!.stopStreaming();
               rendererRef.current!.updateSuccessfulGenerations();
               setIsStreaming(false);
-              setCurrentLLMAction(CurrentActionType.NORMAL);
+              setCurrentLLMAction(CurrentActionType.normal);
               eventSourceRef.current!.close();
               return;
 
             case "START_STREAM":
               getCurrentParser().current!.startStreaming();
-              setCurrentLLMAction(CurrentActionType.NORMAL);
+              setCurrentLLMAction(CurrentActionType.normal);
               editorView.current!.state.tr.setMeta(suggestionNavigatorPluginKey, { navigateToIndex: null, action: "reset"})
               return;
 

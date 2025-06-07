@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { wrisorChatModePrompt } from '../prompts/wrisor-chatmode-prompt-v1';
 import { Env } from '../../worker-configuration';
-import { wrisorSystemPromptV1 } from '../prompts/wrisor-composer-prompt-v1';
+import { wrisorChatModePrompt } from '../prompts/wrisor-chatmode-prompt-v1';
+import { wrisorSystemPrompt } from '../prompts/wrisor-composer-prompt-v1';
 
 let claudeClient: Anthropic | null = null;
 
@@ -33,7 +33,7 @@ export async function handleClaudeStream(props: HandleClaudeStreamProps) {
 
 	const { prompt, chatMode, contentNodes } = props;
 
-	const systemPrompt = chatMode === 'CHAT' ? wrisorChatModePrompt() : wrisorSystemPromptV1(prompt, contentNodes);
+	const systemPrompt = chatMode === 'CHAT' ? wrisorChatModePrompt() : wrisorSystemPrompt(prompt, contentNodes);
 
 	const encoder = new TextEncoder();
 
@@ -92,3 +92,37 @@ export async function handleClaudeStream(props: HandleClaudeStreamProps) {
 		},
 	});
 }
+
+
+
+export async function callClaude(prompt: string, systemPrompt: string, env: Env) {
+
+	if (!claudeClient) {
+		console.log("Claude client does not exist hence creating the instance")
+			getClient(env);
+		}
+
+	const response = await claudeClient!.messages.create({
+		model: "claude-3-5-sonnet-20241022",
+		messages: [
+			{
+				role: "user",
+				content: prompt
+			},
+			{
+				role: "assistant",
+				content: systemPrompt
+			}
+		],
+		max_tokens: 8000,
+	})
+
+	console.log("MSG IS: ", response)
+
+	// strip out newlines and other special characters
+	const text = response.content[0].type === "text" ? response.content[0].text : null
+
+	return text?.replace(/\n/g, "").replace(/\r/g, "").replace(/\t/g, "").trim()
+}
+
+				

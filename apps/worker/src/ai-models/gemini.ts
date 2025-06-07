@@ -1,12 +1,7 @@
-import {
-    GoogleGenerativeAI,
-    HarmCategory,
-    HarmBlockThreshold,
-  } from "@google/generative-ai";
-import { wrisorSystemPromptV1 } from "../prompts/wrisor-composer-prompt-v1";
-import { wrisorChatModePrompt } from "../prompts/wrisor-chatmode-prompt-v1";
-import { Env } from "../../worker-configuration";
 import { GoogleGenAI } from "@google/genai";
+import { Env } from "../../worker-configuration";
+import { wrisorChatModePrompt } from "../prompts/wrisor-chatmode-prompt-v1";
+import { wrisorSystemPrompt } from "../prompts/wrisor-composer-prompt-v1";
 
 
   let genAIClient: GoogleGenAI | null = null;
@@ -41,7 +36,7 @@ export function getClient(env: Env): GoogleGenAI {
   
     console.log("CHATMODE IS: ", chatMode)
   
-    const systemInstructionContent = chatMode === "CHAT" ? wrisorChatModePrompt() : wrisorSystemPromptV1(prompt, contentNodes)
+    const systemInstructionContent = chatMode === "CHAT" ? wrisorChatModePrompt() : wrisorSystemPrompt(prompt, contentNodes)
   
     const encoder = new TextEncoder();
 

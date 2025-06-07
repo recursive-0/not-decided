@@ -5,28 +5,30 @@ export type OperationType = {
   nodeIds: string[];
 }
 
-export enum Tags {
-  H1 = "H1",
-  H2 = "H2",
-  H3 = "H3",
-  P = "P",
-  B = "B",
-  I = "I",
-  UL = "UL",
-  OL = "OL",
-  LI = "LI",
-  CODE = "CODE",
-  LANG = "LANG",
-  VAL = "VAL",
-  CONTENT = "CONTENT",
-  ICODE = "ICODE",
-  QUOTE = "QUOTE",
-  ADD = "ADD",
-  CHECKBOX = "CHECKBOX",
-  NODE = "NODE",
-  DELETE = "DELETE",
-  OPERATION = "OPERATION",
-  THINKING = "THINKING",
-}
 
-export type MODE = Tags.THINKING | Tags.OPERATION | Tags.CONTENT | "NORMAL" | Tags.CODE;
+export type MODE = Tags.thinking | Tags.operation | Tags.content | Tags.normal | Tags.code;
+
+export enum Tags {
+  h1 = "h1",
+  h2 = "h2", 
+  h3 = "h3",
+  p = "p",
+  b = "b",
+  strong = "strong",
+  em = "em",
+  i = "i",
+  ul = "ul",
+  ol = "ol",
+  li = "li",
+  code = "code",
+  content = "content",
+  icode = "icode",
+  quote = "quote",
+  add = "add",
+  checkbox = "checkbox",
+  node = "node",
+  delete = "delete",
+  operation = "operation",
+  thinking = "thinking",
+  normal = "normal",
+}

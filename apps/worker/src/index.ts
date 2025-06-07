@@ -1,10 +1,10 @@
 import { Env } from '../worker-configuration';
 import { createDB, DB } from './db';
-import { createDocument } from './db/queries/document-operations';
 import { generateStream } from './routes/generate-stream';
 import { googleSignIn } from './routes/google-login';
 import { initDocument } from './routes/init-document';
 import { initializeStream } from './routes/init-stream';
+import { transformText } from './routes/transform-text';
 
 const ALLOWED_ORIGINS = ['https://wrisor-dev.pages.dev', 'http://localhost:5173'];
 
@@ -65,6 +65,7 @@ const initializeStreamWithCors = cors(initializeStream);
 const generateStreamWithCors = cors(generateStream);
 const googleSignInWithCors = cors(googleSignIn);
 const createDocumentWithCors = cors(initDocument);
+const transformTextWithCors = cors(transformText);
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -92,6 +93,9 @@ export default {
 			case '/api/documents/create':
 				return createDocumentWithCors(request, env, ctx, db)
 
+			case '/api/documents/transform-text':
+				return transformTextWithCors(request, env, ctx, db)
+				
 			default:
 				return cors(async () => new Response('Not Found', { status: 404 }))(request, env, ctx, db);
 		}

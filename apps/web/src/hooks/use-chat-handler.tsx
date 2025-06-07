@@ -1,18 +1,18 @@
+import { useSSEStream } from "@/hooks/use-sse-stream";
+import { useEditor } from "@/providers/editor-context-provider";
+import { useChatStore } from "@/store/chat";
+import { useEditorStore } from "@/store/editor";
+import { ChatMode, Message } from "@/types/messages";
 import React, {
   createContext,
-  useState,
-  useRef,
-  useEffect,
   useCallback,
   useContext,
+  useEffect,
+  useRef,
+  useState,
   type ReactNode,
 } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { useSSEStream } from "@/hooks/use-sse-stream";
-import { useChatStore } from "@/store/chat";
-import { useEditor } from "@/providers/editor-context-provider";
-import { useEditorStore } from "@/store/editor";
-import { ChatMode, Message } from "@/types/messages";
 
 interface ChatHandlerContextType {
   isThinking: boolean;
@@ -38,10 +38,7 @@ interface ChatHandlerProviderProps {
 export const ChatHandlerProvider: React.FC<ChatHandlerProviderProps> = ({
   children,
 }) => {
-  const chatMessages = useChatStore((state) => state.chatMessages);
-  const addChatMessage = useChatStore((state) => state.addChatMessage);
-  const currentChatMode = useChatStore((state) => state.currentChatMode);
-  const setCurrentChatMode = useChatStore((state) => state.setCurrentChatMode);
+  const {chatMessages, addChatMessage, currentChatMode, setCurrentChatMode} = useChatStore()
   const { totalCurrentEdits } = useEditorStore();
   const appendTokenToMessage = useChatStore(
     (state) => state.appendTokenToLastMessage
@@ -126,6 +123,8 @@ export const ChatHandlerProvider: React.FC<ChatHandlerProviderProps> = ({
 
   const handleSelectionQuery = useCallback(
     (selectedText: string, prompt: string) => {
+
+      //
       if (totalCurrentEdits > 0) {
         setPendingChangesPopup(true);
         return;

@@ -1,7 +1,6 @@
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { Outlet } from "@tanstack/react-router";
 import { SidebarPanel } from "./sidebar-panel";
-import { ResizableHandle, ResizablePanel } from "@/components/ui/resizable";
-import { ResizablePanelGroup } from "@/components/ui/resizable";
 
 export const DashboardLayout = () => {
   return (
@@ -9,7 +8,7 @@ export const DashboardLayout = () => {
     {/* Sidebar Panel */}
     <ResizablePanel 
       defaultSize={25} 
-      minSize={15} 
+      minSize={2} 
       maxSize={20}
     >
       <SidebarPanel />
