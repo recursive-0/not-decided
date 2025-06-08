@@ -6,9 +6,8 @@ import {
 } from "@/lib/composer-mode-parser";
 import { EditorActionsManager } from "@/lib/editor-actions-manager";
 import { FingerprintManager } from "@/lib/fingerprint-manager";
-import { IncrementalProsemirrorRenderer } from "@/lib/incremental-prosemirror-renderer";
 import { getContentNodes } from "@/lib/misc-editor-helpers";
-import { SuggestionHighlightMetaDataType, suggestionHighlightPluginKey } from "@/plugins/suggestion-highlight-plugin";
+import { Renderer } from "@/lib/renderer";
 import { suggestionNavigatorPluginKey } from "@/plugins/suggestion-navigator-plugin";
 import {
   extendedProseMirrorSchema,
@@ -35,7 +34,7 @@ export const useSSEStream = () => {
   const fingerprintManagerRef = useRef<FingerprintManager | null>(null);
   const chatParserRef = useRef<ChatModeIncrementalParser | null>(null);
   const composerParserRef = useRef<ComposerModeParser | null>(null);
-  const rendererRef = useRef<IncrementalProsemirrorRenderer | null>(null);
+  const rendererRef = useRef<Renderer | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
 
   const getCurrentParser = () => {
@@ -51,66 +50,66 @@ export const useSSEStream = () => {
       if (!editorView.current) return;
 
       console.log("EXECUTING OPERATION: ", operationData)
-      const { action, nodeIds } = operationData;
+      // const { action, nodeIds } = operationData;
 
-      if (action === "delete") {
-        const currentTr = editorView.current.state.tr
-        nodeIds.forEach((id) => {
-          if (!editorView.current) return;
-          const metaForPlugin: SuggestionHighlightMetaDataType = {
-            metaData: {
-              type: "deletion-suggestion",
-              nodeId: id,
-            },
-          };
-          currentTr.setMeta(suggestionHighlightPluginKey, metaForPlugin);
-          editorView.current.dispatch(currentTr);
-        });
-        return;
-      }
+      // if (action === "delete") {
+      //   const currentTr = editorView.current.state.tr
+      //   nodeIds.forEach((id) => {
+      //     if (!editorView.current) return;
+      //     const metaForPlugin: SuggestionHighlightMetaDataType = {
+      //       metaData: {
+      //         type: "deletion-suggestion",
+      //         nodeId: id,
+      //       },
+      //     };
+      //     currentTr.setMeta(suggestionHighlightPluginKey, metaForPlugin);
+      //     editorView.current.dispatch(currentTr);
+      //   });
+      //   return;
+      // }
 
-      if (action === "add") {
-        const nodeId = nodeIds[0];
-        if (!nodeId) return;
+      // if (action === "add") {
+      //   const nodeId = nodeIds[0];
+      //   if (!nodeId) return;
 
-        if (rendererRef.current) {
-          editorView.current.state.doc.descendants((node, pos) => {
-            if (nodeId === node.attrs.nodeId) {
-              const endPos = pos + node.nodeSize;
-              rendererRef.current!.setInsertionPoint(endPos);
-              return false;
-            }
-          });
-        }
-        return;
-      }
+      //   if (rendererRef.current) {
+      //     editorView.current.state.doc.descendants((node, pos) => {
+      //       if (nodeId === node.attrs.nodeId) {
+      //         const endPos = pos + node.nodeSize;
+      //         rendererRef.current!.setInsertionPoint(endPos);
+      //         return false;
+      //       }
+      //     });
+      //   }
+      //   return;
+      // }
 
-      if (action === "replace") {
-        const nodeId = nodeIds[0];
-        if (!nodeId || !editorView.current) return;
+      // if (action === "replace") {
+      //   const nodeId = nodeIds[0];
+      //   if (!nodeId || !editorView.current) return;
 
-        const currentTr = editorView.current.state.tr;
+      //   const currentTr = editorView.current.state.tr;
 
-        const deleteNodeMetadata: SuggestionHighlightMetaDataType = {
-          metaData: {
-            type: "deletion-suggestion",
-            nodeId: nodeId,
-          },
-        };
-        currentTr.setMeta(suggestionHighlightPluginKey, deleteNodeMetadata);
-        editorView.current.dispatch(currentTr);
+      //   const deleteNodeMetadata: SuggestionHighlightMetaDataType = {
+      //     metaData: {
+      //       type: "deletion-suggestion",
+      //       nodeId: nodeId,
+      //     },
+      //   };
+      //   currentTr.setMeta(suggestionHighlightPluginKey, deleteNodeMetadata);
+      //   editorView.current.dispatch(currentTr);
 
-        if (rendererRef.current) {
-          editorView.current.state.doc.descendants((node, pos) => {
-            if (nodeId === node.attrs.nodeId) {
-              const endPos = pos + node.nodeSize;
-              rendererRef.current!.setInsertionPoint(endPos);
-              return false;
-            }
-          });
-        }
-        return;
-      }
+      //   if (rendererRef.current) {
+      //     editorView.current.state.doc.descendants((node, pos) => {
+      //       if (nodeId === node.attrs.nodeId) {
+      //         const endPos = pos + node.nodeSize;
+      //         rendererRef.current!.setInsertionPoint(endPos);
+      //         return false;
+      //       }
+      //     });
+      //   }
+      //   return;
+      // }
     },
     [editorView, rendererRef]
   );
@@ -132,9 +131,8 @@ export const useSSEStream = () => {
         }
 
         if (!rendererRef.current && editorView.current) {
-          rendererRef.current = new IncrementalProsemirrorRenderer(
+          rendererRef.current = new Renderer(
             editorView.current,
-            extendedProseMirrorSchema,
           );
 
           editorActionsManagerRef.current = new EditorActionsManager(
@@ -213,7 +211,6 @@ export const useSSEStream = () => {
             case "[DONE]":
             case "END_STREAM":
               getCurrentParser()?.current!.stopStreaming();
-              rendererRef.current!.updateSuccessfulGenerations();
               setIsStreaming(false);
               setCurrentLLMAction(CurrentActionType.normal);
               eventSourceRef.current!.close();

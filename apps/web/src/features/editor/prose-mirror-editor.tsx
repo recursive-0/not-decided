@@ -4,7 +4,6 @@ import { placeholderPlugin } from "@/custom-nodes/placeholder-plugin";
 import { ensureNodeIdPlugin } from "@/plugins/ensure-nodeid-plugin";
 import { suggestionHighlightPlugin } from "@/plugins/suggestion-highlight-plugin";
 import { suggestionNavigatorPlugin } from "@/plugins/suggestion-navigator-plugin";
-import { ensureTrailingParagraphPlugin } from "@/plugins/trailing-paragraph-plugin";
 import {
   extendedProseMirrorSchema,
   useEditor,
@@ -69,7 +68,7 @@ const plugins = [
   suggestionHighlightPlugin,
   // massAcceptRejectPlugin,
   suggestionNavigatorPlugin,
-  ensureTrailingParagraphPlugin,
+  // ensureTrailingParagraphPlugin,
   ensureNodeIdPlugin,
   placeholderPlugin,
   history(),

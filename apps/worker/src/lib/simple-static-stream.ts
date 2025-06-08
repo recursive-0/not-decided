@@ -1,710 +1,124 @@
 export async function simpleStaticStream(prompt?: string) {
     const stream = new ReadableStream({
       async start(controller) {
-        // Simulate chunks being sent from an LLM
-        // const chunks = [
-        //     // Heading and introduction
-        //     "[",
-        //     "H1]Understanding Web Performance Optimization[/",
-        //     "H1]\n\n",
-  
-        //     // First paragraph with split formatting
-        //     "[",
-        //     "P]Web performance is ",
-        //     "critical for user experience. Studies show that [",
-        //     "B]47% of users expect a page to load in less than 2 seconds[/",
-        //     "B], and many will abandon a site that takes ",
-        //     "more than 3 seconds to load. Performance optimization should be a [",
-        //     "I]priority[/",
-        //     "I] for all web developers.[/",
-        //     "P]\n\n",
-  
-        //     // Second section with heading
-        //     "[",
-        //     "H2]Key Performance Metrics[/",
-        //     "H2]\n\n",
-  
-        //     // Paragraph with multiple formatting elements
-        //     "[",
-        //     "P]When measuring web performance, consider these important metrics:[/",
-        //     "P]\n\n",
-  
-        //     // Bullet list with complex formatting
-        //     "[",
-        //     "UL]\n",
-  
-        //     // First list item with split text
-        //     "[",
-        //     "LI][",
-        //     "B]First Contentful Paint (FCP)[/",
-        //     "B]: Measures the time from navigation to when the browser renders the first piece of content from the DOM.[/",
-        //     "LI]\n",
-  
-        //     // Second list item broken across multiple chunks
-        //     "[",
-        //     "LI][",
-        //     "B]Largest Contentful Paint (LCP)[/",
-        //     "B]: Measures the render time of the largest ",
-        //     "content element visible within the viewport. This should occur within [",
-        //     "I]2.5 seconds[/",
-        //     "I] of page load.[/",
-        //     "LI]\n",
-  
-        //     // Third list item with mixed formatting
-        //     "[",
-        //     "LI][",
-        //     "B]Time to Interactive (TTI)[/",
-        //     "B]: Measures the time it takes for a page to become fully ",
-        //     "interactive. A good TTI is less than [",
-        //     "I]3.8 seconds[/",
-        //     "I] on mobile.[/",
-        //     "LI]\n",
-  
-        //     // Fourth list item
-        //     "[",
-        //     "LI][",
-        //     "B]Cumulative Layout Shift (CLS)[/",
-        //     "B]: Quantifies how much elements on the page unexpectedly shift during loading.[/",
-        //     "LI]\n",
-  
-        //     // Close bullet list
-        //     "[/",
-        //     "UL]\n\n",
-  
-        //     // Code section with broken chunks
-        //     "[",
-        //     "P]Here's an example of using the Performance API to measure page load:[/",
-        //     "P]\n\n",
-        // ]
-  
-        // const chunks = [
-        //   // 1. Edge case: Single character chunks for opening tag
-        //   "[",
-        //   "E",
-        //   "D",
-        //   "I",
-        //   "T",
-        //   "O",
-        //   "R",
-        //   "_",
-        //   "C",
-        //   "O",
-        //   "N",
-        //   "T",
-        //   "E",
-        //   "N",
-        //   "T",
-        //   "]",
-  
-        //   "[",
-        //   "U",
-        //   "L",
-        //   "]",
-        //   "[",
-        //   "L",
-        //   "I",
-        //   "]",
-        //   "Main list item with [",
-        //   "B",
-        //   "]",
-        //   "bold",
-        //   "[",
-        //   "/",
-        //   "B",
-        //   "]",
-        //   " formatting",
-        //   "[",
-        //   "/",
-        //   "L",
-        //   "I",
-        //   "]",
-  
-        //   // 2. Nested list with formatting split at critical points
-        //   "[",
-        //   "L",
-        //   "I",
-        //   "]",
-        //   "Second item with [",
-        //   "U",
-        //   "L",
-        //   "]",
-        //   "[",
-        //   "L",
-        //   "I",
-        //   "]",
-        //   "Nested [",
-        //   "I",
-        //   "]",
-        //   "italic",
-        //   " te",
-        //   "xt",
-        //   "[",
-        //   "/",
-        //   "I",
-        //   "]",
-        //   "[",
-        //   "/",
-        //   "L",
-        //   "I",
-        //   "]",
-        //   "[/UL]",
-  
-  
-  
-        //   // // 31. Edge case: Closing the EDITOR_CONTENT tag with splits
-        //   "[",
-        //   "/",
-        //   "E",
-        //   "D",
-        //   "I",
-        //   "T",
-        //   "O",
-        //   "R",
-        //   "_",
-        //   "C",
-        //   "O",
-        //   "N",
-        //   "T",
-        //   "E",
-        //   "N",
-        //   "T",
-        //   "]",
-        // ];
-        // const chunks = [
-        //     "[P]Hey there this i",
-        //     "s a [B]bold[/B] tag that shou",
-        //     "ld go onto new line [/P]"
-        // ]
-  
-  
-        // const chunks = [
-        //   // Opening editor content tag
-        //   "[",
-        //   "E",
-        //   "D",
-        //   "I",
-        //   "T",
-        //   "O",
-        //   "R",
-        //   "_",
-        //   "C",
-        //   "O",
-        //   "N",
-        //   "T",
-        //   "E",
-        //   "N",
-        //   "T",
-        //   "]",
-          
-        //   // First level unordered list
-        //   "[",
-        //   "U",
-        //   "L",
-        //   "]",
-          
-        //   // First item in the first level
-        //   "[",
-        //   "L",
-        //   "I",
-        //   "]",
-        //   "First level item 1 with [",
-        //   "B",
-        //   "]",
-        //   "bold",
-        //   "[",
-        //   "/",
-        //   "B",
-        //   "]",
-        //   " text",
-        //   "[",
-        //   "/",
-        //   "L",
-        //   "I",
-        //   "]",
-          
-        //   // Second item in first level with a nested list
-        //   "[",
-        //   "L",
-        //   "I",
-        //   "]",
-        //   "First level item 2 with nested list:",
-        //   "[",
-        //   "U",
-        //   "L",
-        //   "]",
-          
-        //   // First item in the second level
-        //   "[",
-        //   "L",
-        //   "I",
-        //   "]",
-        //   "Second level item 1 with [",
-        //   "I",
-        //   "]",
-        //   "italic",
-        //   "[",
-        //   "/",
-        //   "I",
-        //   "]",
-        //   " text",
-        //   "[",
-        //   "/",
-        //   "L",
-        //   "I",
-        //   "]",
-          
-        //   // Second item in second level with another nested list
-        //   "[",
-        //   "L",
-        //   "I",
-        //   "]",
-        //   "Second level item 2 with [",
-        //   "B",
-        //   "]",
-        //   "bold",
-        //   "[",
-        //   "/",
-        //   "B",
-        //   "]",
-        //   " and nested list:",
-        //   "[",
-        //   "O",
-        //   "L",
-        //   "]",
-          
-        //   // First item in the third level (now an ordered list)
-        //   "[",
-        //   "L",
-        //   "I",
-        //   "]",
-        //   "Third level [",
-        //   "I",
-        //   "]",
-        //   "ordered",
-        //   "[",
-        //   "/",
-        //   "I",
-        //   "]",
-        //   " item 1",
-        //   "[",
-        //   "/",
-        //   "L",
-        //   "I",
-        //   "]",
-          
-        //   // Second item in the third level with yet another nested list
-        //   "[",
-        //   "L",
-        //   "I",
-        //   "]",
-        //   "Third level item 2 with [",
-        //   "I",
-        //   "C",
-        //   "O",
-        //   "D",
-        //   "E",
-        //   "]",
-        //   "inline code",
-        //   "[",
-        //   "/",
-        //   "I",
-        //   "C",
-        //   "O",
-        //   "D",
-        //   "E",
-        //   "]",
-        //   " and nested:",
-        //   "[",
-        //   "U",
-        //   "L",
-        //   "]",
-          
-        //   // First item in the fourth level (back to unordered)
-        //   "[",
-        //   "L",
-        //   "I",
-        //   "]",
-        //   "Fourth level item with [",
-        //   "B",
-        //   "]",
-        //   "mixed [",
-        //   "I",
-        //   "]",
-        //   "formatting",
-        //   "[",
-        //   "/",
-        //   "I",
-        //   "]",
-        //   "[",
-        //   "/",
-        //   "B",
-        //   "]",
-        //   "[",
-        //   "/",
-        //   "L",
-        //   "I",
-        //   "]",
-          
-        //   // Second item in the fourth level 
-        //   "[",
-        //   "L",
-        //   "I",
-        //   "]",
-        //   "Another fourth level item",
-        //   "[",
-        //   "/",
-        //   "L",
-        //   "I",
-        //   "]",
-          
-        //   // Close all nested lists in the correct order
-        //   "[",
-        //   "/",
-        //   "U",
-        //   "L",
-        //   "]", // Close fourth level list
-          
-        //   "[",
-        //   "/",
-        //   "L",
-        //   "I",
-        //   "]", // Close third level item 2
-          
-        //   "[",
-        //   "/",
-        //   "O",
-        //   "L",
-        //   "]", // Close third level list
-          
-        //   "[",
-        //   "/",
-        //   "L",
-        //   "I",
-        //   "]", // Close second level item 2
-          
-        //   // Third item in second level
-        //   "[",
-        //   "L",
-        //   "I",
-        //   "]",
-        //   "One more second level item",
-        //   "[",
-        //   "/",
-        //   "L",
-        //   "I",
-        //   "]",
-          
-        //   "[",
-        //   "/",
-        //   "U",
-        //   "L",
-        //   "]", // Close second level list
-          
-        //   "[",
-        //   "/",
-        //   "L",
-        //   "I",
-        //   "]", // Close first level item 2
-          
-        //   // Third item in first level
-        //   "[",
-        //   "L",
-        //   "I",
-        //   "]",
-        //   "Final first level item",
-        //   "[",
-        //   "/",
-        //   "L",
-        //   "I",
-        //   "]",
-          
-        //   "[",
-        //   "/",
-        //   "U",
-        //   "L",
-        //   "]", // Close first level list
-          
-        //   // Closing editor content tag
-        //   "[",
-        //   "/",
-        //   "E",
-        //   "D",
-        //   "I",
-        //   "T",
-        //   "O",
-        //   "R",
-        //   "_",
-        //   "C",
-        //   "O",
-        //   "N",
-        //   "T",
-        //   "E",
-        //   "N",
-        //   "T",
-        //   "]"
-        // ];
-  
-        // const chunks = [
-        //   // Opening editor content tag
-        //   "[",
-        //   "E",
-        //   "D",
-        //   "I",
-        //   "T",
-        //   "O",
-        //   "R",
-        //   "_",
-        //   "C",
-        //   "O",
-        //   "N",
-        //   "T",
-        //   "E",
-        //   "N",
-        //   "T",
-        //   "]",
-          
-        //   // First level unordered list
-        //   "[",
-        //   "U",
-        //   "L",
-        //   "]",
-          
-        //   // First item in the first level
-        //   "[",
-        //   "L",
-        //   "I",
-        //   "]",
-        //   "First item",
-        //   "[",
-        //   "/",
-        //   "L",
-        //   "I",
-        //   "]",
-  
-        //   "[",
-        //   "L",
-        //   "I",
-        //   "]",
-        //   "First item",
-        //   "[",
-        //   "/",
-        //   "L",
-        //   "I",
-        //   "]",
-          
-        //   // // Second item with a simple nested list
-        //   "[",
-        //   "L",
-        //   "I",
-        //   "]",
-        //   "Second item with nested list:",
-        //   "[",
-        //   "U",
-        //   "L",
-        //   "]",
-          
-        //   // // // // First nested item
-        //   "[",
-        //   "L",
-        //   "I",
-        //   "]",
-        //   "Nested item one",
-        //   "[",
-        //   "/",
-        //   "L",
-        //   "I",
-        //   "]",
-          
-        //   // // // Second nested item
-        //   "[",
-        //   "L",
-        //   "I",
-        //   "]",
-        //   "Nested item two",
-        //   "[",
-        //   "/",
-        //   "L",
-        //   "I",
-        //   "]",
-          
-        //   // // // Close nested list
-        //   "[",
-        //   "/",
-        //   "U",
-        //   "L",
-        //   "]",
-          
-        //   // // // Close second item
-        //   "[",
-        //   "/",
-        //   "L",
-        //   "I",
-        //   "]",
-          
-        //   // // Third item in first level
-        //   "[",
-        //   "L",
-        //   "I",
-        //   "]",
-        //   "Third item",
-        //   "[",
-        //   "/",
-        //   "L",
-        //   "I",
-        //   "]",
-          
-        //   // // Close first level list
-        //   "[",
-        //   "/",
-        //   "U",
-        //   "L",
-        //   "]",
-          
-        //   // Closing editor content tag
-        //   "[",
-        //   "/",
-        //   "E",
-        //   "D",
-        //   "I",
-        //   "T",
-        //   "O",
-        //   "R",
-        //   "_",
-        //   "C",
-        //   "O",
-        //   "N",
-        //   "T",
-        //   "E",
-        //   "N",
-        //   "T",
-        //   "]"
-        // ];
-  
-        // const chunks = [
-        //   // Opening editor content tag
-        //   "[", "E", "D", "I", "T", "O", "R", "_", "C", "O", "N", "T", "E", "N", "T", "]",
-          
-        //   // First level unordered list
-        //   "[", "U", "L", "]",
-          
-        //   // First item with bold formatting
-        //   "[", "L", "I", "]",
-        //   "First level item with ", "[", "B", "]", "bold", "[", "/", "B", "]", " text",
-        //   "[", "/", "L", "I", "]",
-          
-        //   // Second item with text followed by a nested list
-        //   "[", "L", "I", "]",
-        //   "First level item with nested list",
-        //   "[", "/", "L", "I", "]",
-  
-        //   "[LI]",
-        //   "second list",
-          
-        //   // Nested ordered list (after the list item, as a sibling to the previous LI)
-        //   "[", "O", "L", "]",
-          
-        //   // Items in the nested list
-        //   "[", "L", "I", "]",
-        //   "Second level item 1",
-        //   "[", "/", "L", "I", "]",
-        //   "[/OL]",
-        //   "[/LI]",
-        //   // "[", "L", "I", "]",
-        //   // "Second level item 2 with ", "[", "I", "]", " italic", "[", "/", "I", "]",
-        //   // "[", "/", "L", "I", "]",
-          
-        //   // // Deeper nesting - third level
-        //   // "[", "L", "I", "]",
-        //   // "Second level item 3",
-        //   // "[", "/", "L", "I", "]",
-          
-        //   // "[", "U", "L", "]",
-          
-        //   // "[", "L", "I", "]",
-        //   // "Third level item with ", "[", "ICODE", "]", "inline code", "[", "/", "ICODE", "]",
-        //   // "[", "/", "L", "I", "]",
-          
-        //   // "[", "L", "I", "]",
-        //   // "Another third level item",
-        //   // "[", "/", "L", "I", "]",
-          
-        //   // // Close third level list
-        //   // "[", "/", "U", "L", "]",
-          
-        //   // // Another second level item after the nested third level
-        //   // "[", "L", "I", "]",
-        //   // "Final second level item",
-        //   // "[", "/", "L", "I", "]",
-          
-        //   // // Close the second level list
-        //   // "[", "/", "U", "L", "]",
-          
-        //   // // Back to first level - third item
-        //   // "[", "L", "I", "]",
-        //   // "Another first level item with ", "[", "B", "]", "bold", "[", "/", "B", "]", " and ", "[", "I", "]", "italic", "[", "/", "I", "]",
-        //   // "[", "/", "L", "I", "]",
-          
-        //   // Close the first level list
-        //   "[", "/", "U", "L", "]",
-          
-        //   // Closing editor content tag
-        //   "[", "/", "E", "D", "I", "T", "O", "R", "_", "C", "O", "N", "T", "E", "N", "T", "]"
-        // ];
-  
   
   // Test Case 1: Simple two-level nesting with unordered lists
-  const simpleNestedUL = [
-    "[", "E", "D", "I", "T", "O", "R", "_", "C", "O", "N", "T", "E", "N", "T", "]",
-    "[", "U", "L", "]",
-    "[", "L", "I", "]", "First level item 1", "[", "/", "L", "I", "]",
-    "[", "L", "I", "]", 
-      "First level item 2", 
-      "[", "U", "L", "]",
-        "[", "L", "I", "]", "Second level item 1", "[", "/", "L", "I", "]",
-        "[", "L", "I", "]", "Second level item 2", "[", "/", "L", "I", "]",
-      "[", "/", "U", "L", "]",
-    "[", "/", "L", "I", "]",
-    "[", "L", "I", "]", "First level item 3", "[", "/", "L", "I", "]",
-    "[", "/", "U", "L", "]",
-    "[", "/", "E", "D", "I", "T", "O", "R", "_", "C", "O", "N", "T", "E", "N", "T", "]"
-  ];
-  
-  // Test Case 2: Mixed UL and OL nesting
-  const mixedNestedLists = [
-    "[", "E", "D", "I", "T", "O", "R", "_", "C", "O", "N", "T", "E", "N", "T", "]",
-    "[", "U", "L", "]",
-    "[", "L", "I", "]", "Unordered item with ", "[", "B", "]", "bold", "[", "/", "B", "]", "[", "/", "L", "I", "]",
-    "[", "L", "I", "]", 
-      "Unordered item with ordered sublist", 
-      "[", "O", "L", "]",
-        "[", "L", "I", "]", "Ordered item 1", "[", "/", "L", "I", "]",
-        "[", "L", "I", "]", "Ordered item 2", "[", "/", "L", "I", "]",
-      "[", "/", "O", "L", "]",
-    "[", "/", "L", "I", "]",
-    "[", "/", "U", "L", "]",
-    "[", "/", "E", "D", "I", "T", "O", "R", "_", "C", "O", "N", "T", "E", "N", "T", "]"
-  ];
-  
-  // Test Case 3: Three levels of nesting
-  const threeDeepNesting = [
-    "[", "E", "D", "I", "T", "O", "R", "_", "C", "O", "N", "T", "E", "N", "T", "]",
-    "[", "U", "L", "]",
-    "[", "L", "I", "]", "Level 1 item", "[", "/", "L", "I", "]",
-    "[", "L", "I", "]", 
-      "Level 1 with nesting", 
-      "[", "U", "L", "]",
-        "[", "L", "I", "]", "Level 2 item", "[", "/", "L", "I", "]",
-        "[", "L", "I", "]", 
-          "Level 2 with deeper nesting",
-          "[", "U", "L", "]",
-            "[", "L", "I", "]", "Level 3 item with ", "[", "I", "]", "italic", "[", "/", "I", "]", "[", "/", "L", "I", "]",
-          "[", "/", "U", "L", "]",
-        "[", "/", "L", "I", "]",
-      "[", "/", "U", "L", "]",
-    "[", "/", "L", "I", "]",
-    "[", "/", "U", "L", "]",
-    "[", "/", "E", "D", "I", "T", "O", "R", "_", "C", "O", "N", "T", "E", "N", "T", "]"
-  ];
+const simpleList = [
+    "<", "c", "o", "n", "t", "e", "n", "t", ">",
+    "<", "u", "l", ">",
+    "<", "l", "i", ">", "Item 1", "<", "/", "l", "i", ">",
+    "<", "l", "i", ">", "Item 2", "<", "/", "l", "i", ">",
+    "<", "l", "i", ">", "Item 3", "<", "/", "l", "i", ">",
+    "<", "/", "u", "l", ">",
+    "<", "/", "c", "o", "n", "t", "e", "n", "t", ">"
+];
+
+const singleCheckbox = [
+    "<", "c", "o", "n", "t", "e", "n", "t", ">",
+    "<", "c", "h", "e", "c", "k", "b", "o", "x", ">", "Complete project setup", "<", "/", "c", "h", "e", "c", "k", "b", "o", "x", ">",
+    "<", "/", "c", "o", "n", "t", "e", "n", "t", ">"
+];
+
+const multipleCheckboxes = [
+    "<", "c", "o", "n", "t", "e", "n", "t", ">",
+    "<", "c", "h", "e", "c", "k", "b", "o", "x", ">", "Task 1: Setup environment", "<", "/", "c", "h", "e", "c", "k", "b", "o", "x", ">",
+    "<", "c", "h", "e", "c", "k", "b", "o", "x", ">", "Task 2: Write tests", "<", "/", "c", "h", "e", "c", "k", "b", "o", "x", ">",
+    "<", "c", "h", "e", "c", "k", "b", "o", "x", ">", "Task 3: Deploy to production", "<", "/", "c", "h", "e", "c", "k", "b", "o", "x", ">",
+    "<", "/", "c", "o", "n", "t", "e", "n", "t", ">"
+];
+
+const simpleCodeBlock = [
+    "<", "c", "o", "n", "t", "e", "n", "t", ">",
+    "<", "c", "o", "d", "e", " ", "l", "a", "n", "g", "=", '"', "j", "a", "v", "a", "s", "c", "r", "i", "p", "t", '"', ">",
+    "console.log('Hello World');",
+    "<", "/", "c", "o", "d", "e", ">",
+    "<", "/", "c", "o", "n", "t", "e", "n", "t", ">"
+];
+
+const bashCodeBlock = [
+    "<", "c", "o", "n", "t", "e", "n", "t", ">",
+    "<", "c", "o", "d", "e", " ", "l", "a", "n", "g", "=", '"', "b", "a", "s", "h", '"', ">",
+    "#!/bin/bash\necho \"Hello World\"\nls -la",
+    "<", "/", "c", "o", "d", "e", ">",
+    "<", "/", "c", "o", "n", "t", "e", "n", "t", ">"
+];
+
+const complexDocument = [
+    "<", "c", "o", "n", "t", "e", "n", "t", ">",
+    
+    // Main title with emphasis
+    "<", "h", "1", ">", "The Ultimate ", "<", "s", "t", "r", "o", "n", "g", ">", "AI-Powered", "<", "/", "s", "t", "r", "o", "n", "g", ">", " Text Editor", "<", "/", "h", "1", ">",
+    
+    // Introduction with mixed formatting
+    "<", "p", ">", "Welcome to ", "<", "e", "m", ">", "Wrisor", "<", "/", "e", "m", ">", ", the ", "<", "s", "t", "r", "o", "n", "g", ">", "most advanced", "<", "/", "s", "t", "r", "o", "n", "g", ">", " collaborative editor that uses ", "<", "e", "m", ">", "<", "s", "t", "r", "o", "n", "g", ">", "CRDT technology", "<", "/", "s", "t", "r", "o", "n", "g", ">", "<", "/", "e", "m", ">", " for real-time streaming.", "<", "/", "p", ">",
+    
+    // // Section with code examples
+    "<", "h", "2", ">", "Core Architecture", "<", "/", "h", "2", ">",
+    "<", "p", ">", "Our streaming renderer is built on ", "<", "s", "t", "r", "o", "n", "g", ">", "first principles", "<", "/", "s", "t", "r", "o", "n", "g", ">", " thinking.", "<", "/", "p", ">",
+    
+    // // JavaScript code block
+    "<", "c", "o", "d", "e", " ", "l", "a", "n", "g", "=", '"', "j", "a", "v", "a", "s", "c", "r", "i", "p", "t", '"', ">",
+    "class Renderer {\n  constructor(editorView) {\n    this.editorView = editorView;\n    this.activeNodeStack = [];\n    this.activeMarks = [];\n  }\n\n  onOpenTag(tag) {\n    // Genius-level implementation\n    const node = this.createNodeForTag(tag);\n    const pos = this.getInsertPosition('node');\n    this.insert(node, pos);\n  }\n}",
+    "<", "/", "c", "o", "d", "e", ">",
+    
+    // // Blockquote with nested content
+    "<", "q", "u", "o", "t", "e", ">",
+    "As ", "<", "s", "t", "r", "o", "n", "g", ">", "Claude", "<", "/", "s", "t", "r", "o", "n", "g", ">", " said: ", "<", "e", "m", ">", "This is next-level engineering - you're building the mathematical foundations for AI agents that can truly collaborate at human speed and granularity.", "<", "/", "e", "m", ">",
+    "<", "/", "q", "u", "o", "t", "e", ">",
+    
+    // // Technical details section
+    "<", "h", "2", ">", "Implementation ", "<", "e", "m", ">", "Details", "<", "/", "e", "m", ">", "<", "/", "h", "2", ">",
+    
+    // // Task list
+    "<", "h", "3", ">", "Completed Features", "<", "/", "h", "3", ">",
+    "<", "c", "h", "e", "c", "k", "b", "o", "x", ">", "Node creation with ", "<", "s", "t", "r", "o", "n", "g", ">", "dynamic positioning", "<", "/", "s", "t", "r", "o", "n", "g", ">", "<", "/", "c", "h", "e", "c", "k", "b", "o", "x", ">",
+    "<", "c", "h", "e", "c", "k", "b", "o", "x", ">", "Mark handling with ", "<", "e", "m", ">", "proper nesting", "<", "/", "e", "m", ">", "<", "/", "c", "h", "e", "c", "k", "b", "o", "x", ">",
+    "<", "c", "h", "e", "c", "k", "b", "o", "x", ">", "Text insertion with ", "<", "s", "t", "r", "o", "n", "g", ">", "<", "e", "m", ">", "active mark application", "<", "/", "e", "m", ">", "<", "/", "s", "t", "r", "o", "n", "g", ">", "<", "/", "c", "h", "e", "c", "k", "b", "o", "x", ">",
+    
+    // // Python code example
+    "<", "h", "3", ">", "Parser Implementation", "<", "/", "h", "3", ">",
+    "<", "p", ">", "The parser uses a ", "<", "s", "t", "r", "o", "n", "g", ">", "state machine", "<", "/", "s", "t", "r", "o", "n", "g", ">", " approach:", "<", "/", "p", ">",
+    "<", "c", "o", "d", "e", " ", "l", "a", "n", "g", "=", '"', "p", "y", "t", "h", "o", "n", '"', ">",
+    "def parse_stream(chunks):\n    state = ParserState()\n    for chunk in chunks:\n        if chunk == '<':\n            state.begin_tag()\n        elif chunk == '>':\n            tag = state.complete_tag()\n            yield ('open_tag', tag)\n        else:\n            state.accumulate(chunk)",
+    "<", "/", "c", "o", "d", "e", ">",
+    
+    
+    // // More checkboxes with context
+    "<", "h", "3", ">", "Remaining Tasks", "<", "/", "h", "3", ">",
+    "<", "p", ">", "Critical items for ", "<", "s", "t", "r", "o", "n", "g", ">", "production readiness", "<", "/", "s", "t", "r", "o", "n", "g", ">", ":", "<", "/", "p", ">",
+    "<", "c", "h", "e", "c", "k", "b", "o", "x", ">", "Fix list rendering issues", "<", "/", "c", "h", "e", "c", "k", "b", "o", "x", ">",
+    "<", "c", "h", "e", "c", "k", "b", "o", "x", ">", "Add ", "<", "e", "m", ">", "suggestion highlighting", "<", "/", "e", "m", ">", " for all nodes", "<", "/", "c", "h", "e", "c", "k", "b", "o", "x", ">",
+    
+    // // Rust code block
+    "<", "h", "2", ">", "Performance Optimization", "<", "/", "h", "2", ">",
+    "<", "p", ">", "Using ", "<", "s", "t", "r", "o", "n", "g", ">", "Rust", "<", "/", "s", "t", "r", "o", "n", "g", ">", " for critical paths:", "<", "/", "p", ">",
+    "<", "c", "o", "d", "e", " ", "l", "a", "n", "g", "=", '"', "r", "u", "s", "t", '"', ">",
+    "pub struct StreamingRenderer {\n    node_stack: Vec<NodeContext>,\n    active_marks: Vec<MarkContext>,\n}\n\nimpl StreamingRenderer {\n    pub fn on_chunk(&mut self, chunk: &str) {\n        match self.parse_chunk(chunk) {\n            ChunkType::OpenTag(tag) => self.handle_open_tag(tag),\n            ChunkType::Text(text) => self.handle_text(text),\n            ChunkType::CloseTag(tag) => self.handle_close_tag(tag),\n        }\n    }\n}",
+    "<", "/", "c", "o", "d", "e", ">",
+    
+    // // Empty elements test
+    "<", "h", "3", ">", "<", "/", "h", "3", ">",
+    "<", "p", ">", "<", "/", "p", ">",
+    
+    // // Final section with all marks combined
+    "<", "h", "1", ">", "Conclusion", "<", "/", "h", "1", ">",
+    "<", "p", ">", "This ", "<", "s", "t", "r", "o", "n", "g", ">", "<", "e", "m", ">", "revolutionary", "<", "/", "e", "m", ">", "<", "/", "s", "t", "r", "o", "n", "g", ">", " approach to ", "<", "e", "m", ">", "real-time collaborative editing", "<", "/", "e", "m", ">", " will change how we think about ", "<", "s", "t", "r", "o", "n", "g", ">", "human-AI interaction", "<", "/", "s", "t", "r", "o", "n", "g", ">", ".", "<", "/", "p", ">",
+    
+    // // Complex nested marks
+    "<", "p", ">", "Remember: ", "<", "s", "t", "r", "o", "n", "g", ">", "Never ", "<", "e", "m", ">", "assume", "<", "/", "e", "m", ">", " anything", "<", "/", "s", "t", "r", "o", "n", "g", ">", ", always ", "<", "e", "m", ">", "reason from ", "<", "s", "t", "r", "o", "n", "g", ">", "first principles", "<", "/", "s", "t", "r", "o", "n", "g", ">", "<", "/", "e", "m", ">", ".", "<", "/", "p", ">",
+    
+    // // JSON code block with special characters
+    // "<", "h", "2", ">", "Configuration", "<", "/", "h", "2", ">",
+    // "<", "c", "o", "d", "e", " ", "l", "a", "n", "g", "=", '"', "j", "s", "o", "n", '"', ">",
+    // "{\n  \"renderer\": {\n    \"streaming\": true,\n    \"incremental\": true,\n    \"features\": [\n      \"real-time\",\n      \"collaborative\",\n      \"<crdt-based>\"\n    ],\n    \"performance\": \"100x\"\n  }\n}",
+    // "<", "/", "c", "o", "d", "e", ">",
+    
+    // // Final checkbox
+    "<", "c", "h", "e", "c", "k", "b", "o", "x", ">", "Ship to ", "<", "s", "t", "r", "o", "n", "g", ">", "production", "<", "/", "s", "t", "r", "o", "n", "g", ">", " 🚀", "<", "/", "c", "h", "e", "c", "k", "b", "o", "x", ">",
+    
+    "<", "/", "c", "o", "n", "t", "e", "n", "t", ">"
+];
+
   
   // Test Case 4: Multiple nested lists at same level
   const chunks = [
@@ -729,7 +143,7 @@ export async function simpleStaticStream(prompt?: string) {
   
         // Function to send chunks with delays to simulate streaming
         const sendChunks = async () => {
-          for (const chunk of chunks) {
+          for (const chunk of complexDocument) {
             // --- HOW TO ESCAPE NEWLINES ---
             // Replace each newline character (\n) with the two characters \\n
             const escapedChunk = chunk.replace(/\n/g, '\\n');

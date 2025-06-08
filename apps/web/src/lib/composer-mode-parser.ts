@@ -125,17 +125,7 @@ export class ComposerModeParser {
       } else if (this.mode === Tags.content) {
         this.callbacks.onTextContent(this.textBuffer);
       } else if (this.mode === Tags.code) {
-        const topTag = this.tagStack[this.tagStack.length - 1];
-        if (topTag === "LANG") {
-          this.codeBlockNode.lang += this.textBuffer;
-        } else if (topTag === "VAL") {
-          console.log(
-            "CURRENT CONTENT IN COD BLOCK IS: ",
-            JSON.stringify(this.codeBlockNode)
-          );
-          this.codeBlockNode.content += this.textBuffer;
-          // this.callbacks.onTextContent(this.textBuffer);
-        }
+        this.codeBlockNode.content += this.textBuffer;
       } else {
         console.warn("FLUSHING TEXT BUFFER BUT MODE IS NORMAL!!!");
         this.callbacks.sendTokensCallback(this.textBuffer);
@@ -193,6 +183,29 @@ export class ComposerModeParser {
     // const originalTagText = `[${this.currentTagName}]`;
     console.log(`Parser: Attempting to open tag: "${tagName}"`);
 
+    if (tagName.includes("code lang")) {
+      const topTag = this.tagStack[this.tagStack.length - 1];
+      console.log("FOUND CODE opening tag");
+      console.log("TOP TAG IS: ", topTag);
+      if (topTag === Tags.thinking) {
+        console.log(
+          "Found CODE tag in thought mode so emitting text for thought mode"
+        );
+        this.callbacks.sendTokensCallback(this.textBuffer);
+        return;
+      } else {
+        this.mode = Tags.code;
+        this.tagStack.push(Tags.code);
+        this.clearTextBuffer();
+        this.resetCodeBlockNode();
+        const codeBlockAttributes = extractCodeBlockAttributes(tagName);
+        this.codeBlockNode.lang = codeBlockAttributes.lang || "text";
+        this.state = ParserState.normal;
+        this.currentTagName = "";
+        return;
+      }
+    }
+
     if (!isValidTag(tagName)) {
       this.flushTextBuffer();
       this.state = ParserState.normal;
@@ -230,27 +243,6 @@ export class ComposerModeParser {
       return;
     }
 
-    if (tagName === Tags.code) {
-      const topTag = this.tagStack[this.tagStack.length - 1];
-      console.log("FOUND CODE opening tag");
-      console.log("TOP TAG IS: ", topTag);
-      if (topTag === Tags.thinking) {
-        console.log(
-          "Found CODE tag in thought mode so emitting text for thought mode"
-        );
-        this.callbacks.sendTokensCallback(this.textBuffer);
-        return;
-      } else {
-        this.mode = Tags.code;
-        this.tagStack.push(tagName);
-        this.clearTextBuffer();
-        this.resetCodeBlockNode();
-        this.state = ParserState.normal;
-        this.currentTagName = "";
-        return;
-      }
-    }
-
     if (this.mode === Tags.thinking) {
       this.callbacks.sendTokensCallback(this.textBuffer);
     } else if (this.mode === Tags.content) {
@@ -268,6 +260,7 @@ export class ComposerModeParser {
   }
 
   private closeTag() {
+    console.log("Current tag stack in closetag is: ", this.tagStack)
     const closingTag = this.currentTagName.toLowerCase()
     // const originalTagText = `[/${this.currentTagName}]`;
     const topTagInStack = this.tagStack[this.tagStack.length - 1];
@@ -329,7 +322,6 @@ export class ComposerModeParser {
         this.tagStack.pop();
         this.mode = Tags.normal;
         this.callbacks.setCurrentActionState(CurrentActionType.normal);
-        this.callbacks.onCloseTag(closingTag)
         this.currentTagName = "";
         this.state = ParserState.normal;
         this.clearTextBuffer();
@@ -451,3 +443,13 @@ export class ComposerModeParser {
 
 
 
+function extractCodeBlockAttributes(tagName: string) {
+  
+  const langMatch = tagName.match(/lang=["']([^"']+)["']/);
+  
+  return {
+    tag: 'code',
+    lang: langMatch ? langMatch[1] : 'text', 
+    fullMatch: tagName
+  };
+}
