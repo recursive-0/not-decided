@@ -4,44 +4,17 @@ export async function simpleStaticStream(prompt?: string) {
   
   // Test Case 1: Simple two-level nesting with unordered lists
 const simpleList = [
-    "<", "c", "o", "n", "t", "e", "n", "t", ">",
-    "<", "u", "l", ">",
-    "<", "l", "i", ">", "Item 1", "<", "/", "l", "i", ">",
-    "<", "l", "i", ">", "Item 2", "<", "/", "l", "i", ">",
-    "<", "l", "i", ">", "Item 3", "<", "/", "l", "i", ">",
-    "<", "/", "u", "l", ">",
-    "<", "/", "c", "o", "n", "t", "e", "n", "t", ">"
-];
+          "<", "c", "o", "n", "t", "e", "n", "t", ">",
+          "<", "u", "l", ">",
+          
+          "  ", // <--- THIS IS THE VARIABLE. THE POISON. THE CULPRIT.
 
-const singleCheckbox = [
-    "<", "c", "o", "n", "t", "e", "n", "t", ">",
-    "<", "c", "h", "e", "c", "k", "b", "o", "x", ">", "Complete project setup", "<", "/", "c", "h", "e", "c", "k", "b", "o", "x", ">",
-    "<", "/", "c", "o", "n", "t", "e", "n", "t", ">"
-];
-
-const multipleCheckboxes = [
-    "<", "c", "o", "n", "t", "e", "n", "t", ">",
-    "<", "c", "h", "e", "c", "k", "b", "o", "x", ">", "Task 1: Setup environment", "<", "/", "c", "h", "e", "c", "k", "b", "o", "x", ">",
-    "<", "c", "h", "e", "c", "k", "b", "o", "x", ">", "Task 2: Write tests", "<", "/", "c", "h", "e", "c", "k", "b", "o", "x", ">",
-    "<", "c", "h", "e", "c", "k", "b", "o", "x", ">", "Task 3: Deploy to production", "<", "/", "c", "h", "e", "c", "k", "b", "o", "x", ">",
-    "<", "/", "c", "o", "n", "t", "e", "n", "t", ">"
-];
-
-const simpleCodeBlock = [
-    "<", "c", "o", "n", "t", "e", "n", "t", ">",
-    "<", "c", "o", "d", "e", " ", "l", "a", "n", "g", "=", '"', "j", "a", "v", "a", "s", "c", "r", "i", "p", "t", '"', ">",
-    "console.log('Hello World');",
-    "<", "/", "c", "o", "d", "e", ">",
-    "<", "/", "c", "o", "n", "t", "e", "n", "t", ">"
-];
-
-const bashCodeBlock = [
-    "<", "c", "o", "n", "t", "e", "n", "t", ">",
-    "<", "c", "o", "d", "e", " ", "l", "a", "n", "g", "=", '"', "b", "a", "s", "h", '"', ">",
-    "#!/bin/bash\necho \"Hello World\"\nls -la",
-    "<", "/", "c", "o", "d", "e", ">",
-    "<", "/", "c", "o", "n", "t", "e", "n", "t", ">"
-];
+          "<", "l", "i", ">", "Item 1", "<", "/", "l", "i", ">",
+          "<", "l", "i", ">", "Item 2", "<", "/", "l", "i", ">",
+          "<", "l", "i", ">", "Item 3", "<", "/", "l", "i", ">",
+          "<", "/", "u", "l", ">",
+          "<", "/", "c", "o", "n", "t", "e", "n", "t", ">"
+      ];
 
 const complexDocument = [
     "<", "c", "o", "n", "t", "e", "n", "t", ">",
@@ -128,22 +101,13 @@ const complexDocument = [
     `{\n    // Prints "Hello, world!" to the console\n    println!("Hello, world!");\n}</VAL></CODE></CONTENT>`
   ];
   
-  // NOTE: You'll need to break the strings containing tags AND text into smaller pieces
-  // like your original chunks, e.g., "[", "L", "I", "]", "L", "e", "v", "e", "l", ... etc.
-  // Also add explicit [/B] and [/ICODE] if your parser requires them (it seems it might not
-  // based on the original stream log, but maybe that's part of the bug?).
-  // If your parser *implicitly* handles closing B/ICODE when a block tag like UL/LI starts/ends,
-  // ensure that logic is correctly managing the stack.
-  // You might need to break the strings further if your original chunks were char-by-char
-  // e.g., "[", "E", "D", "I", "T", "O", "R", ... etc.
-  
         // First send a "START_STREAM" event to initialize
         const encoder = new TextEncoder()
         controller.enqueue(encoder.encode(`data: START_STREAM\n\n`));
   
         // Function to send chunks with delays to simulate streaming
         const sendChunks = async () => {
-          for (const chunk of complexDocument) {
+          for (const chunk of simpleList) {
             // --- HOW TO ESCAPE NEWLINES ---
             // Replace each newline character (\n) with the two characters \\n
             const escapedChunk = chunk.replace(/\n/g, '\\n');
@@ -177,3 +141,37 @@ const complexDocument = [
       },
     });
   }
+
+
+
+
+
+  const singleCheckbox = [
+    "<", "c", "o", "n", "t", "e", "n", "t", ">",
+    "<", "c", "h", "e", "c", "k", "b", "o", "x", ">", "Complete project setup", "<", "/", "c", "h", "e", "c", "k", "b", "o", "x", ">",
+    "<", "/", "c", "o", "n", "t", "e", "n", "t", ">"
+];
+
+const multipleCheckboxes = [
+    "<", "c", "o", "n", "t", "e", "n", "t", ">",
+    "<", "c", "h", "e", "c", "k", "b", "o", "x", ">", "Task 1: Setup environment", "<", "/", "c", "h", "e", "c", "k", "b", "o", "x", ">",
+    "<", "c", "h", "e", "c", "k", "b", "o", "x", ">", "Task 2: Write tests", "<", "/", "c", "h", "e", "c", "k", "b", "o", "x", ">",
+    "<", "c", "h", "e", "c", "k", "b", "o", "x", ">", "Task 3: Deploy to production", "<", "/", "c", "h", "e", "c", "k", "b", "o", "x", ">",
+    "<", "/", "c", "o", "n", "t", "e", "n", "t", ">"
+];
+
+const simpleCodeBlock = [
+    "<", "c", "o", "n", "t", "e", "n", "t", ">",
+    "<", "c", "o", "d", "e", " ", "l", "a", "n", "g", "=", '"', "j", "a", "v", "a", "s", "c", "r", "i", "p", "t", '"', ">",
+    "console.log('Hello World');",
+    "<", "/", "c", "o", "d", "e", ">",
+    "<", "/", "c", "o", "n", "t", "e", "n", "t", ">"
+];
+
+const bashCodeBlock = [
+    "<", "c", "o", "n", "t", "e", "n", "t", ">",
+    "<", "c", "o", "d", "e", " ", "l", "a", "n", "g", "=", '"', "b", "a", "s", "h", '"', ">",
+    "#!/bin/bash\necho \"Hello World\"\nls -la",
+    "<", "/", "c", "o", "d", "e", ">",
+    "<", "/", "c", "o", "n", "t", "e", "n", "t", ">"
+];

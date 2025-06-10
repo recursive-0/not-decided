@@ -69,12 +69,8 @@ export function getClient(env: Env): GoogleGenAI {
             const chunkText = chunk.text
   
             if (chunkText) {
-              const safeText = chunkText
-                .replace(/\n/g, "\\n")
-                .replace(/\r/g, "\\r")
-                .replace(/\t/g, "\\t");
-                console.log("CHUNK IS: ", safeText)
-              const sseMessage = `data: ${safeText}\n\n`;
+                console.log("CHUNK IS: ", chunkText)
+              const sseMessage = `data: ${JSON.stringify(chunkText)}\n\n`;
               controller.enqueue(encoder.encode(sseMessage));
             }
           }

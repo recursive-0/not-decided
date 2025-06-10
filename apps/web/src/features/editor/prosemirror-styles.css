@@ -2,7 +2,7 @@
   position: relative;
   word-wrap: break-word;
   white-space: pre-wrap;
-  line-height: 1.6;
+  line-height: 1.65;
   padding-left: 24px;
   padding-right: 24px;
 
@@ -16,73 +16,88 @@
 .prosemirror-editor,
 .ProseMirror {
   outline: none !important;
-  padding-bottom: 5rem;
+  padding-bottom: 8rem;
 }
 
+/* Headings with consistent, elegant spacing */
 .prosemirror-editor h1 {
-  font-size: 2rem;
+  font-size: 2.25rem; 
   font-weight: 700;
-  line-height: 1.3;
+  line-height: 1.2;
   color: #073642;
-  margin-bottom: 1rem;
+  margin-top: 0;
+  margin-bottom: 1rem; 
+}
+
+.prosemirror-editor h1:not(:first-child) {
+  margin-top: 2.5rem;
 }
 
 .prosemirror-editor h1:first-child {
-  margin-top: 0.5rem;
-}
-
-.prosemirror-editor h2 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  line-height: 1.3;
-  color: #073642;
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.prosemirror-editor h3 {
-  font-size: 1.25rem;
-  font-weight: 700;
-  line-height: 1.3;
-  color: #073642;
-  margin-top: 1.75rem;
-  margin-bottom: 0.75rem;
-}
-
-.prosemirror-editor p {
-  min-height: 1.4em;
-  line-height: 1.4;
-  margin-top: 0.3rem;
-  margin-bottom: 0.3rem;
-  color: var(--color--sidebar-background);
-}
-
-.prosemirror-editor h1 + p,
-.prosemirror-editor h2 + p,
-.prosemirror-editor h3 + p {
   margin-top: 0;
 }
 
+.prosemirror-editor h2 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #073642;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.prosemirror-editor h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #073642;
+  margin-top: 1.75rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Paragraphs with tighter, more readable spacing */
+.prosemirror-editor p {
+  font-size: 1rem;
+  line-height: 1.65;
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #073642;
+}
+
+/* Remove top margin when paragraph follows heading */
+.prosemirror-editor h1 + p,
+.prosemirror-editor h2 + p,
+.prosemirror-editor h3 + p,
+.prosemirror-editor h4 + p {
+  margin-top: 0;
+}
+
+/* Lists with better spacing between items */
 .prosemirror-editor ul,
 .prosemirror-editor ol {
   padding-left: 0;
-  margin-top: 0.5rem;
-  margin-bottom: 1.5rem;
+  margin-top: 0;
+  margin-bottom: 1rem;
   list-style-position: inside;
 }
 
 .prosemirror-editor li {
   position: relative;
   padding-left: 1.5rem;
+  margin-bottom: 0.25rem; /* Reduced from 0.5rem for tighter spacing */
+  line-height: 1.65;
+}
 
-  line-height: 1.6;
+.prosemirror-editor li:last-child {
+  margin-bottom: 0;
 }
 
 .prosemirror-editor ul > li::before {
   content: "•";
   position: absolute;
-  left: 0.5rem;
+  left: 0.375rem;
   color: #073642;
+  font-weight: 600;
 }
 
 .prosemirror-editor ol {
@@ -95,6 +110,8 @@
   position: absolute;
   left: 0;
   color: #073642;
+  font-weight: 600;
+  min-width: 1rem;
 }
 
 .prosemirror-editor li p {
@@ -102,22 +119,37 @@
   display: inline;
 }
 
+/* Nested lists with proper indentation */
 .prosemirror-editor li > ul,
 .prosemirror-editor li > ol {
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
+  padding-left: 1.25rem;
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
 }
 
+.prosemirror-editor li ul > li::before {
+  content: "◦";
+}
+
+.prosemirror-editor li li ul > li::before {
+  content: "▪";
+}
+
+.prosemirror-editor li ol {
+  counter-reset: item;
+}
+
+/* Code blocks with refined spacing */
 .prosemirror-editor pre:not(.custom-code-block pre) {
   background-color: var(--color-secondary);
-  border-radius: 0.25rem;
-  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  padding: 1.25rem;
   margin: 1.5rem 0;
   overflow-x: auto;
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier,
     monospace;
-  font-size: 0.9rem;
-  line-height: 1.4;
+  font-size: 0.875rem;
+  line-height: 1.5;
   border: 1px solid var(--color-border);
 }
 
@@ -149,7 +181,7 @@
 }
 
 .prosemirror-editor > *:last-child {
-  line-height: 1.6rem;
+  line-height: 1.65;
 }
 
 .prosemirror-editor:empty:before {
@@ -162,24 +194,25 @@
   left: 1rem;
 }
 
+/* Blockquotes with elegant spacing */
 .prosemirror-editor blockquote {
   position: relative;
-  margin: 1rem 0;
-  padding: 1rem 1.5rem;
+  margin: 1.5rem 0;
+  padding: 1.25rem 1.75rem;
   background-color: var(--color-secondary);
-  border-left: 2px solid var(--color-primary);
-  border-radius: 0.1rem;
+  border-left: 4px solid var(--color-primary);
+  border-radius: 0.375rem;
   font-style: italic;
   color: #073642;
-  box-shadow: 0 1px 3px var(--color-background);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .prosemirror-editor blockquote::after {
   content: '"';
   position: absolute;
-  top: 0.5rem;
-  left: 0.5rem;
-  font-size: 2rem;
+  top: 0.375rem;
+  left: 0.375rem;
+  font-size: 1.75rem;
   color: var(--color-muted-foreground);
   font-family: Georgia, serif;
   opacity: 0.4;
@@ -203,26 +236,26 @@
   color: var(--color-primary);
 }
 
+/* Custom code blocks */
 .ProseMirror {
   .custom-code-block {
     background-color: #eee8d5;
-    border-radius: 4px;
-    margin-bottom: 0.6rem;
-    padding: 0.2em 0.2em;
+    border-radius: 0.5rem;
+    margin: 1.5rem 0;
+    padding: 0;
     position: relative;
     overflow: hidden;
+    border: 1px solid var(--color-border);
   }
 
   .custom-code-block .code-block-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0em 0.8em;
+    padding: 0.625rem 1rem;
     background-color: var(--color-card);
-    border-top-right-radius: 3px;
-    border-top-left-radius: 3px;
-    border-bottom: 1px solid var(--color-chart-7);
-    font-size: 0.85em;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 0.875rem;
   }
 
   .custom-code-block .code-block-language {
@@ -264,14 +297,14 @@
 
   .custom-code-block pre {
     margin: 0;
-    padding: 0.8em 0.8em;
+    padding: 1.25rem;
     overflow-x: auto;
     border-top-left-radius: 0rem;
     border-top-right-radius: 0rem;
     background-color: var(--color--yellow-light);
     font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier,
       monospace;
-    font-size: 0.9em;
+    font-size: 0.875rem;
     line-height: 1.5;
     white-space: pre;
   }
@@ -282,21 +315,24 @@
   }
 }
 
+/* Checkboxes with consistent spacing */
 .ProseMirror .checkbox-container {
   position: relative;
   display: flex;
+  align-items: flex-start;
   cursor: pointer;
-  padding: 1px 0;
+  padding: 0.25rem 0;
+  margin-bottom: 0.25rem;
 }
 
 .ProseMirror .checkbox-box {
   flex-shrink: 0;
-  width: 0.75rem;
-  height: 0.75rem;
-  margin-top: 7px;
-  margin-right: 10px;
-  border: 1px solid var(--color-border);
-  border-radius: 0.15rem;
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.125rem;
+  margin-right: 0.75rem;
+  border: 2px solid var(--color-border);
+  border-radius: 0.25rem;
   background-color: var(--color-secondary);
   transition: all 0.2s ease;
   position: relative;
@@ -324,6 +360,7 @@
   color: #073642;
   font-family: inherit;
   flex-grow: 1;
+  line-height: 1.65;
 }
 
 .ProseMirror .checkbox-container[data-checked="true"] .checkbox-paragraph {
@@ -331,25 +368,27 @@
   color: var(--color-muted-foreground);
 }
 
+/* Inline code with subtle styling */
 .prosemirror-editor code.inline-code-node {
   display: inline;
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier,
     monospace;
   background-color: var(--color-chart-7);
   color: #073642;
-  padding: 0.15em 0.4em;
-  border-radius: var(--radius-sm);
-  font-size: 0.9em;
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
   white-space: nowrap;
   vertical-align: baseline;
 }
 
 .inline-code {
   background-color: var(--color-card);
-  padding: 0.4em 0.4em;
-  border-radius: 5px;
+  padding: 0.25rem 0.375rem;
+  border-radius: 0.25rem;
   font-family: monospace;
-  font-size: 0.9em;
+  font-size: 0.875rem;
 }
 
 pre code.inline-code {
@@ -358,77 +397,27 @@ pre code.inline-code {
   border-radius: 0;
 }
 
-.prosemirror-editor ul,
-.prosemirror-editor ol {
-  padding-left: 0;
-
-  list-style-position: inside;
-}
-
-.prosemirror-editor li > ul,
-.prosemirror-editor li > ol {
-  padding-left: 1.5rem;
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.prosemirror-editor li {
-  position: relative;
-  padding-left: 1.5rem;
-
-  line-height: 1.6;
-}
-
-.prosemirror-editor ul > li::before {
-  content: "•";
-  position: absolute;
-  left: 0.5rem;
-  color: #073642;
-}
-
-.prosemirror-editor ol {
-  counter-reset: item;
-}
-
-.prosemirror-editor ol > li::before {
-  content: counter(item) ".";
-  counter-increment: item;
-  position: absolute;
-  left: 0;
-  color: #073642;
-}
-
-.prosemirror-editor li ol {
-  counter-reset: item;
-}
-
-.prosemirror-editor li ul > li::before {
-  content: "◦";
-}
-
-.prosemirror-editor li li ul > li::before {
-  content: "▪";
-}
-
+/* Empty state placeholder */
 .ProseMirror p {
   position: relative;
 }
 
 .ProseMirror p.is-empty::before {
-  content: "Start typing (⌘m) or press / to see more options";
-
+  content: "Start typing or press / for commands";
   position: absolute;
   left: 0;
   top: 0;
-  color: #aaa;
+  color: #94a3b8;
   pointer-events: none;
   cursor: text;
+  font-style: italic;
 }
 
 .ProseMirror:focus {
   outline: none;
 }
 
+/* Selection and suggestion highlights */
 .persistent-selection-highlight {
   background-color: var(--color-palette-gold-dark);
 }
@@ -443,22 +432,20 @@ pre code.inline-code {
 }
 
 .deletion-suggestion {
-  background-color: rgba(255, 0, 0, 0.2);
-  animation: fadeInHighlight 0.4s ease-in-out forwards;
-  transition: background-color 0.4s ease-in-out;
+  background-color: rgba(239, 68, 68, 0.15);
+  border-radius: 0.25rem;
+  animation: fadeInHighlight 0.3s ease-in-out forwards;
 }
 
 .addition-suggestion {
-  background-color: rgba(0, 255, 0, 0.2);
-  animation: fadeInHighlight 0.4s ease-in-out forwards;
-  transition: background-color 0.4s ease-in-out;
+  background-color: rgba(34, 197, 94, 0.15);
+  border-radius: 0.25rem;
+  animation: fadeInHighlight 0.3s ease-in-out forwards;
 }
-
 
 .suggestion-navigated-active {
   background-color: var(--color-palette-gold-light);
   outline: 2px solid var(--color-card-foreground);
-  /* box-shadow: 0 0px 40px 5px var(--color-palette-gold); */
 }
 
 .current-node-dot {
@@ -469,9 +456,9 @@ pre code.inline-code {
 }
 
 .autocomplete-ghost-text {
-  color: grey; /* A common default */
-  opacity: 0.6; /* Adjust between 0.4 and 0.7 usually works well */
+  color: grey;
+  opacity: 0.6;
   pointer-events: none; 
-  display: inline-block; /* Or just inline, depending on how ProseMirror widgets are handled */
-  vertical-align: baseline; /* Or as needed to match editor text */
+  display: inline-block;
+  vertical-align: baseline;
 }

@@ -115,6 +115,18 @@ export class ComposerModeParser {
   private flushTextBuffer() {
     if (this.textBuffer.length === 0) return;
 
+    let textToEmit: string;
+  if (this.mode === Tags.code) {
+    textToEmit = this.textBuffer;
+  } else {
+    textToEmit = this.textBuffer.replace(/[\n\r\t]/g, "");
+  }
+
+  if (textToEmit.length === 0) {
+    this.clearTextBuffer();
+    return;
+  }
+
     console.log("CURRNT text buffer is: ", this.textBuffer);
 
     if (this.state === ParserState.normal) {

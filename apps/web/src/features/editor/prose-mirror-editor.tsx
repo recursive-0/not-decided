@@ -31,6 +31,7 @@ import { AcceptAllRejectAllDialog } from "./accpet-all-reject-all-dialog";
 import { CommandPalette } from "./command-palette";
 import "./external-dialogs.css";
 import "./prosemirror-styles.css";
+// import { ensureTrailingParagraphPlugin } from "@/plugins/trailing-paragraph-plugin";
 
 const debounce = (func, delay) => {
   let timer;

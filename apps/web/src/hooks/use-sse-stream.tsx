@@ -49,7 +49,7 @@ export const useSSEStream = () => {
     (operationData: OperationType) => {
       if (!editorView.current) return;
 
-      console.log("EXECUTING OPERATION: ", operationData)
+      console.log("EXECUTING OPERATION: ", operationData);
       // const { action, nodeIds } = operationData;
 
       // if (action === "delete") {
@@ -131,9 +131,7 @@ export const useSSEStream = () => {
         }
 
         if (!rendererRef.current && editorView.current) {
-          rendererRef.current = new Renderer(
-            editorView.current,
-          );
+          rendererRef.current = new Renderer(editorView.current);
 
           editorActionsManagerRef.current = new EditorActionsManager(
             editorView.current,
@@ -169,8 +167,7 @@ export const useSSEStream = () => {
           });
         }
 
-        const validContentNodes = getContentNodes(editorView.current)
-
+        const validContentNodes = getContentNodes(editorView.current);
 
         // Initialize stream
         const response = await fetch(`${BASE_URL}/api/init/stream`, {
@@ -195,19 +192,10 @@ export const useSSEStream = () => {
           `${BASE_URL}/api/generate/stream?streamID=${streamId}`
         );
 
-        function preProcessIncomingTokens(tokens: string) {
-          return tokens
-            .replace(/\\n/g, "\n")
-            .replace(/\\r/g, "\r")
-            .replace(/\\t/g, "\t");
-        }
-
-        // Handle messages
         eventSourceRef.current.onmessage = (event) => {
-          const tokens = event.data;
+          const rawData = event.data;
 
-
-          switch (tokens.trim()) {
+          switch (rawData.trim()) {
             case "[DONE]":
             case "END_STREAM":
               getCurrentParser()?.current!.stopStreaming();
@@ -219,14 +207,23 @@ export const useSSEStream = () => {
             case "START_STREAM":
               getCurrentParser().current!.startStreaming();
               setCurrentLLMAction(CurrentActionType.normal);
-              editorView.current!.state.tr.setMeta(suggestionNavigatorPluginKey, { navigateToIndex: null, action: "reset"})
+              editorView.current!.state.tr.setMeta(
+                suggestionNavigatorPluginKey,
+                { navigateToIndex: null, action: "reset" }
+              );
               return;
 
             default:
-              setContent((prev) => prev + preProcessIncomingTokens(tokens));
-              getCurrentParser()?.current!.processChunk(
-                preProcessIncomingTokens(tokens)
-              );
+              try {
+                const parsedText = JSON.parse(rawData);
+                getCurrentParser()?.current!.processChunk(parsedText);
+              } catch (e) {
+                console.error(
+                  "Failed to parse SSE data chunk as JSON:",
+                  rawData,
+                  e
+                );
+              }
           }
         };
 
