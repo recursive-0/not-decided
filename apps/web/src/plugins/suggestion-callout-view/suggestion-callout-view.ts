@@ -1,6 +1,7 @@
 import { PluginView } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
 import { textHighlightPluginKey } from "../text-highlight-plugin/text-highlight-plugin";
+import { useWrisorStore } from "@/store/wrisor";
 
 export class SuggestionControlCallout implements PluginView {
   private suggestionCalloutElement: HTMLDivElement;
@@ -60,6 +61,8 @@ export class SuggestionControlCallout implements PluginView {
 
     this.view.dispatch(tr);
     this.activeSuggestionId = null
+    const { totalCurrentEdits, setTotalCurrentEdits } = useWrisorStore.getState()
+    setTotalCurrentEdits(totalCurrentEdits - 1)
   }
 
   handleRejectSuggestion() {
@@ -80,6 +83,8 @@ export class SuggestionControlCallout implements PluginView {
     });
 
     this.view.dispatch(tr);
+    const { totalCurrentEdits, setTotalCurrentEdits } = useWrisorStore.getState()
+    setTotalCurrentEdits(totalCurrentEdits - 1)
   }
 
   update(view: EditorView): void {
