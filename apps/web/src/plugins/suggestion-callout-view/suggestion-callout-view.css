@@ -3,23 +3,24 @@
   display: none;
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
   z-index: 10;
-  overflow: hidden; 
   border-radius: 8px;
-  background-color: var(--color-palette-cream);
   padding: 2px 2px;
 }
 
+
 .callout-arrow {
   position: absolute;
-  width: 0;
-  height: 0;
+  width: 10px;  
+  height: 10px; 
+  z-index: 4;
+  
+  background-color: var(--color-forest-teal);
 
-  border-left: 8px solid transparent;
-  border-right: 8px solid transparent;
-  border-top: 8px solid var(--color-palette-cream);
-  bottom: -8px;
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: 16px; 
+  left: 20%;
+  transform: translateX(-50%) rotate(45deg); 
+  border-radius: 2px; 
+  
 }
 
 .accept-callout-button,
@@ -34,7 +35,7 @@
   font-size: 10px;
   padding: 4px 8px;
   color: white;
-  transition: opacity 0.2s;
+  transition: all 0.2s;
 }
 
 .accept-callout-button {
@@ -51,5 +52,10 @@
 
 .accept-callout-button:hover,
 .reject-callout-button:hover {
-  opacity: 0.8;
+
+  color: rgb(255, 255, 255, 0.5)
+}
+
+.accept-callout-button:hover ~ .callout-arrow {
+  color: rgb(255, 255, 255, 0.5)
 }

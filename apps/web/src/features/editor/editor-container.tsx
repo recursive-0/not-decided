@@ -1,12 +1,18 @@
 import { Separator } from "@/components/ui/separator";
 import Toolbar from "../toolbar";
 import { ProseMirrorEditor } from "./prose-mirror-editor";
+import { TransformationLoader } from "@/components/loaders/transformation-loader";
+import { useUIStore } from "@/store/ui";
 
 export const EditorContainer = () => {
+
+  const { isTransforming } = useUIStore()
+  console.log("transformation is: ", isTransforming)
   return (
     <div className="w-full h-full flex flex-col items-center bg-background relative">
       <Toolbar />
       <Separator />
+      {isTransforming && <TransformationLoader />}
       <ProseMirrorEditor />
     </div>
   );

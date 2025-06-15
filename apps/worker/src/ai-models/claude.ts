@@ -8,7 +8,7 @@ let claudeClient: Anthropic | null = null;
 export function getClient(env: Env): Anthropic {
 	if (claudeClient === null) {
 		console.log('Initializing Anthropic AI Client for this isolate...');
-		if (!env.GEMINI_API_KEY) {
+		if (!env.ANTHROPIC_API_KEY) {
 			throw new Error('Missing ANTHROPIC_API_KEY secret in environment configuration!');
 		}
 		claudeClient = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
@@ -27,7 +27,7 @@ export async function handleClaudeStream(props: HandleClaudeStreamProps) {
 	console.log('PROPS are: ', props.env);
 
 	if (!claudeClient) {
-    console.log("Claude client does not exist hence creating the instance")
+		console.log('Claude client does not exist hence creating the instance');
 		getClient(props.env);
 	}
 
@@ -59,11 +59,8 @@ export async function handleClaudeStream(props: HandleClaudeStreamProps) {
 
 				// Create a separate handler function with the correct controller reference
 				const handleText = (text: string) => {
-					const safeText = text
-					.replace(/\n/g, "\\n")
-					.replace(/\r/g, "\\r")
-					.replace(/\t/g, "\\t");
-					console.log("SAFE TEXT IS: ", safeText)
+					const safeText = text.replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t');
+					console.log('SAFE TEXT IS: ', safeText);
 					const sseMessage = `data: ${safeText}\n\n`;
 					controller.enqueue(encoder.encode(sseMessage));
 				};
@@ -93,36 +90,41 @@ export async function handleClaudeStream(props: HandleClaudeStreamProps) {
 	});
 }
 
-
-
 export async function callClaude(prompt: string, systemPrompt: string, env: Env) {
+	// if (!claudeClient) {
+	// 	console.log('Claude client does not exist hence creating the instance');
+	// 	getClient(env);
+	// }
 
-	if (!claudeClient) {
-		console.log("Claude client does not exist hence creating the instance")
-			getClient(env);
-		}
+	// if(!claudeClient){
 
-	const response = await claudeClient!.messages.create({
-		model: "claude-3-5-sonnet-20241022",
+	// }
+
+	const claudeClient = getClient(env)
+
+	console.log("Calling claude client for text transformation")
+
+	console.log("Clade client is: ", claudeClient)
+
+	const response = await claudeClient.messages.create({
+		model: 'claude-sonnet-4-20250514',
 		messages: [
 			{
-				role: "user",
-				content: prompt
+				role: 'user',
+				content: prompt,
 			},
 			{
-				role: "assistant",
-				content: systemPrompt
-			}
+				role: 'assistant',
+				content: systemPrompt,
+			},
 		],
-		max_tokens: 8000,
-	})
+		max_tokens: 4000,
+	});
 
-	console.log("MSG IS: ", response)
+	console.log('MSG IS: ', response);
 
 	// strip out newlines and other special characters
-	const text = response.content[0].type === "text" ? response.content[0].text : null
+	const text = response.content[0].type === 'text' ? response.content[0].text : null;
 
-	return text?.replace(/\n/g, "").replace(/\r/g, "").replace(/\t/g, "").trim()
+	return text?.replace(/\n/g, '').replace(/\r/g, '').replace(/\t/g, '').trim();
 }
-
-				

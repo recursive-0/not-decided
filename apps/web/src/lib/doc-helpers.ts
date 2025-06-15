@@ -1,11 +1,14 @@
 import { EditorView } from "prosemirror-view";
 
 export const getDocumentContext = (editor: EditorView) => {
-  const { from, to } = getSemanticTextSelectionRange(editor)
+  const { from, to } = editor.state.selection
   const doc = editor.state.doc;
+  const currentNode = doc.nodeAt(from)
+  const currentNodeContent = currentNode!.textContent
 
   return {
     selectedText: doc.textBetween(from, to),
+    surroundingContext: currentNodeContent,
     documentContent: doc.textBetween(0, doc.content.size),
   };
 };
@@ -69,3 +72,5 @@ export const getSemanticTextSelectionRange = (editor: EditorView) => {
     to: semanticTo
   };
 };
+
+

@@ -108,10 +108,10 @@ export class SuggestionControlCallout implements PluginView {
       this.view.dom.parentNode as HTMLElement
     ).getBoundingClientRect();
     this.suggestionCalloutElement.style.left = `${
-      coords.left - parentRect.left
+      coords.left - parentRect.left - 20
     }px`;
     this.suggestionCalloutElement.style.top = `${
-      coords.top - parentRect.top - 30
+      coords.top - parentRect.top
     }px`;
 
     this.suggestionCalloutElement.style.display = "flex";
