@@ -1,7 +1,7 @@
 import { useSSEStream } from "@/hooks/use-sse-stream";
 import { useEditor } from "@/providers/editor-context-provider";
 import { useChatStore } from "@/store/chat";
-import { useEditorStore } from "@/store/editor";
+import { useWrisorStore } from "@/store/wrisor";
 import { ChatMode, Message } from "@/types/messages";
 import React, {
   createContext,
@@ -39,7 +39,7 @@ export const ChatHandlerProvider: React.FC<ChatHandlerProviderProps> = ({
   children,
 }) => {
   const {chatMessages, addChatMessage, currentChatMode, setCurrentChatMode} = useChatStore()
-  const { totalCurrentEdits } = useEditorStore();
+  const { totalCurrentEdits } = useWrisorStore();
   const appendTokenToMessage = useChatStore(
     (state) => state.appendTokenToLastMessage
   );

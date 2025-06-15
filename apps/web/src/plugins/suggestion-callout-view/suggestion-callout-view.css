@@ -1,0 +1,55 @@
+.callout-container {
+  position: absolute;
+  display: none;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+  z-index: 10;
+  overflow: hidden; 
+  border-radius: 8px;
+  background-color: var(--color-palette-cream);
+  padding: 2px 2px;
+}
+
+.callout-arrow {
+  position: absolute;
+  width: 0;
+  height: 0;
+
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid var(--color-palette-cream);
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.accept-callout-button,
+.reject-callout-button {
+  border: none;
+  height: 20px;
+  width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 10px;
+  padding: 4px 8px;
+  color: white;
+  transition: opacity 0.2s;
+}
+
+.accept-callout-button {
+  background-color: var(--color-forest-teal);
+  border-top-left-radius: 6px;
+  border-bottom-left-radius: 6px;
+}
+
+.reject-callout-button {
+  background-color: var(--color-olive-green);
+  border-top-right-radius: 6px;
+  border-bottom-right-radius: 6px;
+}
+
+.accept-callout-button:hover,
+.reject-callout-button:hover {
+  opacity: 0.8;
+}

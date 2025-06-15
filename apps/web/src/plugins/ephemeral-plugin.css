@@ -1,0 +1,48 @@
+/* In your CSS file */
+.strikethrough-ephemeral {
+  text-decoration: line-through;
+  background-color: rgba(255, 82, 82, 0.2); /* Faint red */
+}
+
+.inserted-ephemeral {
+  background-color: rgba(34, 197, 94, 0.2); /* Faint green */
+  border-bottom: 2px solid #22c55e;
+  color: #166534; /* Darker green text */
+}
+
+
+.suggestion-toolbar {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background-color: #1a1a1a;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid #444;
+  position: absolute; /* This will now be relative to our new span container */
+  bottom: 100%; /* Place it just above the line of text */
+  left: 0;
+  margin-bottom: 6px; /* A bit more space from the text */
+  transform: translateX(-50%); /* Center it on the anchor point */
+  white-space: nowrap; /* Prevent buttons from wrapping */
+  z-index: 10; /* Ensure it appears on top of other editor content */
+}
+
+.suggestion-toolbar-btn {
+  background: none;
+  border: none;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background-color 0.2s;
+}
+
+.suggestion-toolbar-btn.accept:hover {
+  background-color: #22c55e; /* Green */
+}
+
+.suggestion-toolbar-btn.reject:hover {
+  background-color: #ef4444; /* Red */
+}

@@ -8,7 +8,7 @@ import {
   extendedProseMirrorSchema,
   useEditor,
 } from "@/providers/editor-context-provider";
-import { useEditorStore } from "@/store/editor";
+import { useWrisorStore } from "@/store/wrisor";
 import "@/styles/suggestion-navigation.css";
 import {
   baseKeymap,
@@ -31,6 +31,8 @@ import { AcceptAllRejectAllDialog } from "./accpet-all-reject-all-dialog";
 import { CommandPalette } from "./command-palette";
 import "./external-dialogs.css";
 import "./prosemirror-styles.css";
+import "../../plugins/text-highlight-plugin/text-highlight-plugin.css"
+import { textHighlightPlugin } from "@/plugins/text-highlight-plugin/text-highlight-plugin";
 // import { ensureTrailingParagraphPlugin } from "@/plugins/trailing-paragraph-plugin";
 
 const debounce = (func, delay) => {
@@ -70,6 +72,7 @@ const plugins = [
   // massAcceptRejectPlugin,
   suggestionNavigatorPlugin,
   // ensureTrailingParagraphPlugin,
+  textHighlightPlugin,
   ensureNodeIdPlugin,
   placeholderPlugin,
   history(),
@@ -122,7 +125,7 @@ export const ProseMirrorEditor = () => {
   const { editorContainerRef, editorView, setEditorReady, isEditorReady } =
     useEditor();
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const { totalCurrentEdits } = useEditorStore();
+  const { totalCurrentEdits } = useWrisorStore();
   const isDialogClosingRef = useRef(false);
   const [dialogPosition, setDialogPosition] = useState<{
     left: number;
@@ -319,7 +322,7 @@ export const ProseMirrorEditor = () => {
       className="flex flex-col w-full relative max-h-[calc(100vh - 60px)] overflow-scroll"
     >
       <div
-        className="prosemirror-editor w-full h-full py-4 px-4 outline-none"
+        className="prosemirror-editor w-full h-full py-4 px-4 outline-none relative"
         ref={editorRef}
       />
       {smartAiPopupPos !== null && (

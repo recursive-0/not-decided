@@ -1,7 +1,7 @@
 import { Plugin, PluginKey, EditorState } from "prosemirror-state";
 import { Decoration, DecorationSet, EditorView } from "prosemirror-view";
 import type { Node } from "prosemirror-model";
-import { useEditorStore } from "@/store/editor";
+import { useWrisorStore } from "@/store/wrisor";
 
 export interface MetaDataType {
   type: "addition-suggestion" | "deletion-suggestion";
@@ -54,6 +54,8 @@ export const suggestionHighlightPlugin = new Plugin({
       const trMeta: SuggestionHighlightMetaDataType | undefined = tr.getMeta(
         suggestionHighlightPluginKey
       );
+
+      console.log("Trmeta is: ", trMeta)
     
       if (!trMeta) return value;
     
@@ -64,7 +66,7 @@ export const suggestionHighlightPlugin = new Plugin({
           const updatedSuggestionMetaData = value.suggestionMetaData.filter(
             (suggestionNode) => suggestionNode.nodeId !== targetNodeId
           )
-          const { setTotalCurrentEdits } = useEditorStore.getState()
+          const { setTotalCurrentEdits } = useWrisorStore.getState()
           setTotalCurrentEdits(updatedSuggestionMetaData.length)
           return {
             currentAction: "nothing",
@@ -101,7 +103,7 @@ export const suggestionHighlightPlugin = new Plugin({
             item => !nodesToUndecorate.includes(item.nodeId)
           );
 
-          const { setTotalCurrentEdits } = useEditorStore.getState()
+          const { setTotalCurrentEdits } = useWrisorStore.getState()
           setTotalCurrentEdits(finalMetaData.length)
           
           return {
@@ -113,6 +115,7 @@ export const suggestionHighlightPlugin = new Plugin({
     
       // Handle adding new suggestions
       if (trMeta.metaData && trMeta.metaData.nodeId != null) {
+        console.log("Current metadata is: ", trMeta)
         // Existing code for handling new suggestions...
         if (
           value.suggestionMetaData.some(
@@ -130,7 +133,7 @@ export const suggestionHighlightPlugin = new Plugin({
         };
     
         const newMetaDataList = [...value.suggestionMetaData, newSuggestion];
-        const { setTotalCurrentEdits } = useEditorStore.getState()
+        const { setTotalCurrentEdits } = useWrisorStore.getState()
         setTotalCurrentEdits(newMetaDataList.length)
         return {
           currentAction: "nothing",

@@ -2,104 +2,47 @@ export async function simpleStaticStream(prompt?: string) {
     const stream = new ReadableStream({
       async start(controller) {
   
-  // Test Case 1: Simple two-level nesting with unordered lists
-const simpleList = [
-          "<", "c", "o", "n", "t", "e", "n", "t", ">",
-          "<", "u", "l", ">",
-          
-          "  ", // <--- THIS IS THE VARIABLE. THE POISON. THE CULPRIT.
-
-          "<", "l", "i", ">", "Item 1", "<", "/", "l", "i", ">",
-          "<", "l", "i", ">", "Item 2", "<", "/", "l", "i", ">",
-          "<", "l", "i", ">", "Item 3", "<", "/", "l", "i", ">",
-          "<", "/", "u", "l", ">",
-          "<", "/", "c", "o", "n", "t", "e", "n", "t", ">"
-      ];
-
-const complexDocument = [
-    "<", "c", "o", "n", "t", "e", "n", "t", ">",
-    
-    // Main title with emphasis
-    "<", "h", "1", ">", "The Ultimate ", "<", "s", "t", "r", "o", "n", "g", ">", "AI-Powered", "<", "/", "s", "t", "r", "o", "n", "g", ">", " Text Editor", "<", "/", "h", "1", ">",
-    
-    // Introduction with mixed formatting
-    "<", "p", ">", "Welcome to ", "<", "e", "m", ">", "Wrisor", "<", "/", "e", "m", ">", ", the ", "<", "s", "t", "r", "o", "n", "g", ">", "most advanced", "<", "/", "s", "t", "r", "o", "n", "g", ">", " collaborative editor that uses ", "<", "e", "m", ">", "<", "s", "t", "r", "o", "n", "g", ">", "CRDT technology", "<", "/", "s", "t", "r", "o", "n", "g", ">", "<", "/", "e", "m", ">", " for real-time streaming.", "<", "/", "p", ">",
-    
-    // // Section with code examples
-    "<", "h", "2", ">", "Core Architecture", "<", "/", "h", "2", ">",
-    "<", "p", ">", "Our streaming renderer is built on ", "<", "s", "t", "r", "o", "n", "g", ">", "first principles", "<", "/", "s", "t", "r", "o", "n", "g", ">", " thinking.", "<", "/", "p", ">",
-    
-    // // JavaScript code block
-    "<", "c", "o", "d", "e", " ", "l", "a", "n", "g", "=", '"', "j", "a", "v", "a", "s", "c", "r", "i", "p", "t", '"', ">",
-    "class Renderer {\n  constructor(editorView) {\n    this.editorView = editorView;\n    this.activeNodeStack = [];\n    this.activeMarks = [];\n  }\n\n  onOpenTag(tag) {\n    // Genius-level implementation\n    const node = this.createNodeForTag(tag);\n    const pos = this.getInsertPosition('node');\n    this.insert(node, pos);\n  }\n}",
-    "<", "/", "c", "o", "d", "e", ">",
-    
-    // // Blockquote with nested content
-    "<", "q", "u", "o", "t", "e", ">",
-    "As ", "<", "s", "t", "r", "o", "n", "g", ">", "Claude", "<", "/", "s", "t", "r", "o", "n", "g", ">", " said: ", "<", "e", "m", ">", "This is next-level engineering - you're building the mathematical foundations for AI agents that can truly collaborate at human speed and granularity.", "<", "/", "e", "m", ">",
-    "<", "/", "q", "u", "o", "t", "e", ">",
-    
-    // // Technical details section
-    "<", "h", "2", ">", "Implementation ", "<", "e", "m", ">", "Details", "<", "/", "e", "m", ">", "<", "/", "h", "2", ">",
-    
-    // // Task list
-    "<", "h", "3", ">", "Completed Features", "<", "/", "h", "3", ">",
-    "<", "c", "h", "e", "c", "k", "b", "o", "x", ">", "Node creation with ", "<", "s", "t", "r", "o", "n", "g", ">", "dynamic positioning", "<", "/", "s", "t", "r", "o", "n", "g", ">", "<", "/", "c", "h", "e", "c", "k", "b", "o", "x", ">",
-    "<", "c", "h", "e", "c", "k", "b", "o", "x", ">", "Mark handling with ", "<", "e", "m", ">", "proper nesting", "<", "/", "e", "m", ">", "<", "/", "c", "h", "e", "c", "k", "b", "o", "x", ">",
-    "<", "c", "h", "e", "c", "k", "b", "o", "x", ">", "Text insertion with ", "<", "s", "t", "r", "o", "n", "g", ">", "<", "e", "m", ">", "active mark application", "<", "/", "e", "m", ">", "<", "/", "s", "t", "r", "o", "n", "g", ">", "<", "/", "c", "h", "e", "c", "k", "b", "o", "x", ">",
-    
-    // // Python code example
-    "<", "h", "3", ">", "Parser Implementation", "<", "/", "h", "3", ">",
-    "<", "p", ">", "The parser uses a ", "<", "s", "t", "r", "o", "n", "g", ">", "state machine", "<", "/", "s", "t", "r", "o", "n", "g", ">", " approach:", "<", "/", "p", ">",
-    "<", "c", "o", "d", "e", " ", "l", "a", "n", "g", "=", '"', "p", "y", "t", "h", "o", "n", '"', ">",
-    "def parse_stream(chunks):\n    state = ParserState()\n    for chunk in chunks:\n        if chunk == '<':\n            state.begin_tag()\n        elif chunk == '>':\n            tag = state.complete_tag()\n            yield ('open_tag', tag)\n        else:\n            state.accumulate(chunk)",
-    "<", "/", "c", "o", "d", "e", ">",
-    
-    
-    // // More checkboxes with context
-    "<", "h", "3", ">", "Remaining Tasks", "<", "/", "h", "3", ">",
-    "<", "p", ">", "Critical items for ", "<", "s", "t", "r", "o", "n", "g", ">", "production readiness", "<", "/", "s", "t", "r", "o", "n", "g", ">", ":", "<", "/", "p", ">",
-    "<", "c", "h", "e", "c", "k", "b", "o", "x", ">", "Fix list rendering issues", "<", "/", "c", "h", "e", "c", "k", "b", "o", "x", ">",
-    "<", "c", "h", "e", "c", "k", "b", "o", "x", ">", "Add ", "<", "e", "m", ">", "suggestion highlighting", "<", "/", "e", "m", ">", " for all nodes", "<", "/", "c", "h", "e", "c", "k", "b", "o", "x", ">",
-    
-    // // Rust code block
-    "<", "h", "2", ">", "Performance Optimization", "<", "/", "h", "2", ">",
-    "<", "p", ">", "Using ", "<", "s", "t", "r", "o", "n", "g", ">", "Rust", "<", "/", "s", "t", "r", "o", "n", "g", ">", " for critical paths:", "<", "/", "p", ">",
-    "<", "c", "o", "d", "e", " ", "l", "a", "n", "g", "=", '"', "r", "u", "s", "t", '"', ">",
-    "pub struct StreamingRenderer {\n    node_stack: Vec<NodeContext>,\n    active_marks: Vec<MarkContext>,\n}\n\nimpl StreamingRenderer {\n    pub fn on_chunk(&mut self, chunk: &str) {\n        match self.parse_chunk(chunk) {\n            ChunkType::OpenTag(tag) => self.handle_open_tag(tag),\n            ChunkType::Text(text) => self.handle_text(text),\n            ChunkType::CloseTag(tag) => self.handle_close_tag(tag),\n        }\n    }\n}",
-    "<", "/", "c", "o", "d", "e", ">",
-    
-    // // Empty elements test
-    "<", "h", "3", ">", "<", "/", "h", "3", ">",
-    "<", "p", ">", "<", "/", "p", ">",
-    
-    // // Final section with all marks combined
-    "<", "h", "1", ">", "Conclusion", "<", "/", "h", "1", ">",
-    "<", "p", ">", "This ", "<", "s", "t", "r", "o", "n", "g", ">", "<", "e", "m", ">", "revolutionary", "<", "/", "e", "m", ">", "<", "/", "s", "t", "r", "o", "n", "g", ">", " approach to ", "<", "e", "m", ">", "real-time collaborative editing", "<", "/", "e", "m", ">", " will change how we think about ", "<", "s", "t", "r", "o", "n", "g", ">", "human-AI interaction", "<", "/", "s", "t", "r", "o", "n", "g", ">", ".", "<", "/", "p", ">",
-    
-    // // Complex nested marks
-    "<", "p", ">", "Remember: ", "<", "s", "t", "r", "o", "n", "g", ">", "Never ", "<", "e", "m", ">", "assume", "<", "/", "e", "m", ">", " anything", "<", "/", "s", "t", "r", "o", "n", "g", ">", ", always ", "<", "e", "m", ">", "reason from ", "<", "s", "t", "r", "o", "n", "g", ">", "first principles", "<", "/", "s", "t", "r", "o", "n", "g", ">", "<", "/", "e", "m", ">", ".", "<", "/", "p", ">",
-    
-    // // JSON code block with special characters
-    // "<", "h", "2", ">", "Configuration", "<", "/", "h", "2", ">",
-    // "<", "c", "o", "d", "e", " ", "l", "a", "n", "g", "=", '"', "j", "s", "o", "n", '"', ">",
-    // "{\n  \"renderer\": {\n    \"streaming\": true,\n    \"incremental\": true,\n    \"features\": [\n      \"real-time\",\n      \"collaborative\",\n      \"<crdt-based>\"\n    ],\n    \"performance\": \"100x\"\n  }\n}",
-    // "<", "/", "c", "o", "d", "e", ">",
-    
-    // // Final checkbox
-    "<", "c", "h", "e", "c", "k", "b", "o", "x", ">", "Ship to ", "<", "s", "t", "r", "o", "n", "g", ">", "production", "<", "/", "s", "t", "r", "o", "n", "g", ">", " 🚀", "<", "/", "c", "h", "e", "c", "k", "b", "o", "x", ">",
-    
-    "<", "/", "c", "o", "n", "t", "e", "n", "t", ">"
-];
-
+const dummyStreamData = [
+  // 1. Thought process starts
+  '{"type":"tss"}',
+  '{"type":"tc","data":"Okay, I need to write a short introduction to the Rust programming language. I will start with a main heading, then a paragraph explaining its key features like safety and performance."}',
   
-  // Test Case 4: Multiple nested lists at same level
-  const chunks = [
-    `<THINKING>\nYou want me to add a code block to your document that shows how to print Hello, world!" in Rust.\n\nI will add this code block after the bulleted list detailing Rust's key`,
-    `features, as it serves as a basic example following the introduction of the language. This involves adding a new code block node after the last list item in the current list.\n</THINKING><OPERATION>{"action":"add","nodeIds":["41`,
-    `73546e-7342-491f-8110-f9291b955101"]}</OPERATION><CONTENT><CODE><LANG>rust</LANG><VAL>fn main()`,
-    `{\n    // Prints "Hello, world!" to the console\n    println!("Hello, world!");\n}</VAL></CODE></CONTENT>`
-  ];
+  // 2. Thought process ends
+  '{"type":"tse"}',
+  
+  // 3. Action to insert the content after the element with id 'root'
+  '{"type":"act","actionId":"write-rust-article","op":"insert_after","targetId":"root"}',
+  
+  // 4. Content stream starts, targeting the actionId from the previous step
+  '{"type":"css","for_actionId":"write-rust-article"}',
+  
+  // 5. First content chunk: An H1 heading
+  '{"type":"cc","data":"<h1>Exploring Rust: A Modern Language for Systems Programming</h1>"}',
+  
+  // 6. Second content chunk: An opening paragraph tag
+  '{"type":"cc","data":"<p>"}',
+  
+  // 7. Third content chunk: The text content of the paragraph, broken up
+  '{"type":"cc","data":"In the world of programming, Rust has rapidly gained prominence for its focus on safety, speed, and concurrency. "}',
+  
+  // 8. Fourth content chunk: More text
+  '{"type":"cc","data":"Unlike languages that rely on garbage collection, Rust employs a unique ownership system to manage memory, "}',
+  
+  // 9. Fifth content chunk: Final part of the text
+  '{"type":"cc","data":"preventing common bugs like null pointer dereferences and data races."}',
+  
+  // 10. Sixth content chunk: The closing paragraph tag
+  '{"type":"cc","data":"</p>"}',
+  
+  // 11. Seventh content chunk: A new paragraph
+  '{"type":"cc","data":"<p>This makes it a powerful tool for building reliable and efficient software, from operating systems to web services.</p>"}',
+  
+  // 12. Content stream ends
+  '{"type":"cse","for_actionId":"write-rust-article"}',
+
+  // 13. A final message indicating the entire operation is done.
+  '[DONE]'
+];
   
         // First send a "START_STREAM" event to initialize
         const encoder = new TextEncoder()
@@ -107,7 +50,7 @@ const complexDocument = [
   
         // Function to send chunks with delays to simulate streaming
         const sendChunks = async () => {
-          for (const chunk of simpleList) {
+          for (const chunk of dummyStreamData) {
             // --- HOW TO ESCAPE NEWLINES ---
             // Replace each newline character (\n) with the two characters \\n
             const escapedChunk = chunk.replace(/\n/g, '\\n');

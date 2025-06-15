@@ -6,6 +6,8 @@ import { extendedProseMirrorSchema } from "@/providers/editor-context-provider";
 import { v4 as uuidv4 } from "uuid";
 import { suggestionHighlightPluginKey } from "@/plugins/suggestion-highlight-plugin";
 import { CodeBlockNodeType } from "./composer-mode-parser";
+import { ActionMessageType } from "@/types/stream";
+import { getActionContext } from "./misc-editor-helpers";
 
 interface NodeContextType {
   type: Tags;
@@ -14,20 +16,25 @@ interface NodeContextType {
 }
 
 interface ActiveMarksType {
-  type: Tags.b | Tags.em | Tags.strong | Tags.icode
+  type: Tags.b | Tags.em | Tags.strong | Tags.icode;
   startPosition: number;
   endPosition: number;
 }
 
 function isMarkTag(tag: Tags) {
-  return tag === Tags.b || tag === Tags.strong || tag === Tags.em || tag === Tags.icode
+  return (
+    tag === Tags.b ||
+    tag === Tags.strong ||
+    tag === Tags.em ||
+    tag === Tags.icode
+  );
 }
 
 export class Renderer {
   private editorView: EditorView | null = null;
   private activeNodeStack: NodeContextType[] = [];
   private activeMarks: ActiveMarksType[] = [];
-  private insertionPoint: number | null = null;
+  private pendingAction: ActionMessageType | null = null;
 
   constructor(editorView: EditorView) {
     this.editorView = editorView;
@@ -43,8 +50,8 @@ export class Renderer {
     }
   }
 
-  public setInsertionPoint(targetedPos: number) {
-    this.insertionPoint = targetedPos;
+  public setPendingAction(action: ActionMessageType | null) {
+    this.pendingAction = action;
   }
 
   public onOpenTag(tag: Tags) {
@@ -70,6 +77,7 @@ export class Renderer {
 
     const tr = this.editorView.state.tr;
     tr.insert(insertPos, node);
+    this.applyHighlightMeta(tr, tag, node);
 
     this.activeNodeStack.push({
       type: tag,
@@ -109,21 +117,21 @@ export class Renderer {
   public onTextContent(text: string) {
     if (!this.editorView) return;
 
-     if (this.activeNodeStack.length > 0) {
-    const parentContext =
-      this.activeNodeStack[this.activeNodeStack.length - 1];
+    if (this.activeNodeStack.length > 0) {
+      const parentContext =
+        this.activeNodeStack[this.activeNodeStack.length - 1];
 
-    // If the direct parent is a list container (ul or ol) AND the incoming text
-    // consists of nothing but whitespace characters...
-    if (
-      (parentContext.type === Tags.ul || parentContext.type === Tags.ol) &&
-      text.trim().length === 0
-    ) {
-      // ...then this is insignificant layout noise from the LLM.
-      // Discard it and stop processing immediately.
-      return; 
+      // If the direct parent is a list container (ul or ol) AND the incoming text
+      // consists of nothing but whitespace characters...
+      if (
+        (parentContext.type === Tags.ul || parentContext.type === Tags.ol) &&
+        text.trim().length === 0
+      ) {
+        // ...then this is insignificant layout noise from the LLM.
+        // Discard it and stop processing immediately.
+        return;
+      }
     }
-  }
 
     const insertPos = this.getInsertPosition("text");
     const tr = this.editorView.state.tr;
@@ -212,10 +220,12 @@ export class Renderer {
   applyHighlightMeta(tr: Transaction, tag: Tags, node: Node) {
     if (this.isContainerNode(tag)) {
       const metaData = {
-        nodeId: node.attrs.nodeId,
-        type: "addition-suggestion",
+        metaData: {
+          nodeId: node.attrs.nodeId,
+          type: "addition-suggestion",
+        },
       };
-      tr?.setMeta(suggestionHighlightPluginKey, { metaData: metaData });
+      tr?.setMeta(suggestionHighlightPluginKey, metaData);
     }
   }
 
@@ -272,6 +282,17 @@ export class Renderer {
   }
 
   public getInsertPosition(type: "node" | "text"): number {
+    if (this.pendingAction) {
+      const actionContext = getActionContext(
+        this.editorView!,
+        this.pendingAction
+      );
+      this.setPendingAction(null);
+      return actionContext
+        ? actionContext?.insertPos
+        : this.editorView!.state.doc.content.size;
+    }
+
     if (this.activeNodeStack.length === 0) {
       return this.editorView?.state.doc.content.size || 0;
     }
@@ -291,7 +312,7 @@ export class Renderer {
     return this.editorView?.state.doc.content.size || 0;
   }
 
-private calculateInnerPosition(parentNodeId: string): number {
+  private calculateInnerPosition(parentNodeId: string): number {
     const parentPos = this.findCurrentNodePosition(parentNodeId);
     // Find the actual node in the document
     const parentNode = this.findNodeByIdInDocument(parentNodeId);
@@ -305,7 +326,7 @@ private calculateInnerPosition(parentNodeId: string): number {
     // Go to the start of the parent node, step inside (+1),
     // and then move past all the content that's already there.
     return parentPos + 1 + parentNode.content.size;
-}
+  }
 
   private findCurrentNodePosition(nodeId: string): number {
     let position = 0;
@@ -335,20 +356,23 @@ private calculateInnerPosition(parentNodeId: string): number {
       return paragraphPos + paragraphNode.content.size + 1;
     }
 
-if(parentNode.type.name === "list_item" && parentNode.firstChild){
-  const paragraphNode = parentNode.firstChild;
-  const paragraphPos = parentPos + 1;
-  
-  console.log("🔍 LIST ITEM DEBUG:");
-  console.log("  parentPos:", parentPos);
-  console.log("  paragraphPos:", paragraphPos);
-  console.log("  paragraphNode.content.size:", paragraphNode.content.size);
-  console.log("  calculated position:", paragraphPos + paragraphNode.content.size + 1);
-  console.log("  paragraphNode.type.name:", paragraphNode.type.name);
-  console.log("  paragraphNode content:", paragraphNode.textContent);
-  
-  return paragraphPos + paragraphNode.content.size + 1;
-}
+    if (parentNode.type.name === "list_item" && parentNode.firstChild) {
+      const paragraphNode = parentNode.firstChild;
+      const paragraphPos = parentPos + 1;
+
+      console.log("🔍 LIST ITEM DEBUG:");
+      console.log("  parentPos:", parentPos);
+      console.log("  paragraphPos:", paragraphPos);
+      console.log("  paragraphNode.content.size:", paragraphNode.content.size);
+      console.log(
+        "  calculated position:",
+        paragraphPos + paragraphNode.content.size + 1
+      );
+      console.log("  paragraphNode.type.name:", paragraphNode.type.name);
+      console.log("  paragraphNode content:", paragraphNode.textContent);
+
+      return paragraphPos + paragraphNode.content.size + 1;
+    }
 
     return parentPos + parentNode.content.size + 1;
   }

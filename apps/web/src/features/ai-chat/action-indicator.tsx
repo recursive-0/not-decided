@@ -1,38 +1,22 @@
 import React from "react";
 import { cn } from "@/lib/utils";
-import { CurrentActionType } from "@/lib/composer-mode-parser"; 
 import "./action-indicator.css"; 
+import { Mode } from "@/types/stream";
 
 interface ActionIndicatorProps {
-  action: CurrentActionType;
+  action: Mode;
   className?: string;
 }
 
 
 const actionConfig = {
-  [CurrentActionType.THINKING]: {
+  [Mode.thought]: {
     text: "Wrisor is thinking",
     
     dotColorVar: "var(--olive-green-1)",
     textColorVar: "var(--palette-gold)",
   },
-  [CurrentActionType.ADDING]: {
-    text: "Adding content...",
-    
-    
-    
-    
-    
-    dotColorVar: "var(--primary)", 
-    textColorVar: "var(--primary)", 
-  },
-  [CurrentActionType.DELETING]: {
-    text: "Removing content",
-    
-    dotColorVar: "var(--destructive)",
-    textColorVar: "var(--destructive)",
-  },
-  [CurrentActionType.NORMAL]: {
+  [Mode.normal]: {
     
     text: "Wrisor is thinking",
     dotColorVar: "var(--olive-green-1)",

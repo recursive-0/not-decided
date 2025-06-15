@@ -14,14 +14,14 @@ import { ChatMessages } from "./chat-messages";
 import { useChatHandler } from "@/hooks/use-chat-handler";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import PendingChangesWarning from "./pending-changes-warning-popup";
-import { useEditorStore } from "@/store/editor";
-import { useChatStore } from "@/store/chat";
+import { useWrisorStore } from "@/store/wrisor";
 import { ActionIndicator } from "./action-indicator";
 import { ChatMode } from "@/types/messages";
 import { useEditor } from "@/providers/editor-context-provider";
 import { ChatModeEmptyContent } from "./chat-mode-empty-content";
 import { ComposerModeEmptyContent } from "./composer-mode-empty-content";
 import { SectionMentionDropdown } from "./section-mention-dropdown";
+import { Mode } from "@/types/stream";
 
 // Thinking loader component
 const ThinkingLoader = () => {
@@ -101,12 +101,12 @@ const AIChat = () => {
     setPendingChangesPopup,
   } = useChatHandler();
 
-  const { currentLLMAction} = useChatStore()
+
   const { editorView } = useEditor()
 
   const localScrollAreaRef = useRef<HTMLDivElement | null>(null);
 
-  const { totalCurrentEdits } = useEditorStore()
+  const { totalCurrentEdits } = useWrisorStore()
 
   const [showSectionMention, setShowSectionMention] = useState(false);
   const [mentionStartIndex, setMentionStartIndex] = useState(-1);
@@ -395,7 +395,7 @@ const AIChat = () => {
               {chatMessages.length ? (
                 <div className="px-2 min-w-0">
                   <ChatMessages messages={chatMessages} />
-                  {isStreaming && <ActionIndicator action={currentLLMAction} />}
+                  {isStreaming && <ActionIndicator action={Mode.content} />}
 
                 </div>
               ) : <ComposerModeEmptyContent />}

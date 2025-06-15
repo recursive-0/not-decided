@@ -1,5 +1,3 @@
-
-import { CurrentActionType } from "@/lib/composer-mode-parser"
 import type { ChatMode, Message } from "@/types/messages"
 import { create } from "zustand"
 
@@ -10,17 +8,11 @@ export interface ChatStoreProps {
     setChatMessages: (messages: Message[]) => void
     addChatMessage: (message: Message) => void
     appendTokenToLastMessage: (token: string) => void
-    currentLLMAction: CurrentActionType
-    setCurrentLLMAction: (action: CurrentActionType) => void
 }
 
 export const useChatStore = create<ChatStoreProps>((set) => ({
     currentChatMode: "COMPOSER",
     chatMessages: [],
-    currentLLMAction: CurrentActionType.NORMAL,
-    setCurrentLLMAction(action) {
-        return set(() => ({currentLLMAction: action}))
-    },
     setCurrentChatMode: (mode) => set(() => ({currentChatMode: mode})),
     addChatMessage: (newMessage) => set((state) => ({
         chatMessages: [...state.chatMessages, newMessage]

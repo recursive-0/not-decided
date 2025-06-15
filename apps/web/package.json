@@ -30,6 +30,7 @@
     "bun-plugin-tailwind": "^0.0.14",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "diff-match-patch": "^1.0.5",
     "groq-sdk": "^0.19.0",
     "ky": "^1.8.1",
     "lucide-react": "^0.475.0",
@@ -67,6 +68,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.22.0",
+    "@types/diff-match-patch": "^1.0.36",
     "@types/node": "^22.15.3",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",

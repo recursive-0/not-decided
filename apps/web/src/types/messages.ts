@@ -8,3 +8,4 @@ export interface Message {
 }
 
 export type ChatMode = "CHAT" | "COMPOSER"
+

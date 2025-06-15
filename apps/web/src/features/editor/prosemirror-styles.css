@@ -1,3 +1,6 @@
+@import "../../plugins/ephemeral-plugin.css";
+@import "../../plugins/suggestion-callout-view/suggestion-callout-view.css";
+
 .prosemirror-editor {
   position: relative;
   word-wrap: break-word;
@@ -461,4 +464,25 @@ pre code.inline-code {
   pointer-events: none; 
   display: inline-block;
   vertical-align: baseline;
+}
+
+
+.prosemirror-editor > h1,
+.prosemirror-editor > h2,
+.prosemirror-editor > h3,
+.prosemirror-editor > p,
+.prosemirror-editor > ul,
+.prosemirror-editor > ol,
+.prosemirror-editor > pre,
+.prosemirror-editor > blockquote,
+.prosemirror-editor > .custom-code-block,
+.prosemirror-editor > .checkbox-container {
+  margin-top: 0;
+  margin-bottom: 0;
+  position: relative;
+}
+
+
+.prosemirror-editor > * + * {
+  margin-top: 1.25rem; 
 }

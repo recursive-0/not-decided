@@ -1,8 +1,6 @@
 import { ChatModeIncrementalParser } from "@/lib/chat-mode-parser";
 import {
   ComposerModeParser,
-  CurrentActionType,
-  type CodeBlockNodeType,
 } from "@/lib/composer-mode-parser";
 import { EditorActionsManager } from "@/lib/editor-actions-manager";
 import { FingerprintManager } from "@/lib/fingerprint-manager";
@@ -14,8 +12,9 @@ import {
   useEditor,
 } from "@/providers/editor-context-provider";
 import { useChatStore } from "@/store/chat";
-import { OperationType, Tags } from "@/types/editor";
+import { StreamOrchestrator } from "@/stream-handlers/stream-processor";
 import type { ChatMode } from "@/types/messages";
+import { ActionMessageType } from "@/types/stream";
 import { useCallback, useRef, useState } from "react";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8787";
@@ -27,8 +26,8 @@ export const useSSEStream = () => {
   const [error, setError] = useState<Error | null>(null);
   const [currentStreamId, setCurrentStreamId] = useState<string>("");
   const { editorView } = useEditor();
-  const { setCurrentLLMAction } = useChatStore();
 
+  const streamOrchestratorRef = useRef<StreamOrchestrator | null>(null);
   const editorActionsManagerRef = useRef<EditorActionsManager | null>(null);
   const userInteractedRef = useRef<boolean>(false);
   const fingerprintManagerRef = useRef<FingerprintManager | null>(null);
@@ -41,78 +40,82 @@ export const useSSEStream = () => {
     if (chatMode === "CHAT") {
       return chatParserRef;
     } else {
-      return composerParserRef;
+      return streamOrchestratorRef;
     }
   };
 
-  const executeOperation = useCallback(
-    (operationData: OperationType) => {
-      if (!editorView.current) return;
+  const handleAction = (action: ActionMessageType) => {
+    console.log("action", action)
+  };
 
-      console.log("EXECUTING OPERATION: ", operationData);
-      // const { action, nodeIds } = operationData;
+  // const executeOperation = useCallback(
+  //   (operationData: OperationType) => {
+  //     if (!editorView.current) return;
 
-      // if (action === "delete") {
-      //   const currentTr = editorView.current.state.tr
-      //   nodeIds.forEach((id) => {
-      //     if (!editorView.current) return;
-      //     const metaForPlugin: SuggestionHighlightMetaDataType = {
-      //       metaData: {
-      //         type: "deletion-suggestion",
-      //         nodeId: id,
-      //       },
-      //     };
-      //     currentTr.setMeta(suggestionHighlightPluginKey, metaForPlugin);
-      //     editorView.current.dispatch(currentTr);
-      //   });
-      //   return;
-      // }
+  //     console.log("EXECUTING OPERATION: ", operationData);
+  //     const { action, nodeIds } = operationData;
 
-      // if (action === "add") {
-      //   const nodeId = nodeIds[0];
-      //   if (!nodeId) return;
+  //     if (action === "delete") {
+  //       const currentTr = editorView.current.state.tr
+  //       nodeIds.forEach((id) => {
+  //         if (!editorView.current) return;
+  //         const metaForPlugin: SuggestionHighlightMetaDataType = {
+  //           metaData: {
+  //             type: "deletion-suggestion",
+  //             nodeId: id,
+  //           },
+  //         };
+  //         currentTr.setMeta(suggestionHighlightPluginKey, metaForPlugin);
+  //         editorView.current.dispatch(currentTr);
+  //       });
+  //       return;
+  //     }
 
-      //   if (rendererRef.current) {
-      //     editorView.current.state.doc.descendants((node, pos) => {
-      //       if (nodeId === node.attrs.nodeId) {
-      //         const endPos = pos + node.nodeSize;
-      //         rendererRef.current!.setInsertionPoint(endPos);
-      //         return false;
-      //       }
-      //     });
-      //   }
-      //   return;
-      // }
+  //     if (action === "add") {
+  //       const nodeId = nodeIds[0];
+  //       if (!nodeId) return;
 
-      // if (action === "replace") {
-      //   const nodeId = nodeIds[0];
-      //   if (!nodeId || !editorView.current) return;
+  //       if (rendererRef.current) {
+  //         editorView.current.state.doc.descendants((node, pos) => {
+  //           if (nodeId === node.attrs.nodeId) {
+  //             const endPos = pos + node.nodeSize;
+  //             rendererRef.current!.setInsertionPoint(endPos);
+  //             return false;
+  //           }
+  //         });
+  //       }
+  //       return;
+  //     }
 
-      //   const currentTr = editorView.current.state.tr;
+  //     // if (action === "replace") {
+  //     //   const nodeId = nodeIds[0];
+  //     //   if (!nodeId || !editorView.current) return;
 
-      //   const deleteNodeMetadata: SuggestionHighlightMetaDataType = {
-      //     metaData: {
-      //       type: "deletion-suggestion",
-      //       nodeId: nodeId,
-      //     },
-      //   };
-      //   currentTr.setMeta(suggestionHighlightPluginKey, deleteNodeMetadata);
-      //   editorView.current.dispatch(currentTr);
+  //     //   const currentTr = editorView.current.state.tr;
 
-      //   if (rendererRef.current) {
-      //     editorView.current.state.doc.descendants((node, pos) => {
-      //       if (nodeId === node.attrs.nodeId) {
-      //         const endPos = pos + node.nodeSize;
-      //         rendererRef.current!.setInsertionPoint(endPos);
-      //         return false;
-      //       }
-      //     });
-      //   }
-      //   return;
-      // }
-    },
-    [editorView, rendererRef]
-  );
+  //     //   const deleteNodeMetadata: SuggestionHighlightMetaDataType = {
+  //     //     metaData: {
+  //     //       type: "deletion-suggestion",
+  //     //       nodeId: nodeId,
+  //     //     },
+  //     //   };
+  //     //   currentTr.setMeta(suggestionHighlightPluginKey, deleteNodeMetadata);
+  //     //   editorView.current.dispatch(currentTr);
+
+  //     //   if (rendererRef.current) {
+  //     //     editorView.current.state.doc.descendants((node, pos) => {
+  //     //       if (nodeId === node.attrs.nodeId) {
+  //     //         const endPos = pos + node.nodeSize;
+  //     //         rendererRef.current!.setInsertionPoint(endPos);
+  //     //         return false;
+  //     //       }
+  //     //     });
+  //     //   }
+  //     //   return;
+  //     // }
+  //   },
+  //   [editorView, rendererRef]
+  // );
 
   const startStreaming = useCallback(
     async (
@@ -128,6 +131,16 @@ export const useSSEStream = () => {
 
         if (eventSourceRef.current) {
           eventSourceRef.current.close();
+        }
+
+        if (!streamOrchestratorRef.current && editorView.current) {
+          streamOrchestratorRef.current = new StreamOrchestrator({
+            editorView: editorView.current,
+            callbacks: {
+              onMarkdownChunk: (chunk: string) => sendTokensCallback(chunk),
+              onAction: (action: ActionMessageType) => handleAction(action),
+            },
+          });
         }
 
         if (!rendererRef.current && editorView.current) {
@@ -150,21 +163,21 @@ export const useSSEStream = () => {
             editorView.current!
           );
 
-          composerParserRef.current = new ComposerModeParser({
-            onOperation(operation) {
-              executeOperation(operation);
-            },
-            sendTokensCallback: (tokens: string) => sendTokensCallback(tokens),
-            sendCodeBlockNode: (codeBlock: CodeBlockNodeType) =>
-              rendererRef.current!.onCodeBlock(codeBlock),
-            onOpenTag: (tag: Tags) => rendererRef.current?.onOpenTag(tag),
-            onCloseTag: (tag: Tags) => rendererRef.current?.onCloseTag(tag),
-            onTextContent: (text: string) =>
-              rendererRef.current?.onTextContent(text),
-            setCurrentActionState(action) {
-              setCurrentLLMAction(action);
-            },
-          });
+          // composerParserRef.current = new ComposerModeParser({
+          //   onOperation(operation) {
+          //     executeOperation(operation);
+          //   },
+          //   sendTokensCallback: (tokens: string) => sendTokensCallback(tokens),
+          //   sendCodeBlockNode: (codeBlock: CodeBlockNodeType) =>
+          //     rendererRef.current!.onCodeBlock(codeBlock),
+          //   onOpenTag: (tag: Tags) => rendererRef.current?.onOpenTag(tag),
+          //   onCloseTag: (tag: Tags) => rendererRef.current?.onCloseTag(tag),
+          //   onTextContent: (text: string) =>
+          //     rendererRef.current?.onTextContent(text),
+          //   setCurrentActionState(action) {
+          //     setCurrentLLMAction(action);
+          //   },
+          // });
         }
 
         const validContentNodes = getContentNodes(editorView.current);
@@ -195,18 +208,18 @@ export const useSSEStream = () => {
         eventSourceRef.current.onmessage = (event) => {
           const rawData = event.data;
 
+          console.log("Raw data is: ", rawData)
+
           switch (rawData.trim()) {
             case "[DONE]":
             case "END_STREAM":
               getCurrentParser()?.current!.stopStreaming();
               setIsStreaming(false);
-              setCurrentLLMAction(CurrentActionType.normal);
               eventSourceRef.current!.close();
               return;
 
             case "START_STREAM":
               getCurrentParser().current!.startStreaming();
-              setCurrentLLMAction(CurrentActionType.normal);
               editorView.current!.state.tr.setMeta(
                 suggestionNavigatorPluginKey,
                 { navigateToIndex: null, action: "reset" }
@@ -215,8 +228,7 @@ export const useSSEStream = () => {
 
             default:
               try {
-                const parsedText = JSON.parse(rawData);
-                getCurrentParser()?.current!.processChunk(parsedText);
+                getCurrentParser()?.current!.processChunk(rawData);
               } catch (e) {
                 console.error(
                   "Failed to parse SSE data chunk as JSON:",

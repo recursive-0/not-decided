@@ -67,12 +67,18 @@ export function getClient(env: Env): GoogleGenAI {
   
           for await (const chunk of streamResult) {
             const chunkText = chunk.text
-  
-            if (chunkText) {
-                console.log("CHUNK IS: ", chunkText)
-              const sseMessage = `data: ${JSON.stringify(chunkText)}\n\n`;
-              controller.enqueue(encoder.encode(sseMessage));
+            if(chunkText){
+            const jsonObjects = chunkText.split('\n');
+
+            for (const line of jsonObjects) {
+              // Ensure we don't send empty lines as messages
+              if (line.trim()) {
+                const sseMessage = `data: ${line}\n\n`;
+                console.log("CHUNK: ", sseMessage)
+                controller.enqueue(encoder.encode(sseMessage));
+              }
             }
+          }
           }
   
           console.log("Gemini stream finished.");
