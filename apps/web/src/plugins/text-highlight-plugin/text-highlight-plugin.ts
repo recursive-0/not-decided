@@ -80,7 +80,7 @@ export const textHighlightPlugin = new Plugin<TextHighlightPluginStateType>({
 
       const createStrikeThroughDecoration = (props: RangeType): Decoration => {
         const { from, to } = props;
-        return Decoration.inline(from, to, { class: "strike-through-text" });
+        return Decoration.inline(from, to, { class: "strike-through-text",  });
       };
 
       const createHighlightDecoration = (props: RangeType): Decoration => {

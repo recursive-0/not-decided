@@ -6,6 +6,7 @@ interface TransformTextProps {
     // documentId: string;
     // userId: string;
     selectedText: string;
+    surroundingContext: string
     context: string;
 }
 

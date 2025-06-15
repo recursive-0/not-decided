@@ -31,8 +31,10 @@ import { AcceptAllRejectAllDialog } from "./accpet-all-reject-all-dialog";
 import { CommandPalette } from "./command-palette";
 import "./external-dialogs.css";
 import "./prosemirror-styles.css";
-import "../../plugins/text-highlight-plugin/text-highlight-plugin.css"
+import "../../plugins/text-highlight-plugin/text-highlight-plugin.css";
 import { textHighlightPlugin } from "@/plugins/text-highlight-plugin/text-highlight-plugin";
+import { createTransformationGuardPlugin } from "@/plugins/transformation-guard-plugin";
+import { useUIStore } from "@/store/ui";
 // import { ensureTrailingParagraphPlugin } from "@/plugins/trailing-paragraph-plugin";
 
 const debounce = (func, delay) => {
@@ -75,6 +77,7 @@ const plugins = [
   textHighlightPlugin,
   ensureNodeIdPlugin,
   placeholderPlugin,
+  createTransformationGuardPlugin(),
   history(),
   listRelatedKeymap,
   keymap(baseKeymap),
@@ -86,34 +89,34 @@ const plugins = [
 ];
 
 const normalizeCommandDialogPos = (selectionCoords, containerBounds) => {
-  const { left: selectionX, top: selectionY } = selectionCoords;
-
-  const {
-    left: containerLeft,
-    right: containerRight,
-    top: containerTop,
-    bottom: containerBottom,
-  } = containerBounds;
-
+  // Convert window coordinates to container-relative coordinates
+  const relativeX = selectionCoords.left - containerBounds.left;
+  const relativeY = selectionCoords.top - containerBounds.top;
+  
   const popupWidth = 300;
   const popupHeight = 150;
+  const padding = 10;
 
-  let left = selectionX;
-  let top = selectionY;
+  let left = relativeX;
+  let top = relativeY;
 
-  if (left + popupWidth > containerRight) {
-    left = containerRight - popupWidth - 10;
+  // Right boundary check (relative to container width)
+  if (left + popupWidth > containerBounds.width) {
+    left = containerBounds.width - popupWidth - padding;
   }
 
-  if (left < containerLeft) {
-    left = containerLeft + 10;
+  // Left boundary check
+  if (left < padding) {
+    left = padding;
   }
 
-  if (top + popupHeight > containerBottom) {
-    top = selectionY - popupHeight - 5;
-
-    if (top < containerTop) {
-      top = containerTop + 10;
+  // Bottom boundary check (try to position above selection if no space below)
+  if (top + popupHeight > containerBounds.height) {
+    top = relativeY - popupHeight - 5; // Position above selection
+    
+    // If still out of bounds, force it inside
+    if (top < padding) {
+      top = padding;
     }
   }
 
@@ -126,6 +129,7 @@ export const ProseMirrorEditor = () => {
     useEditor();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const { totalCurrentEdits } = useWrisorStore();
+  const { isTransforming, triggerShake } = useUIStore()
   const isDialogClosingRef = useRef(false);
   const [dialogPosition, setDialogPosition] = useState<{
     left: number;
@@ -166,6 +170,13 @@ export const ProseMirrorEditor = () => {
       isDialogClosingRef.current = false;
     }, 100);
   };
+
+  const handleEditorClick = () => {
+    if(isTransforming){
+      triggerShake()
+      return
+    }
+  }
 
   useEffect(() => {
     if (!editorRef.current) return;
@@ -277,7 +288,7 @@ export const ProseMirrorEditor = () => {
               const coordsAtPos = editorView.current.coordsAtPos(actualEndPos);
 
               const editorContainerPos =
-                containerRef.current!.getBoundingClientRect();
+                editorView.current.dom.parentElement!.getBoundingClientRect();
 
               const { left, top } = normalizeCommandDialogPos(
                 coordsAtPos,
@@ -324,8 +335,9 @@ export const ProseMirrorEditor = () => {
       <div
         className="prosemirror-editor w-full h-full py-4 px-4 outline-none relative"
         ref={editorRef}
+        onClick={() => handleEditorClick()}
       />
-      {smartAiPopupPos !== null && (
+      {!isTransforming && smartAiPopupPos !== null && (
         <CommandPalette
           clientX={smartAiPopupPos.x}
           clientY={smartAiPopupPos.y}
@@ -339,5 +351,3 @@ export const ProseMirrorEditor = () => {
     </div>
   );
 };
-
-

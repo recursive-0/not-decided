@@ -3,7 +3,9 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/custom-toasts";
 import { Textarea } from "@/components/ui/textarea";
 import { useChatHandler } from "@/hooks/use-chat-handler";
-import { getDocumentContext, getSemanticTextSelectionRange } from "@/lib/doc-helpers";
+import {
+  getDocumentContext,
+} from "@/lib/doc-helpers";
 import { useEditor } from "@/providers/editor-context-provider";
 import { useWrisorStore } from "@/store/wrisor";
 import "@/styles/suggestion-navigation.css";
@@ -17,6 +19,7 @@ import {
   textHighlightPluginKey,
   TextHighlightPluginType,
 } from "@/plugins/text-highlight-plugin/text-highlight-plugin";
+import { useUIStore } from "@/store/ui";
 
 export const CommandPalette = ({ clientX, clientY, onClose }) => {
   const [input, setInput] = useState("");
@@ -25,43 +28,51 @@ export const CommandPalette = ({ clientX, clientY, onClose }) => {
   const { editorView } = useEditor();
 
   const { isStreaming, handleSelectionQuery } = useChatHandler();
-  const { totalCurrentEdits } = useWrisorStore();
+  const { totalCurrentEdits, setTotalCurrentEdits } = useWrisorStore();
+  const { startTransformation, endTransformation } = useUIStore();
 
   const transformTextMutation = useMutation({
     mutationFn: () => {
+      startTransformation();
       const context = getDocumentContext(editorView.current!);
-      const { selectedText, documentContent } = context;
+      const { selectedText, surroundingContext, documentContent } = context;
       const prompt = input.trim();
-      return transformText({ prompt, selectedText, context: documentContent });
+      editorView.current?.setProps({
+        editable: () => false,
+      });
+      return transformText({
+        prompt,
+        selectedText,
+        surroundingContext,
+        context: documentContent,
+      });
     },
-      onSuccess: (data) => {
+    onSuccess: (data) => {
       const { transformedText } = data;
-      console.log("transformed text is: ", transformedText)
+      console.log("transformed text is: ", transformedText);
       const view = editorView.current!;
-      // const { from, to } = view.state.selection
 
-      // --- THE FIX: Use the semantic range as the single source of truth ---
-
-      // Step 1: Get the clean, semantic range. This is our work area.
-      const { from: semanticFrom, to: semanticTo } = getSemanticTextSelectionRange(view);
-      console.log("Semantic selection is: ", view.state.doc.textBetween(semanticFrom, semanticTo))
+      const { from: semanticFrom, to: semanticTo } = editorView.current!.state.selection
+      console.log(
+        "Semantic selection is: ",
+        view.state.doc.textBetween(semanticFrom, semanticTo)
+      );
       const originalText = view.state.doc.textBetween(semanticFrom, semanticTo);
 
       let tr = view.state.tr;
       const textToInsert = transformedText;
 
-      // Step 2: Plan the insertion using the CLEAN semantic boundary.
       tr = tr.insertText(textToInsert, semanticTo);
 
-      // Step 3: Define ranges for decorations using ONLY the clean semantic boundaries.
       const strikeThroughRange = { from: semanticFrom, to: semanticTo };
-      // The highlight starts after the clean boundary.
-      const highlightRange = { from: semanticTo, to: semanticTo + textToInsert.length };
+      const highlightRange = {
+        from: semanticTo,
+        to: semanticTo + textToInsert.length,
+      };
 
       const suggestionId =
         Date.now().toString() + Math.random().toString(36).substring(2);
 
-      // Step 4: Assemble metadata with the now-consistent coordinates.
       const metaData: TextHighlightPluginType = {
         action: "show-suggestion",
         strikeThroughRange,
@@ -75,6 +86,11 @@ export const CommandPalette = ({ clientX, clientY, onClose }) => {
 
       // Step 5: Dispatch the coherent, non-contradictory plan.
       view.dispatch(tr);
+      endTransformation();
+      editorView.current!.setProps({
+        editable: () => true,
+      });
+      setTotalCurrentEdits(totalCurrentEdits + 1);
     },
     onError: (error) => {
       console.log("error while transforming text", error);
@@ -144,7 +160,7 @@ export const CommandPalette = ({ clientX, clientY, onClose }) => {
   return (
     <div
       ref={dialogRef}
-      className="fixed z-50 bg-palette-beige-1 rounded-md shadow-lg border border-neutral-200"
+      className="absolute z-50 bg-palette-beige-1 rounded-md shadow-lg border border-neutral-200"
       style={{
         left: `${clientX}px`,
         top: `${clientY}px`,

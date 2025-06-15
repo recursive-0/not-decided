@@ -7,6 +7,8 @@ interface WrisorStoreType {
     totalCurrentEdits: number,
     actions: Record<string, ActionMessageType> | null,
     activeAction: ActionMessageType | null,
+    isTransformationPending: boolean,
+    setTransformation: (flag: boolean) => void,
     setCurrentMode: (newMode: Mode) => void,
     setTotalCurrentEdits: (newEditsCount: number) => void,
     addAction: (action: ActionMessageType) => void,
@@ -18,6 +20,10 @@ export const useWrisorStore = create<WrisorStoreType>((set) => ({
     mode: Mode.normal,
     actions: null,
     activeAction: null,
+    isTransformationPending: false,
+    setTransformation(flag) {
+        return set({isTransformationPending: flag})
+    },
     setTotalCurrentEdits: (editsCount) => set({totalCurrentEdits: editsCount}),
     setCurrentMode(newMode) {
         return set({mode: newMode})

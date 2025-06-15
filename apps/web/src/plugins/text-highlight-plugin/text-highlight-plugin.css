@@ -2,13 +2,30 @@
 
 .strike-through-text {
   text-decoration: line-through;
+  opacity: 0.5;
   background-color: rgba(255, 82, 82, 0.2); 
 }
 
 .highlight-text-in-green {
   background-color: rgba(34, 197, 94, 0.2);
-  border-bottom: 2px solid #22c55e;
-  color: #166534; 
+  color: black;
+  /* border-bottom: 2px solid #22c55e; */
+  /* color: #166534;  */
+}
+
+
+@keyframes pulse {
+  0%{
+    opacity: 0.2;
+  }
+
+  50%{
+    opacity: 1;
+  }
+
+  100%{
+    opacity: 0.2;
+  }
 }
 
 
