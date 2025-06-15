@@ -1,5 +1,6 @@
 import { Plugin, PluginKey, Transaction } from "prosemirror-state";
-import { v4 as uuidv4 } from "uuid";
+
+let nodeCount = 0
 
 export const ensureNodeIdPluginKey = new PluginKey("ensureNodeIdPlugin");
 
@@ -20,7 +21,8 @@ export const ensureNodeIdPlugin = new Plugin({
           if (!newTr) {
             newTr = newState.tr;
           }
-          const freshId = uuidv4();
+          const freshId = `block-${nodeCount}`
+          nodeCount++;
           const newNode = node.type.create(
             { ...node.attrs, nodeId: freshId },
             node.content,
