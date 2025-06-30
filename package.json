@@ -1,5 +1,5 @@
 {
-  "name": "echo-ai",
+  "name": "monorepo",
   "type": "module",
   "workspaces": [
     "apps/*",
@@ -15,7 +15,7 @@
     "dev:worker": "pnpm --filter ./apps/worker dev",
     "build": "pnpm run build:web",
     "build:web": "pnpm --filter ./apps/web build",
-    "i:web": "pnpm --filter ./apps/web",
+    "web": "pnpm --filter ./apps/web",
     "i:worker": "pnpm --filter ./apps/worker"
   },
   "dependencies": {
