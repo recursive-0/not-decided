@@ -96,6 +96,17 @@ export class StreamParser {
   public startStreaming() {
     this.state = ParserState.normal;
     this.isStreamActive = true;
+    this.actionBuffer = "";
+    this.contentBuffer = "";
+    this.thoughtBuffer = "";
+    this.textBuffer = "";
+    this.currentTagName = "";
+    this.tagStack = [];
+    this.codeBlockNode = {
+      lang: "",
+      content: "",
+    };
+    this.mode = Tags.normal;
   }
 
   public setMode(mode: MODE) {
@@ -136,8 +147,10 @@ export class StreamParser {
 
     if(this.mode === Tags.action && this.state === ParserState.normal) {
       this.actionBuffer += this.textBuffer;
+      console.log("Action buffer is: ", this.actionBuffer);
       try {
         const action = JSON.parse(this.actionBuffer) as ActionMessageType;
+        console.log("Action is: ", action);
         this.callbacks.onAction(action);
       } catch (error) {
         console.error("Still need to buffer the action: ", error);
@@ -219,6 +232,7 @@ export class StreamParser {
     } else if(tagName === Tags.action) {
       this.mode = Tags.action;
       this.setMode(this.mode);
+      this.actionBuffer = "";
     } else if(tagName === Tags.content) {
       this.mode = Tags.content;
       this.setMode(this.mode);
@@ -252,7 +266,7 @@ export class StreamParser {
       return;
     }
 
-    if(closingTag === Tags.thinking || closingTag === Tags.action || closingTag === Tags.content) {
+    if(closingTag === "</TKH>" || closingTag === "</ACT>" || closingTag === "</CNT>") {
       this.mode = Tags.normal;
       this.setMode(this.mode);
     } else {

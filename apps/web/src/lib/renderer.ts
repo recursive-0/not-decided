@@ -1,12 +1,12 @@
-import { Transaction } from "prosemirror-state";
-import { Tags } from "@/types/editor";
-import { Mark, Node } from "prosemirror-model";
-import { EditorView } from "prosemirror-view";
-import { extendedProseMirrorSchema } from "@/providers/editor-context-provider";
-import { v4 as uuidv4 } from "uuid";
 import { suggestionHighlightPluginKey } from "@/plugins/suggestion-highlight-plugin";
-import { CodeBlockNodeType } from "./composer-mode-parser";
+import { extendedProseMirrorSchema } from "@/providers/editor-context-provider";
+import { Tags } from "@/types/editor";
 import { ActionMessageType } from "@/types/stream";
+import { Mark, Node } from "prosemirror-model";
+import { Transaction } from "prosemirror-state";
+import { EditorView } from "prosemirror-view";
+import { v4 as uuidv4 } from "uuid";
+import { CodeBlockNodeType } from "./composer-mode-parser";
 import { getActionContext } from "./misc-editor-helpers";
 
 interface NodeContextType {
@@ -35,19 +35,14 @@ export class Renderer {
   private activeNodeStack: NodeContextType[] = [];
   private activeMarks: ActiveMarksType[] = [];
   private pendingAction: ActionMessageType | null = null;
+  private targetPosition: number | null = null;
 
   constructor(editorView: EditorView) {
     this.editorView = editorView;
   }
 
-  public cleanupAfterStreamStop() {
-    if (
-      this.activeNodeStack.length > 0 &&
-      this.activeNodeStack[this.activeNodeStack.length - 1].type === Tags.add
-    ) {
-      this.activeNodeStack = [];
-      this.activeMarks = [];
-    }
+  public setTargetPosition(position: number) {
+    this.targetPosition = position;
   }
 
   public setPendingAction(action: ActionMessageType | null) {
@@ -106,8 +101,12 @@ export class Renderer {
     const currentContext =
       this.activeNodeStack[this.activeNodeStack.length - 1];
 
-    if (currentContext.type !== tag) {
-      console.warn(`Tag mismatch: expected ${currentContext.type}, got ${tag}`);
+    // simply remove the / from the tag and compare
+    const tagWithoutSlash = tag.replace("/", "");
+    if (currentContext.type !== tagWithoutSlash) {
+      console.warn(
+        `Tag mismatch: expected ${currentContext.type}, got ${tagWithoutSlash}`
+      );
       return;
     }
 
@@ -282,6 +281,15 @@ export class Renderer {
   }
 
   public getInsertPosition(type: "node" | "text"): number {
+
+    // if we have a target position, use it
+    if(this.targetPosition) {
+      const posToInsert = this.targetPosition;
+      this.targetPosition = null;
+      return posToInsert;
+    }
+
+    // if we have a pending action, use it
     if (this.pendingAction) {
       const actionContext = getActionContext(
         this.editorView!,
@@ -434,5 +442,12 @@ export class Renderer {
           nodeId: uuidv4(),
         });
     }
+  }
+
+  public cleanup() {
+    this.activeNodeStack = [];
+    this.activeMarks = [];
+    this.targetPosition = null;
+    this.pendingAction = null;
   }
 }

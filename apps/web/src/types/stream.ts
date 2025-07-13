@@ -3,21 +3,15 @@ import { Node } from "prosemirror-model";
 
 
 export enum TypeEnum {
-    tss = "tss",
-    tc = "tc",
-    tse = "tse",
-    act = "act",
-    css = "css",
-    cse = "cse",
-    cc = "cc",
+    insert = "insert",
+    delete = "delete",
 }
 
 
 export interface ActionMessageType {
-    type: "act",
-    op: OperationType,
-    actionId: string,
+    type: TypeEnum,
     targetId: string,
+    pos: "before" | "after",
 }
 
 export enum OperationType {

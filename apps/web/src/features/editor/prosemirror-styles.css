@@ -62,7 +62,7 @@
 .prosemirror-editor p {
   font-size: 1rem;
   line-height: 1.65;
-  margin-top: 0;
+  padding-top: 0.5rem;
   margin-bottom: 1rem;
   color: #073642;
 }

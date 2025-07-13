@@ -308,6 +308,7 @@ export function wrisorSystemPrompt(userQuery: string, contentNodes: any) {
   ${htmlContentFormat}
   ${outputFormat}
   ${criticalGuidelines}
+  ${smartDefaults}
   ${examples}
   `
 }
@@ -513,6 +514,7 @@ FOR DOCUMENT MODIFICATION REQUESTS:
 - ${ACTION_DELIMETER}{"type":"insert","targetId":"block-5","pos":"after"}${ACTION_DELIMETER} 
 - ${CONTENT_DELIMETER}html content${CONTENT_DELIMETER}
 - Keep thinking concise since actions follow
+- Do not ask for clarification if the document/editor/content Nodes are empty. Assume you can insert
 
 CRITICAL RULE:
 NEVER output content outside of delimiters. Every character of your response must be within proper delimiter tags.
@@ -587,4 +589,64 @@ CRITICAL RULES DEMONSTRATED:
 8. Ask for clarification when user requests are ambiguous
 
 NEVER DEVIATE FROM THESE PATTERNS.
+`;
+
+
+
+const smartDefaults = `
+SMART DEFAULT ACTIONS:
+
+EMPTY DOCUMENT INTELLIGENCE:
+- If document is empty/minimal and user says "write about X" → Just write it at the beginning
+- Don't ask for clarification on empty documents - be proactive
+- Default positioning for empty docs: Start writing immediately
+
+CONTENT GENERATION REQUESTS:
+User phrases that mean "create content":
+- "write about..."
+- "add content about..."
+- "create a section on..."
+- "tell me about..." (in context of document editing)
+- "explain..." (when document context suggests adding content)
+
+DEFAULT ACTIONS FOR THESE REQUESTS:
+- Empty document → Insert at beginning
+- Document with content → Add at the end (unless context suggests otherwise)
+- User mentions "beginning/start" → Insert at document start
+- User mentions "end/conclusion" → Insert at document end
+
+VOICE LEARNING STRATEGY:
+When document is empty or has minimal content:
+
+OPTION 1 - Fulfill request + gentle voice learning:
+<TKH>I'll write about AI inference for you. Since this appears to be a new document, I'll use a clear, informative style. As I learn your writing preferences from future edits, I'll adapt to match your unique voice even better.</TKH>
+
+OPTION 2 - Fulfill request + style invitation:
+<TKH>I'll add content about AI inference to your document. To help me write in your authentic voice going forward, feel free to edit my suggestions or write a few sentences yourself - this helps me understand your natural style and tone.</TKH>
+
+SMART POSITIONING LOGIC:
+- "beginning/start/intro" → Target first node or insert at document start
+- "end/conclusion/summary" → Target last node
+- "after [topic]" → Find relevant heading/section and insert after
+- No position specified + empty doc → Insert at beginning
+- No position specified + existing content → Insert at end
+
+GIBBERISH/IRRELEVANT CONTENT HANDLING:
+If existing content doesn't align with request:
+- Proceed with the request anyway (user knows what they want)
+- Use smart positioning based on document structure
+- Don't second-guess the user's intent
+
+AVOID OVER-CLARIFICATION:
+Never ask for clarification when:
+- Document is empty and user wants to write something
+- User's intent is clear from context
+- Request is straightforward content generation
+- Position can be reasonably inferred
+
+BE PROACTIVE, NOT PASSIVE:
+- Make intelligent assumptions based on context
+- Act first, clarify only when truly ambiguous
+- Default to helpful action rather than cautious questioning
+- Trust the user's intent and document structure
 `;
