@@ -1,6 +1,7 @@
 import { ChatModeIncrementalParser } from "@/lib/chat-mode-parser";
 import {
-  ComposerModeParser,
+  CodeBlockNodeType,
+  StreamParser,
 } from "@/lib/composer-mode-parser";
 import { EditorActionsManager } from "@/lib/editor-actions-manager";
 import { FingerprintManager } from "@/lib/fingerprint-manager";
@@ -12,10 +13,10 @@ import {
   useEditor,
 } from "@/providers/editor-context-provider";
 import { useChatStore } from "@/store/chat";
-import { StreamOrchestrator } from "@/stream-handlers/stream-processor";
+import { Tags } from "@/types/editor";
 import type { ChatMode } from "@/types/messages";
 import { ActionMessageType } from "@/types/stream";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8787";
 
@@ -27,12 +28,11 @@ export const useSSEStream = () => {
   const [currentStreamId, setCurrentStreamId] = useState<string>("");
   const { editorView } = useEditor();
 
-  const streamOrchestratorRef = useRef<StreamOrchestrator | null>(null);
+  const streamParserRef = useRef<StreamParser | null>(null);
   const editorActionsManagerRef = useRef<EditorActionsManager | null>(null);
   const userInteractedRef = useRef<boolean>(false);
   const fingerprintManagerRef = useRef<FingerprintManager | null>(null);
   const chatParserRef = useRef<ChatModeIncrementalParser | null>(null);
-  const composerParserRef = useRef<ComposerModeParser | null>(null);
   const rendererRef = useRef<Renderer | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
 
@@ -40,7 +40,7 @@ export const useSSEStream = () => {
     if (chatMode === "CHAT") {
       return chatParserRef;
     } else {
-      return streamOrchestratorRef;
+      return streamParserRef;
     }
   };
 
@@ -124,6 +124,7 @@ export const useSSEStream = () => {
       sendTokensCallback: (token: string) => void
     ) => {
       userInteractedRef.current = false;
+
       try {
         setIsStreaming(true);
         setError(null);
@@ -133,51 +134,27 @@ export const useSSEStream = () => {
           eventSourceRef.current.close();
         }
 
-        if (!streamOrchestratorRef.current && editorView.current) {
-          streamOrchestratorRef.current = new StreamOrchestrator({
-            editorView: editorView.current,
-            callbacks: {
-              onMarkdownChunk: (chunk: string) => sendTokensCallback(chunk),
-              onAction: (action: ActionMessageType) => handleAction(action),
-            },
-          });
-        }
-
-        if (!rendererRef.current && editorView.current) {
-          rendererRef.current = new Renderer(editorView.current);
-
-          editorActionsManagerRef.current = new EditorActionsManager(
-            editorView.current,
-            extendedProseMirrorSchema
-          );
+        if (!streamParserRef.current && editorView.current) {
+          streamParserRef.current = new StreamParser({
+              onOpenTag: (tag: Tags) => rendererRef.current?.onOpenTag(tag),
+              onCloseTag: (tag: Tags) => rendererRef.current?.onCloseTag(tag),
+              onTextContent: (text: string) => rendererRef.current?.onTextContent(text),
+              onCodeBlock: (codeBlock: CodeBlockNodeType) => rendererRef.current?.onCodeBlock(codeBlock),
+              onMarkdownChunk: (chunk: string) => {
+                console.log("Markdown chunk is: ", chunk);
+                sendTokensCallback(chunk);
+              },
+              onAction: (action: ActionMessageType) => {
+                console.log("Action is: ", action);
+                handleAction(action);
+              }
+            });
         }
 
         if (!chatParserRef.current && rendererRef.current) {
           chatParserRef.current = new ChatModeIncrementalParser(
             sendTokensCallback
           );
-        }
-
-        if (!composerParserRef.current && rendererRef.current) {
-          fingerprintManagerRef.current = new FingerprintManager(
-            editorView.current!
-          );
-
-          // composerParserRef.current = new ComposerModeParser({
-          //   onOperation(operation) {
-          //     executeOperation(operation);
-          //   },
-          //   sendTokensCallback: (tokens: string) => sendTokensCallback(tokens),
-          //   sendCodeBlockNode: (codeBlock: CodeBlockNodeType) =>
-          //     rendererRef.current!.onCodeBlock(codeBlock),
-          //   onOpenTag: (tag: Tags) => rendererRef.current?.onOpenTag(tag),
-          //   onCloseTag: (tag: Tags) => rendererRef.current?.onCloseTag(tag),
-          //   onTextContent: (text: string) =>
-          //     rendererRef.current?.onTextContent(text),
-          //   setCurrentActionState(action) {
-          //     setCurrentLLMAction(action);
-          //   },
-          // });
         }
 
         const validContentNodes = getContentNodes(editorView.current);
@@ -254,7 +231,7 @@ export const useSSEStream = () => {
         setIsStreaming(false);
       }
     },
-    [editorView, chatMode]
+    [editorView]
   );
 
   const stopStreaming = () => {
@@ -268,6 +245,15 @@ export const useSSEStream = () => {
     setIsStreaming(false);
     setContent("");
   };
+
+  useEffect(() => {
+    rendererRef.current = new Renderer(editorView.current!);
+    editorActionsManagerRef.current = new EditorActionsManager(
+      editorView.current!,
+      extendedProseMirrorSchema
+    );
+    fingerprintManagerRef.current = new FingerprintManager(editorView.current!);
+  }, [editorView]);
 
   return {
     content,

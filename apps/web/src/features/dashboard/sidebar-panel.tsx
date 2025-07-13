@@ -2,26 +2,26 @@
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
-import { 
-  Home, 
-  Search, 
-  BarChart3, 
-  FileText, 
-  Plus, 
-  ChevronDown,
-  Gift,
-  MessageSquare,
-  HelpCircle
-} from "lucide-react"
 import { useUserStore } from "@/store/user"
+import {
+  BarChart3,
+  ChevronDown,
+  FileText,
+  Gift,
+  HelpCircle,
+  Home,
+  MessageSquare,
+  Plus,
+  Search
+} from "lucide-react"
 
 export function SidebarPanel() {
   const { userDetails } = useUserStore()
 
   return (
-    <div className="h-full bg-muted/30 flex flex-col">
+    <div className="h-full bg-background flex flex-col">
       {/* User Header */}
-      <div className="p-4 border-b">
+      <div className="h-10 px-2 py-1.5 border-b">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="font-semibold">{userDetails?.name}</span>

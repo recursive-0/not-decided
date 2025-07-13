@@ -1,9 +1,9 @@
 import type { Message } from "@/types/messages";
 import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import rehypeRaw from "rehype-raw";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import * as styles from 'react-syntax-highlighter/dist/esm/styles/prism';
+import rehypeRaw from "rehype-raw";
+import remarkGfm from "remark-gfm";
 
 interface ChatMessagesProps {
   messages: Message[];
@@ -12,13 +12,8 @@ interface ChatMessagesProps {
 // Component for user messages
 const UserMessage = ({ content }: { content: string }) => {
   return (
-    <div className="flex items-start justify-end">
-      <div className="flex-shrink-0 mr-3">
-        <div className="w-6 h-6 rounded-full p-0 bg-primary/40 flex items-center justify-center text-[10px] font-medium">
-          Me
-        </div>
-      </div>
-      <div className="bg-background shadow-sm py-2 px-4 rounded-sm text-sm max-w-[95%]">
+    <div className="flex-1 items-start justify-start">
+      <div className="bg-border py-2 px-4 rounded-sm text-sm max-w-[95%]">
         {content}
       </div>
     </div>
@@ -74,7 +69,7 @@ const AIMessage = ({ content }: { content: string }) => {
               p({ children, ...props }) {
                 return (
                   <p
-                    className="mb-4 whitespace-pre-line overflow-wrap-break-word"
+                    className="mb-2 whitespace-pre-line overflow-wrap-break-word"
                     {...props}
                   >
                     {children}
@@ -207,7 +202,7 @@ export const ChatMessages = ({ messages }: ChatMessagesProps) => {
   return (
     <div className="space-y-4 py-2">
       {messages.map((msg) => (
-        <div key={msg.id}>
+        <div key={msg.id} className="w-full">
           {msg.role === "user" ? (
             <UserMessage content={msg.content} />
           ) : (

@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { createRootRoute, createRoute, Outlet } from "@tanstack/react-router"
 import { App } from "./App"
 import { DashboardLayout } from "./features/dashboard/dashboard-layout"
-import WrisorLandingHero from "./features/Home/home"
+import Home from "./features/Home/home"
 import { Login } from "./features/login"
 
 const queryClient = new QueryClient()
@@ -25,7 +25,7 @@ export const RootRoute = createRootRoute({
 export const HomeRoute = createRoute({
     getParentRoute: () => RootRoute,
     path: "/",
-    component: () => <WrisorLandingHero />,
+    component: () => <Home />,
 })
 
 export const LoginRoute = createRoute({

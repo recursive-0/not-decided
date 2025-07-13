@@ -1,27 +1,27 @@
-import { Edit, MessageSquare, PenTool } from 'lucide-react';
+import { Edit, PenTool } from 'lucide-react';
 
 export const ComposerModeEmptyContent = () => {
   return (
-    <div className="flex flex-col h-full bg-[var(--color-palette-beige-2)] text-[#073642]">
+    <div className="flex flex-col h-full bg-background text-foreground">
       <div className="flex-1 overflow-auto p-4">
         <div className="flex flex-col space-y-4">
           {/* Welcome Header */}
-          <div className="text-2xl font-medium mb-2 text-[#073642] flex items-center gap-2">
-            <Edit className="w-6 h-6 text-[var(--color-palette-salmon)]" />
+          <div className="text-2xl font-medium mb-2 flex items-center gap-2 text-layer-8">
+            <Edit className="w-6 h-6 text-layer-8" />
             Composer Mode
           </div>
           
-          <p className="text-sm text-[var(--color-palette-dark)] mb-4">
+          <p className="text-sm mb-4 text-layer-9">
             Composer edits your document directly and knows its current content. Ask it to write, edit, or summarize sections of your document.
           </p>
           
           {/* Main Feature Card */}
-          <div className="bg-[var(--color-palette-beige-1)] border border-[var(--color-palette-gold-light)] rounded-lg p-5 mb-4">
+          <div className="bg-border/40 rounded-lg p-4 mb-4">
             <div className="flex items-start space-x-3">
-              <PenTool className="w-5 h-5 text-[var(--color-palette-salmon)] mt-1 flex-shrink-0" />
+              <PenTool className="w-5 h-5 text-layer-9 mt-1 flex-shrink-0" />
               <div>
-                <h3 className="font-medium text-[#073642] mb-2">Direct Document Editing</h3>
-                <p className="text-sm text-[var(--color-palette-dark)]">
+                <h3 className="text-layer-9 font-medium mb-2">Direct Document Editing</h3>
+                <p className="text-sm text-layer-9">
                   Wrisor can directly edit your document based on your instructions. Simply tell Wrisor what you want to add, change, or improve.
                 </p>
               </div>
@@ -29,7 +29,7 @@ export const ComposerModeEmptyContent = () => {
           </div>
           
           {/* Mode Comparison */}
-          <div className="bg-[var(--color-palette-beige-1)] border border-[var(--color-palette-gold-light)] rounded-lg p-4">
+          {/* <div className="bg-[var(--color-palette-beige-1)] border border-[var(--color-palette-gold-light)] rounded-lg p-4">
             <h3 className="font-medium text-[#073642] mb-3">Chat Mode vs. Composer Mode</h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-[var(--color-palette-cream)] p-3 rounded-md border border-[var(--color-palette-gold-light)] opacity-80">
@@ -60,7 +60,7 @@ export const ComposerModeEmptyContent = () => {
             <div className="mt-3 text-xs text-[var(--color-palette-dark)] italic">
               Ask the Composer to edit your document using natural language instructions below.
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

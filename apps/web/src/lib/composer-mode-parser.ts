@@ -1,4 +1,5 @@
-import { Tags } from "@/types/editor";
+import { MODE, Tags } from "@/types/editor";
+import { ActionMessageType } from "@/types/stream";
 
 enum ParserState {
   normal = "normal",
@@ -19,44 +20,50 @@ interface ParserCallbacks {
   onCloseTag: (tag: Tags) => void;
   onTextContent: (txt: string) => void;
   onCodeBlock: (code: CodeBlockNodeType) => void;
+  onMarkdownChunk: (chunk: string) => void;
+  onAction: (action: ActionMessageType) => void;
 }
 
 const all_tags = [
   "<h1>",
+  "</h1>",
   "<h2>",
+  "</h2>",
   "<h3>",
+  "</h3>",
   "<b>",
+  "</b>",
   "<em>",
+  "</em>",
   "<strong>",
+  "</strong>",
   "<p>",
+  "</p>",
   "<code>",
+  "</code>",
   "<icode>",
+  "</icode>",
   "<ul>",
+  "</ul>",
   "<li>",
+  "</li>",
   "<quote>",
+  "</quote>",
   "<ol>",
+  "</ol>",
   "<checkbox>",
+  "</checkbox>",
+  "<TKH>",
+  "</TKH>",
+  "<ACT>",
+  "</ACT>",
+  "<CNT>",
+  "</CNT>",
 ];
 
-const ALLOWED_TAGS = [
-  "h1",
-  "h2",
-  "h3",
-  "p",
-  "b",
-  "em",
-  "strong",
-  "ul",
-  "ol",
-  "li",
-  "code",
-  "icode",
-  "quote",
-  "checkbox",
-];
 
 const isValidTag = (tag: string) => {
-  return ALLOWED_TAGS.find((t) => t === tag) ? true : false;
+  return all_tags.find((t) => t === tag) ? true : false;
 };
 
 const includesAllowedTags = (tag: string) => {
@@ -68,8 +75,13 @@ export type CodeBlockNodeType = {
   content: string;
 };
 
-export class ComposerModeParser {
+export class StreamParser {
+  private isStreamActive: boolean = false;
   private state: ParserState = ParserState.normal;
+  private buffer: string = "";
+  private thoughtBuffer: string = "";
+  private contentBuffer: string = "";
+  private actionBuffer: string = "";
   private textBuffer: string = "";
   private currentTagName: string = "";
   private tagStack: string[] = [];
@@ -77,8 +89,18 @@ export class ComposerModeParser {
     lang: "",
     content: "",
   };
+  private mode: MODE = Tags.normal;
 
   constructor(private callbacks: ParserCallbacks) {}
+
+  public startStreaming() {
+    this.state = ParserState.normal;
+    this.isStreamActive = true;
+  }
+
+  public setMode(mode: MODE) {
+    this.mode = mode;
+  }
 
   private flushTextBuffer() {
     if (this.textBuffer.length === 0) return;
@@ -90,43 +112,58 @@ export class ComposerModeParser {
       return;
     }
 
-    let textToEmit: string;
+
     const topTagInStack = this.tagStack[this.tagStack.length - 1];
 
-    if (topTagInStack === Tags.code) {
-      textToEmit = this.textBuffer;
+    if(this.mode === Tags.normal) {
+      this.callbacks.onTextContent(this.textBuffer);
       this.clearTextBuffer();
       return;
     }
 
-    textToEmit = this.textBuffer.replace(/[\n\r\t]/g, "");
+    if (topTagInStack === Tags.code) {
+      this.codeBlockNode.content += this.textBuffer;
+      this.clearTextBuffer();
+      return;
+    }
+
+    if(this.mode === Tags.thinking && this.state === ParserState.normal) {
+      this.thoughtBuffer += this.textBuffer;
+      this.callbacks.onMarkdownChunk(this.textBuffer);
+      this.clearTextBuffer();
+      return;
+    }
+
+    if(this.mode === Tags.action && this.state === ParserState.normal) {
+      this.actionBuffer += this.textBuffer;
+      try {
+        const action = JSON.parse(this.actionBuffer) as ActionMessageType;
+        this.callbacks.onAction(action);
+      } catch (error) {
+        console.error("Still need to buffer the action: ", error);
+      }
+      this.clearTextBuffer();
+      return;
+    }
+
+    // for content buffer we don't need newlines or special characters
+
+    const textToEmit = this.textBuffer.replace(/[\n\r\t]/g, "");
+
     if (textToEmit.length === 0) {
       this.clearTextBuffer();
       return;
     }
 
-    console.log("Flushing text buffer: ", this.textBuffer)
-    this.callbacks.onTextContent(this.textBuffer);
-    this.clearTextBuffer()
+    if(this.mode === Tags.content && this.state === ParserState.normal) {
+      this.contentBuffer += this.textBuffer;
+      this.callbacks.onTextContent(textToEmit);
+      this.clearTextBuffer();
+      return;
+    }
+
   }
 
-  private clearTextBuffer() {
-    this.textBuffer = "";
-  }
-
-  private reset() {
-    this.state = ParserState.normal;
-    this.clearTextBuffer();
-    this.currentTagName = "";
-    this.tagStack = [];
-  }
-
-  private resetCodeBlockNode() {
-    this.codeBlockNode = {
-      lang: "",
-      content: "",
-    };
-  }
 
   processChunk(chunk: string) {
     // if (!this.isActive) {
@@ -136,9 +173,15 @@ export class ComposerModeParser {
 
     console.log("CHUNK to process is: ", chunk);
 
+    if(!this.isStreamActive) {
+      console.log("Stream is not active, skipping chunk");
+      return;
+    }
+
     for (let i = 0; i < chunk.length; i++) {
       const char = chunk[i];
-      this.processEachCharacter(char);
+      this.buffer += char;
+      this.processCharacter(char);
     }
 
     console.log("TAG STACK IS: ", this.tagStack);
@@ -147,14 +190,12 @@ export class ComposerModeParser {
   }
 
   private openTag() {
-    const tagName = this.currentTagName.toLowerCase();
+    const tagName = this.textBuffer;
     // const originalTagText = `[${this.currentTagName}]`;
     console.log(`Parser: Attempting to open tag: "${tagName}"`);
 
     if (tagName.includes("code lang")) {
-      const topTag = this.tagStack[this.tagStack.length - 1];
       console.log("FOUND CODE opening tag");
-      console.log("TOP TAG IS: ", topTag);
       const codeBlockAttributes = extractCodeBlockAttributes(tagName);
       this.resetCodeBlockNode();
       this.codeBlockNode.lang = codeBlockAttributes.lang || "text";
@@ -172,8 +213,21 @@ export class ComposerModeParser {
       return;
     }
 
+    if(tagName === Tags.thinking) {
+      this.mode = Tags.thinking;
+      this.setMode(this.mode);
+    } else if(tagName === Tags.action) {
+      this.mode = Tags.action;
+      this.setMode(this.mode);
+    } else if(tagName === Tags.content) {
+      this.mode = Tags.content;
+      this.setMode(this.mode);
+    } else {
+      console.log("Found content tag i guess: ", tagName);
+      this.callbacks.onOpenTag(tagName as Tags);
+    }
+
     this.tagStack.push(tagName)
-    this.callbacks.onOpenTag(tagName as Tags);
     this.clearTextBuffer();
     this.currentTagName = "";
     this.state = ParserState.normal;
@@ -181,9 +235,8 @@ export class ComposerModeParser {
 
   private closeTag() {
     console.log("Current tag stack in closetag is: ", this.tagStack);
-    const closingTag = this.currentTagName.toLowerCase();
-    // const originalTagText = `[/${this.currentTagName}]`;
-    const topTagInStack = this.tagStack[this.tagStack.length - 1];
+    const closingTag = this.textBuffer;
+
 
     if (!isValidTag(closingTag)) {
       this.flushTextBuffer();
@@ -199,14 +252,19 @@ export class ComposerModeParser {
       return;
     }
 
-    if (closingTag === topTagInStack) {
+    if(closingTag === Tags.thinking || closingTag === Tags.action || closingTag === Tags.content) {
+      this.mode = Tags.normal;
+      this.setMode(this.mode);
+    } else {
+      console.log("Found content tag i guess: ", closingTag);
       this.callbacks.onCloseTag(closingTag as Tags);
+    }
+
+
       this.tagStack.pop();
       this.clearStateAfterTag();
       return;
-    }
 
-    console.warn("This is an invalid state inside closeTag");
   }
 
   clearStateAfterTag() {
@@ -215,7 +273,7 @@ export class ComposerModeParser {
     this.state = ParserState.normal;
   }
 
-  processEachCharacter(char: string) {
+  processCharacter(char: string) {
     switch (this.state) {
       case ParserState.normal:
         if (char === "<") {
@@ -267,6 +325,24 @@ export class ComposerModeParser {
 
   public stopStreaming() {
     this.reset();
+  }
+
+  private clearTextBuffer() {
+    this.textBuffer = "";
+  }
+
+  private reset() {
+    this.state = ParserState.normal;
+    this.clearTextBuffer();
+    this.currentTagName = "";
+    this.tagStack = [];
+  }
+
+  private resetCodeBlockNode() {
+    this.codeBlockNode = {
+      lang: "",
+      content: "",
+    };
   }
 }
 

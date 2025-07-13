@@ -1,27 +1,27 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import {
-  Bot,
-  CornerDownLeft,
   AlertTriangle,
-  X,
+  CornerDownLeft,
+  X
 } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
 
-import { cn } from "@/lib/utils";
-import { ChatMessages } from "./chat-messages";
-import { useChatHandler } from "@/hooks/use-chat-handler";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import PendingChangesWarning from "./pending-changes-warning-popup";
-import { useWrisorStore } from "@/store/wrisor";
-import { ActionIndicator } from "./action-indicator";
-import { ChatMode } from "@/types/messages";
+import { useChatHandler } from "@/hooks/use-chat-handler";
+import { cn } from "@/lib/utils";
 import { useEditor } from "@/providers/editor-context-provider";
+import { useWrisorStore } from "@/store/wrisor";
+import { WrisorLogo } from "@/svg/wrisor-logo.svg";
+import { ChatMode } from "@/types/messages";
+import { Mode } from "@/types/stream";
+import { ActionIndicator } from "./action-indicator";
+import { ChatMessages } from "./chat-messages";
 import { ChatModeEmptyContent } from "./chat-mode-empty-content";
 import { ComposerModeEmptyContent } from "./composer-mode-empty-content";
+import PendingChangesWarning from "./pending-changes-warning-popup";
 import { SectionMentionDropdown } from "./section-mention-dropdown";
-import { Mode } from "@/types/stream";
 
 // Thinking loader component
 const ThinkingLoader = () => {
@@ -237,19 +237,19 @@ const AIChat = () => {
     <div className="border-b border-border bg-[var(--color-palette-beige-2)] flex-shrink-0">
       <div className="h-10 flex items-center px-3 py-1.5">
         <div className="flex items-center space-x-2">
-          <div className="w-6 h-6 rounded flex items-center justify-center text-primary">
+          {/* <div className="w-6 h-6 rounded flex items-center justify-center text-primary">
             <Bot className="w-4 h-4" />
-          </div>
-          <TabsList className="bg-transparent p-0 h-auto">
+          </div> */}
+          <TabsList className="h-auto border border-border rounded-sm bg-muted-foreground/10 p-0">
             <TabsTrigger
               value="CHAT"
-              className="text-xs font-medium px-2.5 py-1 data-[state=active]:bg-background data-[state=active]:text-[#073642] text-muted-foreground rounded-sm data-[state=active]:shadow-sm"
+              className="text-xs font-medium data-[state=active]:bg-white text-muted-foreground data-[state=active]:text-layer-7 rounded-sm data-[state=active]:shadow-sm"
             >
               Chat
             </TabsTrigger>
             <TabsTrigger
               value="COMPOSER"
-              className="text-xs font-medium px-2.5 py-1 data-[state=active]:bg-background data-[state=active]:text-[#073642] text-muted-foreground rounded-sm data-[state=active]:shadow-sm"
+                className="text-xs font-medium data-[state=active]:bg-white text-muted-foreground data-[state=active]:text-layer-7 rounded-sm data-[state=active]:shadow-sm"
             >
               Composer
             </TabsTrigger>
@@ -260,17 +260,32 @@ const AIChat = () => {
   );
 
   const renderInputArea = () => (
-    <div className="p-2 flex-shrink-0 relative">
+    <div className="p-2 flex-shrink-0 relative z-10">
       <div className="relative flex items-start">
+      <div className="absolute -top-7 left-1/2 transform -translate-x-1/2 w-[95%] h-7 border-t border-x bg-white rounded-t-md">
+      <div className="w-full h-full flex items-center justify-between">
+        <div className="w-full h-full flex items-center justify-start gap-2 relative px-2">
+          <div className="w-6 h-6 relative">
+          <WrisorLogo />
+          </div>
+          <span className="text-xs font-medium text-muted-foreground">Wrisor is running</span>
+          
+        </div>
+        <div className="w-full h-full flex items-center justify-end mr-2">
+          <button className="w-3 h-3 relative">
+            <span className="w-full h-full rounded-xs bg-red-800 flex items-center justify-center"></span>
+          </button>
+        </div>
+        </div>
+      </div>
         <Textarea
           ref={textareaRef}
           placeholder="Ask anything (⌘k), @ to mention sections"
-          style={{
-            backgroundColor: "var(--color-palette-gold-light)",
-          }}
-          className="flex-1 text-sm rounded-md resize-none border border-[var(--color-palette-gold-dark)]
-            text-[var(--color-palette-dark)] placeholder:text-muted-foreground
-            pr-8 py-2 min-h-[38px] max-h-[100px] overflow-y-scroll"
+          className="flex-1 text-sm rounded-md resize-none border border-border
+            text-muted-foreground placeholder:text-muted-foreground/80
+            pr-8 py-2 min-h-[70px] max-h-[100px] overflow-y-scroll bg-transparent shadow-md 
+            focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none focus-visible:border-border
+            "
           value={input}
           onChange={handleInputChange}
           onKeyDown={(e) => handleKeyDown(e)}
@@ -358,13 +373,19 @@ const AIChat = () => {
     };
     document.addEventListener("keydown", onKeyDown)
 
+    if(localStorage.getItem("user_prompt")){
+      // send the message to the ai
+      handleSendMessage(localStorage.getItem("user_prompt") || "")
+      localStorage.removeItem("user_prompt")
+    }
+
     return () => {
       document.removeEventListener("keydown", onKeyDown)
     }
-  },[textareaRef, editorView])
+  },[textareaRef, editorView, handleSendMessage])
 
   return (
-    <div className="w-full flex flex-col h-full bg-[var(--color-palette-beige-2)] text-[#073642]">
+    <div className="w-full flex flex-col h-full bg-border/15 text-[#073642]">
       <Tabs
         autoFocus
         value={currentChatMode}

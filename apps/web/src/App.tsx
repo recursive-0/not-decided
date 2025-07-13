@@ -9,12 +9,12 @@ export function App() {
   return (
     <EditorProvider>
       <ChatHandlerProvider>
-        <div className="h-screen w-full bg-red-400 flex flex-row">
+        <div className="h-screen w-full flex flex-row">
           <ResizablePanelGroup direction="horizontal" className="h-screen">
           <ResizablePanel defaultSize={55}>
             <EditorContainer />
           </ResizablePanel>
-          <ResizableHandle withHandle className="before:w-[1px]" />
+          <ResizableHandle withHandle className="before:w-[1px] bg-border" />
           <ResizablePanel defaultSize={30} className="min-w-1/4">
             <AIChat />
           </ResizablePanel>

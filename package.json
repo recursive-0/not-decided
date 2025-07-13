@@ -10,13 +10,12 @@
   },
   "private": true,
   "scripts": {
-    "dev": "pnpm run dev:web && pnpm run dev:worker",
-    "dev:web": "pnpm --filter ./apps/web dev",
-    "dev:worker": "pnpm --filter ./apps/worker dev",
-    "build": "pnpm run build:web",
-    "build:web": "pnpm --filter ./apps/web build",
-    "web": "pnpm --filter ./apps/web",
-    "i:worker": "pnpm --filter ./apps/worker"
+    "dev": "pnpm run --parallel --filter monorepo/web --filter monorepo/worker dev",
+    "web": "pnpm --filter monorepo/web",
+    "worker": "pnpm --filter monorepo/worker",
+    "build": "pnpm run --parallel --filter monorepo/web --filter monorepo/worker build",
+    "build:web": "pnpm --filter monorepo/web build",
+    "build:worker": "pnpm --filter monorepo/worker build"
   },
   "dependencies": {
     "groq-sdk": "^0.21.0"

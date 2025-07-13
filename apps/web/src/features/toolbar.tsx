@@ -1,48 +1,4 @@
-import React, { useState } from "react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
-import {
-  Bold,
-  Italic,
-  Underline,
-  Strikethrough,
-  Link,
-  Heading1,
-  Heading2,
-  Heading3,
-  List,
-  ListOrdered,
-  Quote,
-  HighlighterIcon,
-  Type,
-  Download,
-} from "lucide-react";
-import { useEditor } from "@/providers/editor-context-provider";
-import {
-  boldText,
-  italicizeText,
-  strikethroughText,
-  underlineText,
-  superscriptText,
-  subscriptText,
-  setTextColor,
-  setHighlightColor,
-  applyHeading,
-  toggleBlockquote,
-  toggleList,
-  insertLink,
-} from "@/lib/prosemirror-tool-handlers";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -50,11 +6,56 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { EditorView } from "prosemirror-view";
-import { DOMSerializer } from "prosemirror-model";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  applyHeading,
+  boldText,
+  insertLink,
+  italicizeText,
+  setHighlightColor,
+  setTextColor,
+  strikethroughText,
+  subscriptText,
+  superscriptText,
+  toggleBlockquote,
+  toggleList,
+  underlineText,
+} from "@/lib/prosemirror-tool-handlers";
+import { cn } from "@/lib/utils";
+import { useEditor } from "@/providers/editor-context-provider";
+import {
+  Bold,
+  ChevronDown,
+  Download,
+  Heading1,
+  Heading2,
+  Heading3,
+  HighlighterIcon,
+  Italic,
+  Link,
+  List,
+  ListOrdered,
+  Quote,
+  Strikethrough,
+  Type,
+  Underline,
+} from "lucide-react";
 import { MarkdownSerializer } from "prosemirror-markdown";
+import { DOMSerializer } from "prosemirror-model";
+import { EditorView } from "prosemirror-view";
+import React, { useState } from "react";
 
 // Expanded types for all formatting options
 type TextFormatType =
@@ -346,20 +347,18 @@ const Toolbar = () => {
         {/* Block formatting section */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-1 rounded-sm px-2 py-1 transition-colors text-[#073642] hover:bg-secondary/50">
+            <button className="flex items-center gap-1 rounded-sm px-2 py-1 transition-colors hover:bg-layer-15/70">
               {renderActiveBlockIcon()}
               <span className="text-xs font-medium">{activeBlockType}</span>
+              <ChevronDown className="h-3 w-3 text-layer-7" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            style={{
-              backgroundColor: "var(--color-palette-beige-2)",
-            }}
-            className="bg-palette-gold-light"
+            className="bg-background"
           >
             {blockOptions.map((option) => (
               <DropdownMenuItem
-                className="hover:!bg-primary/80"
+                className="hover:!bg-layer-15/70"
                 key={option.id}
                 onClick={() => setBlockFormat(option.id as BlockType)}
               >
@@ -416,23 +415,13 @@ const Toolbar = () => {
         <div className="w-px h-5 mx-1.5 bg-border" />
 
         {/* Link section */}
-        <Tooltip>
-          <TooltipTrigger asChild>
             <button
               onClick={handleInsertLink}
-              className="flex items-center gap-1 rounded-sm px-2 py-1 transition-colors text-[#073642] hover:bg-secondary/50"
+              className="flex items-center gap-1 rounded-sm px-2 py-1 transition-colors hover:bg-layer-15/70"
             >
               <Link className="h-4 w-4" />
               <span className="text-xs font-medium">Add Link</span>
             </button>
-          </TooltipTrigger>
-          <TooltipContent className="bg-card text-card-foreground border-border flex items-center gap-2">
-            <span>Add Link</span>
-            <span className="flex items-center rounded border border-border bg-secondary px-1 text-xs font-semibold text-secondary-foreground">
-              ⌘K
-            </span>
-          </TooltipContent>
-        </Tooltip>
 
         <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
           <DialogContent className="sm:max-w-md">
@@ -485,19 +474,16 @@ const Toolbar = () => {
         <div className="flex items-center gap-0.5">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-2 rounded-md px-3 py-1.5 transition-all duration-200 bg-gradient-to-r from-palette-salmon to-palette-gold text-white font-medium shadow-md hover:shadow-lg hover:scale-105 transform">
-                    <Download className="h-4 w-4" />
-                    <span className="text-xs font-semibold">Export</span>
+                  <button className="flex items-center gap-2 rounded-md px-3 py-1.5 border border-layer-15/70 text-layer-9 hover:bg-layer-15/70">
+                    <Download className="h-4 w-4 text-layer-7" />
+                    <span className="text-xs font-medium text-layer-7">Export</span>
                   </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
-              style={{
-                backgroundColor: "var(--color-palette-beige-2)",
-              }}
-              className="bg-palette-gold-light"
+              className="bg-background"
             >
               <DropdownMenuItem
-                className="hover:!bg-primary/80"
+                className="hover:!bg-layer-15/70"
                 onClick={() => {
                   if (editorView.current) {
                     const markdown = convertToMarkdown(editorView.current);
@@ -514,14 +500,14 @@ const Toolbar = () => {
                   <div className="h-4 w-4 rounded bg-blue-500 flex items-center justify-center">
                     <span className="text-xs text-white font-bold">M</span>
                   </div>
-                  <span>Markdown</span>
+                  <span className="text-layer-9 hover:text-layer-7">Markdown</span>
                   <span className="ml-auto text-xs text-muted-foreground">
                     .md
                   </span>
                 </div>
               </DropdownMenuItem>
               <DropdownMenuItem
-                className="hover:!bg-primary/80"
+                className="hover:!bg-layer-15/70"
                 onClick={() => {
                   if (editorView.current) {
                     const html = convertToHTML(editorView.current);
@@ -538,7 +524,7 @@ const Toolbar = () => {
                   <div className="h-4 w-4 rounded bg-orange-500 flex items-center justify-center">
                     <span className="text-xs text-white font-bold">H</span>
                   </div>
-                  <span>HTML</span>
+                  <span className="text-layer-9 hover:text-layer-7">HTML</span>
                   <span className="ml-auto text-xs text-muted-foreground">
                     .html
                   </span>

@@ -1,7 +1,6 @@
 import { Env } from '../../worker-configuration';
 import { handleGeminiStream } from '../ai-models/gemini';
 import { DB } from '../db';
-import { simpleStaticStream } from '../lib/simple-static-stream';
 
 export async function generateStream(req: Request, env: Env, ctx: ExecutionContext, db: DB): Promise<Response> {
 	const url = new URL(req.url);

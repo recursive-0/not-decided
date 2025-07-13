@@ -3,93 +3,133 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Main backgrounds - using light creams for comfortable writing */
-  --background: oklch(0.94 0.01 85); /* #EBE7DD equivalent */
-  --foreground: oklch(0.2 0.02 45); /* Very dark brown for text */
-  --card: oklch(0.96 0.015 75); /* #F6EFDF equivalent */
-  --card-foreground: oklch(0.2 0.02 45); /* #2C2C2C equivalent */
-  --popover: oklch(0.96 0.015 75); /* #F6EFDF equivalent */
-  --popover-foreground: oklch(0.2 0.02 45); /* #2C2C2C equivalent */
+  /* ===== SHADCN VARIABLES - LIGHT THEME ===== */
+  --background: #ffffff;        /* Lightest from our progression */
+  --foreground: #060607;        /* Darkest for text */
   
-  /* Primary - warm brown for main actions */
-  --primary: oklch(0.5 0.08 50); /* #AB7946 equivalent */
-  --primary-foreground: oklch(0.95 0.01 75); /* #F6EFDF equivalent */
+  --card: #BEBEBF;              /* One step darker than background */
+  --card-foreground: #0A0A0C;   
   
-  /* Secondary - lighter warm tone */
-  --secondary: oklch(0.88 0.03 75); /* Light version of golden tone */
-  --secondary-foreground: oklch(0.3 0.02 45); /* #2C2C2C equivalent */
+  --popover: #BEBEBF;           
+  --popover-foreground: #0A0A0C;
   
-  /* Muted elements */
-  --muted: oklch(0.92 0.015 80); /* Slightly darker than background */
-  --muted-foreground: oklch(0.45 0.02 50); /* #2C2C2C equivalent */
+  --primary: #8B5CF6;           /* Deep Thought Purple */
+  --primary-foreground: #CFD0D0;
   
-  /* Accent - golden brown */
-  --accent: oklch(0.7 0.06 65); /* #E0B36A equivalent */
-  --accent-foreground: oklch(0.2 0.02 45); /* #2C2C2C equivalent */
+  --secondary: #ACACAD;         
+  --secondary-foreground: #131316;
   
-  /* Destructive - keeping a subtle red that fits the palette */
-  --destructive: oklch(0.55 0.15 25);
-  --destructive-foreground: oklch(0.95 0.01 75); /* #F6EFDF equivalent */ 
+  --muted: #ACACAD;             
+  --muted-foreground: #525356;  
   
-  /* Borders and inputs - subtle earthy tones */
-  --border: oklch(0.85 0.02 70); /* #D9C7A8 equivalent */
-  --input: oklch(0.85 0.02 70); /* #D9C7A8 equivalent */
-  --ring: oklch(0.6 0.06 55); /* Focus ring in warm brown */
+  --accent: #B794F6;            /* Lighter purple */
+  --accent-foreground: #0F0F11;
   
-  /* Chart colors - earth-inspired palette */
-  --chart-1: oklch(0.5 0.08 50); /* #AB7946 equivalent */
-  --chart-2: oklch(0.7 0.06 65); /* #E0B36A equivalent */
-  --chart-3: oklch(0.45 0.04 35); /* #D9C7A8 equivalent */
-  --chart-4: oklch(0.8 0.04 75); /* #F6EFDF equivalent */
-  --chart-5: oklch(0.55 0.06 45); /* #AB7946 equivalent */
+  --destructive: #EF4444;       
+  --destructive-foreground: #CFD0D0;
+  
+  --border: #eeeef0;            
+  --input: #9A9A9C;             
+  --ring: #8B5CF6;              
+  
+  --chart-1: #8B5CF6;
+  --chart-2: #B794F6;
+  --chart-3: #7C3AED;
+  --chart-4: #D4BBF8;
+  --chart-5: #6D28D9;
   
   --radius: 0.625rem;
   
-  /* Sidebar - using darker earth tones */
-  --sidebar: oklch(0.9 0.02 75); /* #D9C7A8 equivalent */
-  --sidebar-foreground: oklch(0.25 0.02 45); /* #2C2C2C equivalent */
-  --sidebar-primary: oklch(0.5 0.08 50); /* #AB7946 equivalent */
-  --sidebar-primary-foreground: oklch(0.95 0.01 75); /* #F6EFDF equivalent */
-  --sidebar-accent: oklch(0.85 0.025 70); /* #D9C7A8 equivalent */
-  --sidebar-accent-foreground: oklch(0.3 0.02 45); /* #2C2C2C equivalent */
-  --sidebar-border: oklch(0.8 0.025 65); /* #D9C7A8 equivalent */
-  --sidebar-ring: oklch(0.6 0.06 55); /* #AB7946 equivalent */
+  --sidebar: #ACACAD;
+  --sidebar-foreground: #0F0F11;
+  --sidebar-primary: #8B5CF6;
+  --sidebar-primary-foreground: #CFD0D0;
+  --sidebar-accent: #B794F6;
+  --sidebar-accent-foreground: #0F0F11;
+  --sidebar-border: #88888A;
+  --sidebar-ring: #8B5CF6;
+
+  /* ===== OUR 15 LAYER PROGRESSION ===== */
+  --layer-0: #060607;   /* Deepest void */
+  --layer-1: #0A0A0C;   /* Canvas */
+  --layer-2: #0F0F11;   /* Surface */
+  --layer-3: #131316;   /* Elevated */
+  --layer-4: #18181C;   /* Interactive */
+  --layer-5: #1C1D21;   /* Border soft */
+  --layer-6: #2E2F33;   /* Border strong */
+  --layer-7: #404144;   /* Border contrast */
+  --layer-8: #525356;   /* Text ghost */
+  --layer-9: #646467;   /* Text muted */
+  --layer-10: #767679;  /* Text subtle */
+  --layer-11: #88888A;  /* Text secondary */
+  --layer-12: #9A9A9C;  /* Text neutral */
+  --layer-13: #ACACAD;  /* Text primary */
+  --layer-14: #BEBEBF;  /* Text emphasis */
+  --layer-15: #CFD0D0;  /* Text contrast */
 }
 
 .dark {
-  /* Dark mode - we can keep this for future use */
-  --background: oklch(0.15 0.01 45);
-  --foreground: oklch(0.95 0.01 75);
-  --card: oklch(0.18 0.01 45);
-  --card-foreground: oklch(0.95 0.01 75);
-  --popover: oklch(0.18 0.01 45);
-  --popover-foreground: oklch(0.95 0.01 75);
-  --primary: oklch(0.7 0.06 65);
-  --primary-foreground: oklch(0.15 0.01 45);
-  --secondary: oklch(0.25 0.02 50);
-  --secondary-foreground: oklch(0.9 0.01 75);
-  --muted: oklch(0.25 0.02 50);
-  --muted-foreground: oklch(0.65 0.02 55);
-  --accent: oklch(0.3 0.02 50);
-  --accent-foreground: oklch(0.95 0.01 75);
-  --destructive: oklch(0.45 0.12 25);
-  --destructive-foreground: oklch(0.95 0.01 75);
-  --border: oklch(0.25 0.02 50);
-  --input: oklch(0.25 0.02 50);
-  --ring: oklch(0.5 0.06 55);
-  --chart-1: oklch(0.6 0.08 55);
-  --chart-2: oklch(0.75 0.06 70);
-  --chart-3: oklch(0.5 0.04 40);
-  --chart-4: oklch(0.8 0.04 75);
-  --chart-5: oklch(0.65 0.06 50);
-  --sidebar: oklch(0.2 0.01 45);
-  --sidebar-foreground: oklch(0.9 0.01 75);
-  --sidebar-primary: oklch(0.6 0.08 55);
-  --sidebar-primary-foreground: oklch(0.15 0.01 45);
-  --sidebar-accent: oklch(0.25 0.02 50);
-  --sidebar-accent-foreground: oklch(0.9 0.01 75);
-  --sidebar-border: oklch(0.25 0.02 50);
-  --sidebar-ring: oklch(0.5 0.06 55);
+  /* ===== SHADCN VARIABLES - DARK THEME ===== */
+  --background: #060607;        /* Darkest from our progression */
+  --foreground: #CFD0D0;        /* Lightest for text */
+  
+  --card: #0A0A0C;              /* One step lighter than background */
+  --card-foreground: #BEBEBF;   
+  
+  --popover: #0F0F11;           /* More elevated than card */
+  --popover-foreground: #CFD0D0;
+  
+  --primary: #8B5CF6;           /* Same purple in both themes */
+  --primary-foreground: #060607;
+  
+  --secondary: #131316;         
+  --secondary-foreground: #ACACAD;
+  
+  --muted: #0F0F11;             
+  --muted-foreground: #767679;  
+  
+  --accent: #131316;            /* Dark accent background */
+  --accent-foreground: #8B5CF6; /* Purple text */
+  
+  --destructive: #EF4444;       
+  --destructive-foreground: #CFD0D0;
+  
+  --border: #1C1D21;            
+  --input: #131316;             
+  --ring: #8B5CF6;              
+  
+  --chart-1: #8B5CF6;
+  --chart-2: #B794F6;
+  --chart-3: #7C3AED;
+  --chart-4: #D4BBF8;
+  --chart-5: #6D28D9;
+  
+  --sidebar: #0A0A0C;
+  --sidebar-foreground: #ACACAD;
+  --sidebar-primary: #8B5CF6;
+  --sidebar-primary-foreground: #060607;
+  --sidebar-accent: #131316;
+  --sidebar-accent-foreground: #8B5CF6;
+  --sidebar-border: #1C1D21;
+  --sidebar-ring: #8B5CF6;
+
+  /* ===== SAME 15 LAYERS - AVAILABLE IN BOTH THEMES ===== */
+  --layer-0: #060607;   /* Deepest void */
+  --layer-1: #0A0A0C;   /* Canvas */
+  --layer-2: #0F0F11;   /* Surface */
+  --layer-3: #131316;   /* Elevated */
+  --layer-4: #18181C;   /* Interactive */
+  --layer-5: #1C1D21;   /* Border soft */
+  --layer-6: #2E2F33;   /* Border strong */
+  --layer-7: #404144;   /* Border contrast */
+  --layer-8: #525356;   /* Text ghost */
+  --layer-9: #646467;   /* Text muted */
+  --layer-10: #767679;  /* Text subtle */
+  --layer-11: #88888A;  /* Text secondary */
+  --layer-12: #9A9A9C;  /* Text neutral */
+  --layer-13: #ACACAD;  /* Text primary */
+  --layer-14: #BEBEBF;  /* Text emphasis */
+  --layer-15: #CFD0D0;  /* Text contrast */
 }
 
 @theme inline {
@@ -129,6 +169,26 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  --color-layer-0: var(--layer-0);
+  --color-layer-1: var(--layer-1);
+  --color-layer-2: var(--layer-2);
+  --color-layer-3: var(--layer-3);
+  --color-layer-4: var(--layer-4);
+  --color-layer-5: var(--layer-5);
+  --color-layer-6: var(--layer-6);
+  --color-layer-7: var(--layer-7);
+  --color-layer-8: var(--layer-8);
+  --color-layer-9: var(--layer-9);
+  --color-layer-10: var(--layer-10);
+  --color-layer-11: var(--layer-11);
+  --color-layer-12: var(--layer-12);
+  --color-layer-13: var(--layer-13);
+  --color-layer-14: var(--layer-14);
+  --color-layer-15: var(--layer-15);
+
+
+
 }
 
 @layer base {

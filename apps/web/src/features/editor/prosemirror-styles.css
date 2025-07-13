@@ -435,12 +435,14 @@ pre code.inline-code {
 }
 
 .deletion-suggestion {
+  padding: 0.25rem 0.5rem;
   background-color: rgba(239, 68, 68, 0.15);
   border-radius: 0.25rem;
   animation: fadeInHighlight 0.3s ease-in-out forwards;
 }
 
 .addition-suggestion {
+  padding: 0.25rem 0.5rem;
   background-color: rgba(34, 197, 94, 0.15);
   border-radius: 0.25rem;
   animation: fadeInHighlight 0.3s ease-in-out forwards;

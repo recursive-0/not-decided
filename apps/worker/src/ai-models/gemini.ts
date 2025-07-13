@@ -66,19 +66,16 @@ export function getClient(env: Env): GoogleGenAI {
           console.log("Stream result is: ", streamResult)
   
           for await (const chunk of streamResult) {
-            const chunkText = chunk.text
-            if(chunkText){
-            const jsonObjects = chunkText.split('\n');
-
-            for (const line of jsonObjects) {
-              // Ensure we don't send empty lines as messages
-              if (line.trim()) {
-                const sseMessage = `data: ${line}\n\n`;
-                console.log("CHUNK: ", sseMessage)
-                controller.enqueue(encoder.encode(sseMessage));
-              }
+            const chunkText = chunk.text; // Assuming .text() is correct, or chunk.text
+            if (chunkText) {
+              // THE FIX: Process multi-line chunks to be SSE compliant.
+              const lines = chunkText.split('\n');
+              const formattedChunk = lines.map(line => `data: ${line}`).join('\n');
+              const sseMessage = `${formattedChunk}\n\n`;
+          
+              console.log("CORRECTED SSE MESSAGE:", sseMessage);
+              controller.enqueue(encoder.encode(sseMessage));
             }
-          }
           }
   
           console.log("Gemini stream finished.");
