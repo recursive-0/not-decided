@@ -1,3 +1,4 @@
+import { NudeTags, ParsedTag } from "@/types/editor";
 import { EditorView } from "prosemirror-view";
 
 export const getDocumentContext = (editor: EditorView) => {
@@ -74,3 +75,44 @@ export const getSemanticTextSelectionRange = (editor: EditorView) => {
 };
 
 
+export function parseTag(rawInput: string): ParsedTag | null {
+  const openingTagRegex = /<(\w+)(.*?)>/;
+  const tagMatch = rawInput.match(openingTagRegex)
+
+  console.log("Tag match is: ", tagMatch)
+
+  if(!tagMatch) {
+    console.warn("This is not a valid opening tag: ", rawInput)
+    return null
+  }
+
+  const tag = tagMatch[1] as NudeTags
+  const attributesString = tagMatch[2]
+
+  const attributeRegex = /(\w+)="([^"]+)"/g;
+  const attributes: Record<string, string> = {};
+
+  for(const attrMatch of attributesString.matchAll(attributeRegex)){
+    const key = attrMatch[1]
+    const value = attrMatch[2]
+    attributes[key] = value
+  }
+
+  return { tag, attributes}
+}
+
+export function parseClosingTag(rawInput: string): ParsedTag | null {
+  const closingTagRegex = /<\/(\w+)>/;
+  const tagMatch = rawInput.match(closingTagRegex)
+
+  console.log("Tag match is: ", tagMatch)
+
+  if(!tagMatch) {
+    console.warn("This is not a valid closing tag: ", rawInput)
+    return null
+  }
+
+  const tag = tagMatch[1] as NudeTags
+  const attributes: Record<string, string> = {}
+  return { tag, attributes }
+}

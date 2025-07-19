@@ -1,74 +1,32 @@
-import { MODE, Tags } from "@/types/editor";
+import { NudeTags, ParsedTag, Tags } from "@/types/editor";
 import { ActionMessageType } from "@/types/stream";
+import { parseClosingTag, parseTag } from "./doc-helpers";
 
 enum ParserState {
   normal = "normal",
-  thought = "thought",
-  inside_thought_tag = "inside_thought_tag",
-  collect_thought_text = "collect_thought_text",
-  tag_start = "tag_start",
-  tag_name = "tag_name",
-  tag_end = "tag_end",
-  closing_tag_start = "closing_tag_start",
-  closing_tag_name = "closing_tag_name",
-  editor_content = "editor_content",
-  inside_editor_content_tag = "inside_editor_content_tag",
+  in_tag = "in_tag",
+}
+
+enum ParserMode {
+  normal = "normal",
+  thinking = "thinking",
+  action = "action",
+  content = "content"
 }
 
 interface ParserCallbacks {
-  onOpenTag: (tag: Tags) => void;
-  onCloseTag: (tag: Tags) => void;
+  onOpenTag: (tag: ParsedTag) => void;
+  onCloseTag: (tag: ParsedTag) => void;
   onTextContent: (txt: string) => void;
   onCodeBlock: (code: CodeBlockNodeType) => void;
   onMarkdownChunk: (chunk: string) => void;
   onAction: (action: ActionMessageType) => void;
 }
 
-const all_tags = [
-  "<h1>",
-  "</h1>",
-  "<h2>",
-  "</h2>",
-  "<h3>",
-  "</h3>",
-  "<b>",
-  "</b>",
-  "<em>",
-  "</em>",
-  "<strong>",
-  "</strong>",
-  "<p>",
-  "</p>",
-  "<code>",
-  "</code>",
-  "<icode>",
-  "</icode>",
-  "<ul>",
-  "</ul>",
-  "<li>",
-  "</li>",
-  "<quote>",
-  "</quote>",
-  "<ol>",
-  "</ol>",
-  "<checkbox>",
-  "</checkbox>",
-  "<TKH>",
-  "</TKH>",
-  "<ACT>",
-  "</ACT>",
-  "<CNT>",
-  "</CNT>",
-];
 
-
-const isValidTag = (tag: string) => {
-  return all_tags.find((t) => t === tag) ? true : false;
-};
-
-const includesAllowedTags = (tag: string) => {
-  return all_tags.find((t) => t.includes(tag)) ? true : false;
-};
+// const includesAllowedTags = (tag: string) => {
+//   return all_tags.find((t) => t.includes(tag)) ? true : false;
+// };
 
 export type CodeBlockNodeType = {
   lang: string;
@@ -83,13 +41,14 @@ export class StreamParser {
   private contentBuffer: string = "";
   private actionBuffer: string = "";
   private textBuffer: string = "";
-  private currentTagName: string = "";
+  private tagBuffer: string = "";
+  private openingTag: string = "";
   private tagStack: string[] = [];
   private codeBlockNode: CodeBlockNodeType = {
     lang: "",
     content: "",
   };
-  private mode: MODE = Tags.normal;
+  private mode: ParserMode = ParserMode.normal
 
   constructor(private callbacks: ParserCallbacks) {}
 
@@ -100,16 +59,16 @@ export class StreamParser {
     this.contentBuffer = "";
     this.thoughtBuffer = "";
     this.textBuffer = "";
-    this.currentTagName = "";
+    this.openingTag = "";
     this.tagStack = [];
     this.codeBlockNode = {
       lang: "",
       content: "",
     };
-    this.mode = Tags.normal;
+    this.mode = ParserMode.normal
   }
 
-  public setMode(mode: MODE) {
+  public setMode(mode: ParserMode) {
     this.mode = mode;
   }
 
@@ -126,8 +85,9 @@ export class StreamParser {
 
     const topTagInStack = this.tagStack[this.tagStack.length - 1];
 
-    if(this.mode === Tags.normal) {
-      this.callbacks.onTextContent(this.textBuffer);
+    if(this.mode === ParserMode.normal) {
+      // Dead content so rendering it in chat
+      this.callbacks.onMarkdownChunk(this.textBuffer);
       this.clearTextBuffer();
       return;
     }
@@ -138,14 +98,14 @@ export class StreamParser {
       return;
     }
 
-    if(this.mode === Tags.thinking && this.state === ParserState.normal) {
+    if(this.mode === ParserMode.thinking && this.state === ParserState.normal) {
       this.thoughtBuffer += this.textBuffer;
       this.callbacks.onMarkdownChunk(this.textBuffer);
       this.clearTextBuffer();
       return;
     }
 
-    if(this.mode === Tags.action && this.state === ParserState.normal) {
+    if(this.mode === ParserMode.action && this.state === ParserState.normal) {
       this.actionBuffer += this.textBuffer;
       console.log("Action buffer is: ", this.actionBuffer);
       try {
@@ -168,7 +128,7 @@ export class StreamParser {
       return;
     }
 
-    if(this.mode === Tags.content && this.state === ParserState.normal) {
+    if(this.mode === ParserMode.content && this.state === ParserState.normal) {
       this.contentBuffer += this.textBuffer;
       this.callbacks.onTextContent(textToEmit);
       this.clearTextBuffer();
@@ -179,10 +139,6 @@ export class StreamParser {
 
 
   processChunk(chunk: string) {
-    // if (!this.isActive) {
-    //   console.warn("Error: trying to parse chunk when stream is not active");
-    //   throw new Error("Can't processs a dead stream");
-    // }
 
     console.log("CHUNK to process is: ", chunk);
 
@@ -202,89 +158,157 @@ export class StreamParser {
     this.flushTextBuffer();
   }
 
-  private openTag() {
-    const tagName = this.textBuffer;
-    // const originalTagText = `[${this.currentTagName}]`;
-    console.log(`Parser: Attempting to open tag: "${tagName}"`);
+  // private openTag() {
+  //   const tagName = this.openingTag
+  //   // const originalTagText = `[${this.openingTag}]`;
+  //   console.log(`Parser: Attempting to open tag: "${tagName}"`);
 
-    if (tagName.includes("code lang")) {
-      console.log("FOUND CODE opening tag");
-      const codeBlockAttributes = extractCodeBlockAttributes(tagName);
-      this.resetCodeBlockNode();
-      this.codeBlockNode.lang = codeBlockAttributes.lang || "text";
-      this.tagStack.push(Tags.code);
+  //   if (tagName.includes("code lang")) {
+  //     console.log("FOUND CODE opening tag");
+  //     const codeBlockAttributes = extractCodeBlockAttributes(tagName);
+  //     this.resetCodeBlockNode();
+  //     this.codeBlockNode.lang = codeBlockAttributes.lang || "text";
+  //     this.tagStack.push(Tags.code);
+  //     this.clearStateAfterTag();
+  //     return;
+  //   }
 
-      this.clearStateAfterTag();
-      return;
-    }
+  //   if (!isValidTag(tagName)) {
+  //     console.error("Invalid tag: ", tagName);
+  //     this.flushTextBuffer();
+  //     this.state = ParserState.normal;
+  //     this.openingTag = "";
+  //     return;
+  //   }
 
-    if (!isValidTag(tagName)) {
-      console.error("Invalid tag: ", tagName);
-      this.flushTextBuffer();
-      this.state = ParserState.normal;
-      this.currentTagName = "";
-      return;
-    }
+  //   if(tagName === Tags.thinking) {
+  //     this.mode = Tags.thinking;
+  //     this.setMode(this.mode);
+  //   } else if(tagName === Tags.action) {
+  //     this.mode = Tags.action;
+  //     this.setMode(this.mode);
+  //     this.actionBuffer = "";
+  //   } else if(tagName === Tags.content) {
+  //     this.mode = Tags.content;
+  //     this.setMode(this.mode);
+  //   } else {
+  //     console.log("Found content tag i guess: ", tagName);
+  //     this.callbacks.onOpenTag(tagName as Tags);
+  //   }
 
-    if(tagName === Tags.thinking) {
-      this.mode = Tags.thinking;
-      this.setMode(this.mode);
-    } else if(tagName === Tags.action) {
-      this.mode = Tags.action;
-      this.setMode(this.mode);
-      this.actionBuffer = "";
-    } else if(tagName === Tags.content) {
-      this.mode = Tags.content;
-      this.setMode(this.mode);
-    } else {
-      console.log("Found content tag i guess: ", tagName);
-      this.callbacks.onOpenTag(tagName as Tags);
-    }
+  //   this.tagStack.push(tagName)
+  //   this.clearTextBuffer();
+  //   this.openingTag = "";
+  //   this.state = ParserState.normal;
+  // }
 
-    this.tagStack.push(tagName)
-    this.clearTextBuffer();
-    this.currentTagName = "";
-    this.state = ParserState.normal;
-  }
-
-  private closeTag() {
-    console.log("Current tag stack in closetag is: ", this.tagStack);
-    const closingTag = this.textBuffer;
-
-
-    if (!isValidTag(closingTag)) {
-      this.flushTextBuffer();
-      this.state = ParserState.normal;
-      this.currentTagName = "";
-      return;
-    }
-
-    if (closingTag === Tags.code) {
-      this.callbacks.onCodeBlock(this.codeBlockNode);
-      this.resetCodeBlockNode();
-      this.clearStateAfterTag();
-      return;
-    }
-
-    if(closingTag === "</TKH>" || closingTag === "</ACT>" || closingTag === "</CNT>") {
-      this.mode = Tags.normal;
-      this.setMode(this.mode);
-    } else {
-      console.log("Found content tag i guess: ", closingTag);
-      this.callbacks.onCloseTag(closingTag as Tags);
-    }
+  // private closeTag() {
+  //   console.log("Current tag stack in closetag is: ", this.tagStack);
+  //   const closingTag = this.openingTag
 
 
-      this.tagStack.pop();
-      this.clearStateAfterTag();
-      return;
 
-  }
+  //   if (!isValidTag(closingTag)) {
+  //     this.flushTextBuffer();
+  //     this.state = ParserState.normal;
+  //     this.openingTag = "";
+  //     return;
+  //   }
+
+  //   if (closingTag === Tags.code) {
+  //     this.callbacks.onCodeBlock(this.codeBlockNode);
+  //     this.resetCodeBlockNode();
+  //     this.clearStateAfterTag();
+  //     return;
+  //   }
+
+  //   if(closingTag === "</TKH>" || closingTag === "</ACT>" || closingTag === "</CNT>") {
+  //     this.mode = Tags.normal;
+  //     this.setMode(this.mode);
+  //   } else {
+  //     console.log("Found content tag i guess: ", closingTag);
+  //     this.callbacks.onCloseTag(closingTag as Tags);
+  //   }
+
+
+  //     this.tagStack.pop();
+  //     this.clearStateAfterTag();
+  //     return;
+
+  // }
 
   clearStateAfterTag() {
     this.clearTextBuffer();
-    this.currentTagName = "";
+    this.openingTag = "";
     this.state = ParserState.normal;
+  }
+
+  clearTagBuffer(){
+    this.tagBuffer = ""
+  }
+
+
+  processClosingTag(tagString: string){
+
+    const nudeTag = parseClosingTag(tagString)
+
+    if(!nudeTag){
+      console.warn("Invalid closing tag: ", tagString)
+      throw new Error("invalid closing tag")
+    }
+
+    if(nudeTag.tag === NudeTags.thinking || nudeTag.tag === NudeTags.action || nudeTag.tag === NudeTags.cnt ){
+      this.mode = ParserMode.normal
+    } else {
+      this.callbacks.onCloseTag(nudeTag)
+    }
+  }
+
+
+  processOpeningTag(tagString: string){
+    const parsed = parseTag(tagString)
+
+    console.log("parsed opening tag is: ", parsed)
+
+    if(!parsed){
+      console.warn("Invalid opening tag: ", parsed)
+      return
+    }
+
+    if(parsed?.tag === NudeTags.thinking){
+      this.mode = ParserMode.thinking
+      this.tagStack.push(parsed.tag)
+    } else if(parsed?.tag === NudeTags.action){
+      this.mode = ParserMode.action
+      this.tagStack.push(parsed.tag)
+    } else if(parsed?.tag === NudeTags.cnt){
+      this.mode = ParserMode.content
+      this.tagStack.push(parsed.tag)
+    } else {
+      console.warn("We must be in content mode because tag is not TKH | ACT | CNT: ", parsed?.tag)
+      if(this.mode === ParserMode.content){
+        this.tagStack.push(parsed.tag)
+        this.callbacks.onOpenTag(parsed)
+      } else {
+        console.warn("Invalid opening tag so defaulting to paragraph: ", parsed)
+        const paraNode = {
+          tag: NudeTags.p,
+          attributes: {}
+        }
+        this.callbacks.onOpenTag(paraNode)
+      }
+    }
+  }
+
+
+  processCompleteTag(tagString: string) {
+
+    if(tagString.startsWith("</")){
+      this.processClosingTag(tagString)
+      return
+    }
+
+    this.processOpeningTag(tagString)
   }
 
   processCharacter(char: string) {
@@ -292,43 +316,19 @@ export class StreamParser {
       case ParserState.normal:
         if (char === "<") {
           this.flushTextBuffer();
-          this.textBuffer += char;
-          this.state = ParserState.tag_start;
+          this.clearTagBuffer()
+          this.state = ParserState.in_tag;
+          this.tagBuffer = "<"
         } else {
           this.textBuffer += char;
         }
         break;
-      case ParserState.tag_start:
-        if (char === "/") {
-          console.log("Found /, switching to CLOSING_TAG_START");
-          this.textBuffer += char;
-          this.state = ParserState.closing_tag_start;
-        } else if (includesAllowedTags(this.textBuffer + char)) {
-          this.textBuffer += char;
-          this.currentTagName = char;
-          this.state = ParserState.tag_name;
-        } else {
-          this.textBuffer += char;
+      case ParserState.in_tag:
+        this.tagBuffer += char;
+        if(char === ">") {
+          this.processCompleteTag(this.tagBuffer);
+          this.clearTagBuffer();
           this.state = ParserState.normal;
-        }
-        break;
-      case ParserState.tag_name:
-        if (char === ">") {
-          this.textBuffer += char;
-          this.openTag();
-        } else {
-          this.textBuffer += char;
-          this.currentTagName += char;
-        }
-        break;
-      case ParserState.closing_tag_start:
-        if (char === ">") {
-          console.log("CLOSING TAG IS: ", this.currentTagName);
-          this.textBuffer += char;
-          this.closeTag();
-        } else {
-          this.textBuffer += char;
-          this.currentTagName += char;
         }
         break;
       default:
@@ -348,7 +348,7 @@ export class StreamParser {
   private reset() {
     this.state = ParserState.normal;
     this.clearTextBuffer();
-    this.currentTagName = "";
+    this.openingTag = "";
     this.tagStack = [];
   }
 
@@ -360,12 +360,4 @@ export class StreamParser {
   }
 }
 
-function extractCodeBlockAttributes(tagName: string) {
-  const langMatch = tagName.match(/lang=["']([^"']+)["']/);
 
-  return {
-    tag: "code",
-    lang: langMatch ? langMatch[1] : "text",
-    fullMatch: tagName,
-  };
-}
