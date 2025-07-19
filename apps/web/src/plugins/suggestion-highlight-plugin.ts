@@ -236,10 +236,6 @@ export const suggestionHighlightPlugin = new Plugin({
             const widgetDecoration = Decoration.widget(
               from,
               widgetDomFactory,
-              {
-                side: 1,
-                relaxedSide: true,
-              }
             );
 
             decorations.push(decoration);

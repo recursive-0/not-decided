@@ -5,8 +5,8 @@
     justify-content: center;
     align-items: center;
     gap: 1;
-  right: 25px;
-  translate: 0% 0%;  
+  right: 0px;
+  translate: -50% -100%;  
   z-index: 10; 
 }
 
@@ -26,7 +26,7 @@
 }
 
 .accept-action-button &:hover {
-    opacity: 0.2;
+    background-color: var(--color-green-800);
 }
 
 .reject-action-button {
@@ -45,5 +45,5 @@
 }
 
 .reject-action-button &:hover{
-    opacity: 0.2;
+    background-color: var(--color-red-800);
 }
