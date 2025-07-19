@@ -36,7 +36,9 @@
   margin-top: 2.5rem;
 }
 
-.prosemirror-editor h1:first-child {
+.prosemirror-editor h1:first-child,
+.prosemirror-editor h1.addition-suggestion:first-child,
+.prosemirror-editor h1.deletion-suggestion:first-child  {
   margin-top: 0;
 }
 
@@ -62,7 +64,6 @@
 .prosemirror-editor p {
   font-size: 1rem;
   line-height: 1.65;
-  padding-top: 0.5rem;
   margin-bottom: 1rem;
   color: #073642;
 }
@@ -435,14 +436,14 @@ pre code.inline-code {
 }
 
 .deletion-suggestion {
-  padding: 0.25rem 0.5rem;
+  /* margin: 0.25rem 0.5rem; */
   background-color: rgba(239, 68, 68, 0.15);
   border-radius: 0.25rem;
   animation: fadeInHighlight 0.3s ease-in-out forwards;
 }
 
 .addition-suggestion {
-  padding: 0.25rem 0.5rem;
+  /* margin: 0.25rem 0.5rem; */
   background-color: rgba(34, 197, 94, 0.15);
   border-radius: 0.25rem;
   animation: fadeInHighlight 0.3s ease-in-out forwards;
@@ -487,4 +488,30 @@ pre code.inline-code {
 
 .prosemirror-editor > * + * {
   margin-top: 1.25rem; 
+}
+
+.prosemirror-editor h1.addition-suggestion,
+.prosemirror-editor h2.addition-suggestion,
+.prosemirror-editor h3.addition-suggestion,
+.prosemirror-editor p.addition-suggestion,
+.prosemirror-editor ul.addition-suggestion,
+.prosemirror-editor ol.addition-suggestion,
+.prosemirror-editor pre.addition-suggestion,
+.prosemirror-editor blockquote.addition-suggestion,
+.prosemirror-editor .custom-code-block.addition-suggestion {
+  margin-top: 0 !important; 
+  padding: 0.4rem;
+}
+
+.prosemirror-editor h1.deletion-suggestion,
+.prosemirror-editor h2.deletion-suggestion,
+.prosemirror-editor h3.deletion-suggestion,
+.prosemirror-editor p.deletion-suggestion,
+.prosemirror-editor ul.deletion-suggestion,
+.prosemirror-editor ol.deletion-suggestion,
+.prosemirror-editor pre.deletion-suggestion,
+.prosemirror-editor blockquote.deletion-suggestion,
+.prosemirror-editor .custom-code-block.deletion-suggestion {
+  margin-top: 0 !important; 
+  padding: 0.4rem;
 }
