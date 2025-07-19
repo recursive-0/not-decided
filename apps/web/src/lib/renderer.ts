@@ -1,32 +1,32 @@
-import { Transaction } from "prosemirror-state";
-import { Tags } from "@/types/editor";
-import { Mark, Node } from "prosemirror-model";
-import { EditorView } from "prosemirror-view";
-import { extendedProseMirrorSchema } from "@/providers/editor-context-provider";
-import { v4 as uuidv4 } from "uuid";
 import { suggestionHighlightPluginKey } from "@/plugins/suggestion-highlight-plugin";
-import { CodeBlockNodeType } from "./composer-mode-parser";
+import { extendedProseMirrorSchema } from "@/providers/editor-context-provider";
+import { NudeTags, ParsedTag } from "@/types/editor";
 import { ActionMessageType } from "@/types/stream";
+import { Mark, Node } from "prosemirror-model";
+import { Transaction } from "prosemirror-state";
+import { EditorView } from "prosemirror-view";
+import { v4 as uuidv4 } from "uuid";
+import { CodeBlockNodeType } from "./composer-mode-parser";
 import { getActionContext } from "./misc-editor-helpers";
 
 interface NodeContextType {
-  type: Tags;
+  type: NudeTags;
   node: Node;
   nodeId: string;
 }
 
 interface ActiveMarksType {
-  type: Tags.b | Tags.em | Tags.strong | Tags.icode;
+  type: NudeTags
   startPosition: number;
   endPosition: number;
 }
 
-function isMarkTag(tag: Tags) {
+function isMarkTag(tag: NudeTags) {
   return (
-    tag === Tags.b ||
-    tag === Tags.strong ||
-    tag === Tags.em ||
-    tag === Tags.icode
+    tag === NudeTags.b ||
+    tag === NudeTags.strong ||
+    tag === NudeTags.em ||
+    tag === NudeTags.icode
   );
 }
 
@@ -35,52 +35,46 @@ export class Renderer {
   private activeNodeStack: NodeContextType[] = [];
   private activeMarks: ActiveMarksType[] = [];
   private pendingAction: ActionMessageType | null = null;
+  private targetPosition: number | null = null;
 
   constructor(editorView: EditorView) {
     this.editorView = editorView;
   }
 
-  public cleanupAfterStreamStop() {
-    if (
-      this.activeNodeStack.length > 0 &&
-      this.activeNodeStack[this.activeNodeStack.length - 1].type === Tags.add
-    ) {
-      this.activeNodeStack = [];
-      this.activeMarks = [];
-    }
+  public setTargetPosition(position: number) {
+    this.targetPosition = position;
   }
 
   public setPendingAction(action: ActionMessageType | null) {
     this.pendingAction = action;
   }
 
-  public onOpenTag(tag: Tags) {
+  public onOpenTag(parsedTag: ParsedTag ) {
     if (!this.editorView) return;
-    console.log("Incoming open tag: ", tag);
+    console.log("open tag renderer: ", parsedTag);
     console.log("Current Tag Stack: ", this.activeNodeStack);
 
-    const isMark = isMarkTag(tag);
+    const isMark = isMarkTag(parsedTag.tag);
 
     if (isMark) {
       const pos = this.getInsertPosition("text");
       this.activeMarks.push({
-        type: tag,
+        type: parsedTag.tag,
         startPosition: pos,
         endPosition: pos,
       });
       return;
     }
 
-    console.log("Creating NODE for: ", tag);
-    const node = this.createNodeForTag(tag);
+    const node = this.createNode(parsedTag);
     const insertPos = this.getInsertPosition("node");
 
     const tr = this.editorView.state.tr;
     tr.insert(insertPos, node);
-    this.applyHighlightMeta(tr, tag, node);
+    this.applyHighlightMeta(tr, parsedTag.tag, node);
 
     this.activeNodeStack.push({
-      type: tag,
+      type: parsedTag.tag,
       node: node,
       nodeId: node.attrs.nodeId,
     });
@@ -88,26 +82,34 @@ export class Renderer {
     this.editorView.dispatch(tr);
   }
 
-  public onCloseTag(tag: Tags) {
+  public onCloseTag(ParsedTag: ParsedTag) {
     if (!this.editorView) return;
-    console.log("Incoming close tag: ", tag);
+    console.log("close tag renderer: ", ParsedTag.tag);
     console.log("Current Tag Stack: ", this.activeNodeStack);
 
-    if (isMarkTag(tag)) {
-      this.closeActiveMark(tag);
-      return;
+    if (isMarkTag(ParsedTag.tag)) {
+      const topTag = this.activeMarks[this.activeMarks.length - 1]
+      if(topTag.type === ParsedTag.tag){
+        this.activeMarks.pop()
+        return
+      } else {
+        console.warn(`Expecting ${ParsedTag.tag} but found ${topTag}`)
+        throw new Error("Unexpected closing tag")
+      }
     }
 
     if (this.activeNodeStack.length === 0) {
-      console.warn(`Trying to close ${tag} but no nodes are open`);
+      console.warn(`Trying to close ${ParsedTag.tag} but no nodes are open`);
       return;
     }
 
     const currentContext =
       this.activeNodeStack[this.activeNodeStack.length - 1];
 
-    if (currentContext.type !== tag) {
-      console.warn(`Tag mismatch: expected ${currentContext.type}, got ${tag}`);
+    if (currentContext.type !== ParsedTag.tag) {
+      console.warn(
+        `Tag mismatch: expected ${currentContext.type}, got ${ParsedTag.tag}`
+      );
       return;
     }
 
@@ -124,7 +126,7 @@ export class Renderer {
       // If the direct parent is a list container (ul or ol) AND the incoming text
       // consists of nothing but whitespace characters...
       if (
-        (parentContext.type === Tags.ul || parentContext.type === Tags.ol) &&
+        (parentContext.type === NudeTags.ul || parentContext.type === NudeTags.ol) &&
         text.trim().length === 0
       ) {
         // ...then this is insignificant layout noise from the LLM.
@@ -159,19 +161,6 @@ export class Renderer {
     });
   }
 
-  private closeActiveMark(tag: Tags) {
-    const markIndex = this.activeMarks.findLastIndex(
-      (mark) => mark.type === tag
-    );
-
-    if (markIndex === -1) {
-      console.warn(`No active ${tag} mark to close`);
-      return;
-    }
-
-    this.activeMarks.splice(markIndex, 1);
-  }
-
   public onCodeBlock(codeBlock: CodeBlockNodeType) {
     if (!this.editorView) return;
 
@@ -191,10 +180,10 @@ export class Renderer {
     const tr = this.editorView.state.tr;
 
     tr.insert(insertPos, codeBlockNode);
-    this.applyHighlightMeta(tr, Tags.code, codeBlockNode);
+    this.applyHighlightMeta(tr, NudeTags.code, codeBlockNode);
 
     this.activeNodeStack.push({
-      type: Tags.code,
+      type: NudeTags.code,
       node: codeBlockNode,
       nodeId: codeBlockNode.attrs.nodeId,
     });
@@ -202,22 +191,22 @@ export class Renderer {
     this.editorView.dispatch(tr);
   }
 
-  private getMarkTypeForTag(tag: Tags) {
+  private getMarkTypeForTag(tag: NudeTags) {
     if (!extendedProseMirrorSchema) return null;
 
     switch (tag) {
-      case Tags.strong:
+      case NudeTags.strong:
         return extendedProseMirrorSchema.marks.strong;
-      case Tags.b:
+      case NudeTags.b:
         return extendedProseMirrorSchema.marks.strong;
-      case Tags.em:
+      case NudeTags.em:
         return extendedProseMirrorSchema.marks.em;
       default:
         return null;
     }
   }
 
-  applyHighlightMeta(tr: Transaction, tag: Tags, node: Node) {
+  applyHighlightMeta(tr: Transaction, tag: NudeTags, node: Node) {
     if (this.isContainerNode(tag)) {
       const metaData = {
         metaData: {
@@ -229,17 +218,17 @@ export class Renderer {
     }
   }
 
-  private isContainerNode(tag: Tags): boolean {
+  private isContainerNode(tag: NudeTags): boolean {
     const containerTags = [
-      Tags.h1,
-      Tags.h2,
-      Tags.h3,
-      Tags.p,
-      Tags.ul,
-      Tags.ol,
-      Tags.quote,
-      Tags.code,
-      Tags.checkbox,
+      NudeTags.h1,
+      NudeTags.h2,
+      NudeTags.h3,
+      NudeTags.p,
+      NudeTags.ul,
+      NudeTags.ol,
+      NudeTags.quote,
+      NudeTags.code,
+      NudeTags.checkbox,
     ];
 
     return containerTags.includes(tag);
@@ -282,6 +271,15 @@ export class Renderer {
   }
 
   public getInsertPosition(type: "node" | "text"): number {
+
+    // if we have a target position, use it
+    if(this.targetPosition) {
+      const posToInsert = this.targetPosition;
+      this.targetPosition = null;
+      return posToInsert;
+    }
+
+    // if we have a pending action, use it
     if (this.pendingAction) {
       const actionContext = getActionContext(
         this.editorView!,
@@ -391,41 +389,42 @@ export class Renderer {
     return targetNode;
   }
 
-  public createNodeForTag(tag: Tags): Node {
+  public createNode(parsedTag: ParsedTag): Node {
+    const tag = parsedTag.tag
     switch (tag) {
-      case Tags.h1:
+      case NudeTags.h1:
         return extendedProseMirrorSchema.nodes.heading.create({
           level: 1,
           nodeId: uuidv4(),
         });
-      case Tags.h2:
+      case NudeTags.h2:
         return extendedProseMirrorSchema.nodes.heading.create({
           level: 2,
           nodeId: uuidv4(),
         });
-      case Tags.h3:
+      case NudeTags.h3:
         return extendedProseMirrorSchema.nodes.heading.create({
           level: 3,
           nodeId: uuidv4(),
         });
-      case Tags.p:
+      case NudeTags.p:
         return extendedProseMirrorSchema.nodes.paragraph.create({
           nodeId: uuidv4(),
         });
-      case Tags.ul:
+      case NudeTags.ul:
         return this.createListNode("ul");
-      case Tags.ol:
+      case NudeTags.ol:
         return this.createListNode("ol");
-      case Tags.li:
+      case NudeTags.li:
         return this.createListNodeItem();
-      case Tags.code:
+      case NudeTags.code:
         return extendedProseMirrorSchema.nodes.code_block.create({
-          language: "bash",
+          language: parsedTag.attributes["language"],
           nodeId: uuidv4(),
         });
-      case Tags.quote:
+      case NudeTags.quote:
         return this.createQuoteNode();
-      case Tags.checkbox:
+      case NudeTags.checkbox:
         return extendedProseMirrorSchema.nodes.checkbox_item.create({
           nodeId: uuidv4(),
         });
@@ -434,5 +433,12 @@ export class Renderer {
           nodeId: uuidv4(),
         });
     }
+  }
+
+  public cleanup() {
+    this.activeNodeStack = [];
+    this.activeMarks = [];
+    this.targetPosition = null;
+    this.pendingAction = null;
   }
 }

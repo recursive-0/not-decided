@@ -1,7 +1,7 @@
-import { Plugin, PluginKey, EditorState } from "prosemirror-state";
-import { Decoration, DecorationSet, EditorView } from "prosemirror-view";
-import type { Node } from "prosemirror-model";
 import { useWrisorStore } from "@/store/wrisor";
+import type { Node } from "prosemirror-model";
+import { EditorState, Plugin, PluginKey } from "prosemirror-state";
+import { Decoration, DecorationSet, EditorView } from "prosemirror-view";
 
 export interface MetaDataType {
   type: "addition-suggestion" | "deletion-suggestion";
@@ -236,7 +236,10 @@ export const suggestionHighlightPlugin = new Plugin({
             const widgetDecoration = Decoration.widget(
               from,
               widgetDomFactory,
-              {}
+              {
+                side: 1,
+                relaxedSide: true,
+              }
             );
 
             decorations.push(decoration);

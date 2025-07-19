@@ -47,7 +47,7 @@ export function getClient(env: Env): GoogleGenAI {
           controller.enqueue(encoder.encode(`data: START_STREAM \n\n`));
   
           const streamResult = await genAIClient!.models.generateContentStream({
-            model: "gemini-2.5-flash-preview-04-17",
+            model: "gemini-2.5-flash",
             contents: {
               role: "user",
               parts: [{text: prompt}]

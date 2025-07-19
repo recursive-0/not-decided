@@ -4,14 +4,14 @@ import { handleSuggestionBatch, suggestionHighlightPluginKey } from "@/plugins/s
 import { suggestionNavigatorPluginKey } from "@/plugins/suggestion-navigator-plugin";
 import { useEditor } from "@/providers/editor-context-provider";
 import { EditorView } from "prosemirror-view";
-import "./accept-rejet-dialog.css"
+import "./accept-rejet-dialog.css";
 
 
 interface AcceptAllRejectAllDialogProps {
   position: { left: number; bottom: number };
 }
 
-const baseClasses = "z-20 h-fit p-1.5 px-2 text-black bg-none rounded-md hover:cursor-pointer hover:bg-palette-gold-dark"
+const baseClasses = "z-20 h-fit p-1.5 px-2 text-white bg-none rounded-md hover:cursor-pointer hover:bg-layer-8 hover:text-layer-15"
 
 const isElementInViewport = (element: Element, threshold: number = 0.7): boolean => {
   const rect = element.getBoundingClientRect();
@@ -118,18 +118,12 @@ export const AcceptAllRejectAllDialog = ({
 
   return (
     <div
-      className="relative flex justify-center px-0.5 py-0.5 bg-background rounded-lg items-center gap-2 z-10 pointer-events-none border-[1px] border-palette-gold-light"
+      className="relative flex justify-center px-0.5 py-0.5 bg-layer-6 rounded-lg items-center gap-2 z-10 pointer-events-none border border-layer-8"
       style={{
         position: "fixed",
         left: `${position.left}px`,
         bottom: `${position.bottom}px`,
         transform: "translateX(-50%)",
-        boxShadow: `
-        0 0 40px 20px rgba(217, 197, 137, 0.2),
-        0 0 60px 40px rgba(217, 153, 130, 0.4),
-        0 0 80px 60px rgba(217, 197, 137, 0.7),
-        0 20px 80px rgba(0, 0, 0, 0.6)
-      `,
       // Optional: Add a subtle backdrop blur
       backdropFilter: 'blur(2px)',
       }}
