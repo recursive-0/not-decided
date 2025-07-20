@@ -6,7 +6,7 @@ import {
 } from "./schema-helpers";
 import { addListNodes } from "prosemirror-schema-list";
 import type { MarkSpec, NodeSpec } from "prosemirror-model";
-import { v4 as uuidv4 } from "uuid";
+import { nanoid } from "nanoid";
 
 const alignmentAttrs = {
   align: {
@@ -57,7 +57,7 @@ const updatedHeadingSpec: NodeSpec = {
     ...originalHeadingSpec.attrs,
     ...alignmentAttrs,
     nodeId: {
-      default: uuidv4(),
+      default: nanoid(10),
     },
   },
 
@@ -76,7 +76,7 @@ const updatedBlockquoteSpec: NodeSpec = {
     ...originalBlockquoteSpec.attrs,
     ...alignmentAttrs,
     nodeId: {
-      default: uuidv4(),
+      default: nanoid(10),
     },
   },
   toDOM: createAlignedToDOM("blockquote"),
@@ -95,7 +95,7 @@ const customCodeBlockSpec = {
       default: "Text",
     },
     nodeId: {
-      default: uuidv4(),
+      default: nanoid(10),
     },
   },
 };
@@ -107,7 +107,7 @@ const customHorizontalRuleSpec = {
   attrs: {
     ...originalHorizontalRuleSpec.attrs,
     nodeId: {
-      default: uuidv4(),
+      default: nanoid(10),
     },
   },
 };
@@ -120,7 +120,7 @@ const customHardBreakNodeSpec = {
   attrs: {
     ...originalHardBreakNodeSpec.attrs,
     nodeId: {
-      default: uuidv4(),
+      default: nanoid(10),
     },
   },
 };
@@ -155,7 +155,7 @@ listNodeNamesToModify.forEach((listName) => {
       ...originalListSpec,
       attrs: {
         ...originalListSpec.attrs,
-        nodeId: { default: uuidv4() },
+        nodeId: { default: nanoid(10) },
       },
     };
     nodesWithListSpecs = nodesWithListSpecs.update(listName, updatedListSpec);
