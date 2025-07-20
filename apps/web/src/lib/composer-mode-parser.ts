@@ -24,10 +24,6 @@ interface ParserCallbacks {
 }
 
 
-// const includesAllowedTags = (tag: string) => {
-//   return all_tags.find((t) => t.includes(tag)) ? true : false;
-// };
-
 export type CodeBlockNodeType = {
   lang: string;
   content: string;
@@ -42,7 +38,6 @@ export class StreamParser {
   private actionBuffer: string = "";
   private textBuffer: string = "";
   private tagBuffer: string = "";
-  private openingTag: string = "";
   private tagStack: string[] = [];
   private codeBlockNode: CodeBlockNodeType = {
     lang: "",
@@ -59,7 +54,6 @@ export class StreamParser {
     this.contentBuffer = "";
     this.thoughtBuffer = "";
     this.textBuffer = "";
-    this.openingTag = "";
     this.tagStack = [];
     this.codeBlockNode = {
       lang: "",
@@ -239,7 +233,6 @@ export class StreamParser {
 
   clearStateAfterTag() {
     this.clearTextBuffer();
-    this.openingTag = "";
     this.state = ParserState.normal;
   }
 
@@ -348,16 +341,9 @@ export class StreamParser {
   private reset() {
     this.state = ParserState.normal;
     this.clearTextBuffer();
-    this.openingTag = "";
     this.tagStack = [];
   }
 
-  private resetCodeBlockNode() {
-    this.codeBlockNode = {
-      lang: "",
-      content: "",
-    };
-  }
 }
 
 

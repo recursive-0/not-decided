@@ -14,7 +14,7 @@ import {
   useEditor,
 } from "@/providers/editor-context-provider";
 import { useChatStore } from "@/store/chat";
-import { Tags } from "@/types/editor";
+import { ParsedTag } from "@/types/editor";
 import type { ChatMode } from "@/types/messages";
 import { ActionMessageType, TypeEnum } from "@/types/stream";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -135,8 +135,8 @@ export const useSSEStream = () => {
 
         if (!streamParserRef.current && editorView.current) {
           streamParserRef.current = new StreamParser({
-              onOpenTag: (tag: Tags) => rendererRef.current?.onOpenTag(tag),
-              onCloseTag: (tag: Tags) => rendererRef.current?.onCloseTag(tag),
+              onOpenTag: (parsedTag: ParsedTag) => rendererRef.current?.onOpenTag(parsedTag),
+              onCloseTag: (parsedTag: ParsedTag) => rendererRef.current?.onCloseTag(parsedTag),
               onTextContent: (text: string) => rendererRef.current?.onTextContent(text),
               onCodeBlock: (codeBlock: CodeBlockNodeType) => rendererRef.current?.onCodeBlock(codeBlock),
               onMarkdownChunk: (chunk: string) => {
