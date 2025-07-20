@@ -1,6 +1,5 @@
 import { Plugin, PluginKey, Transaction } from "prosemirror-state";
-
-let nodeCount = 0
+import { nanoid } from 'nanoid'
 
 export const ensureNodeIdPluginKey = new PluginKey("ensureNodeIdPlugin");
 
@@ -21,8 +20,7 @@ export const ensureNodeIdPlugin = new Plugin({
           if (!newTr) {
             newTr = newState.tr;
           }
-          const freshId = `block-${nodeCount}`
-          nodeCount++;
+          const freshId = nanoid(10)
           const newNode = node.type.create(
             { ...node.attrs, nodeId: freshId },
             node.content,

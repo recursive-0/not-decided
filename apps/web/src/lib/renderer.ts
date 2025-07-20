@@ -4,7 +4,7 @@ import { NudeTags, ParsedTag } from "@/types/editor";
 import { Mark, Node } from "prosemirror-model";
 import { Transaction } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
-import { v4 as uuidv4 } from "uuid";
+import { nanoid } from "nanoid";
 import { CodeBlockNodeType } from "./composer-mode-parser";
 
 interface NodeContextType {
@@ -164,7 +164,7 @@ export class Renderer {
     const codeBlockNode = extendedProseMirrorSchema.nodes.code_block.create(
       {
         language: lang || "text",
-        nodeId: uuidv4(),
+        nodeId: nanoid(10),
       },
       textNode
     );
@@ -229,11 +229,11 @@ export class Renderer {
 
   createListNodeItem(): Node {
     const paragraph = extendedProseMirrorSchema.nodes.paragraph.create({
-      nodeId: uuidv4(),
+      nodeId: nanoid(10),
     });
 
     return extendedProseMirrorSchema.nodes.list_item.create(
-      { nodeId: uuidv4() },
+      { nodeId: nanoid(10) },
       paragraph
     );
   }
@@ -241,24 +241,24 @@ export class Renderer {
   createListNode(type: "ul" | "ol"): Node {
     if (type === "ol") {
       const orderedList = extendedProseMirrorSchema.nodes.ordered_list.create({
-        nodeId: uuidv4(),
+        nodeId: nanoid(10),
       });
       return orderedList;
     }
 
     const bulletList = extendedProseMirrorSchema.nodes.bullet_list.create({
-      nodeId: uuidv4(),
+      nodeId: nanoid(10),
     });
     return bulletList;
   }
 
   createQuoteNode(): Node {
     const defaultParagraph = extendedProseMirrorSchema.nodes.paragraph.create({
-      nodeId: uuidv4(),
+      nodeId: nanoid(10),
     });
 
     return extendedProseMirrorSchema.nodes.blockquote.create(
-      { nodeId: uuidv4() },
+      { nodeId: nanoid(10) },
       defaultParagraph
     );
   }
@@ -376,21 +376,21 @@ export class Renderer {
       case NudeTags.h1:
         return extendedProseMirrorSchema.nodes.heading.create({
           level: 1,
-          nodeId: uuidv4(),
+          nodeId: nanoid(10),
         });
       case NudeTags.h2:
         return extendedProseMirrorSchema.nodes.heading.create({
           level: 2,
-          nodeId: uuidv4(),
+          nodeId: nanoid(10),
         });
       case NudeTags.h3:
         return extendedProseMirrorSchema.nodes.heading.create({
           level: 3,
-          nodeId: uuidv4(),
+          nodeId: nanoid(10),
         });
       case NudeTags.p:
         return extendedProseMirrorSchema.nodes.paragraph.create({
-          nodeId: uuidv4(),
+          nodeId: nanoid(10),
         });
       case NudeTags.ul:
         return this.createListNode("ul");
@@ -401,17 +401,17 @@ export class Renderer {
       case NudeTags.code:
         return extendedProseMirrorSchema.nodes.code_block.create({
           language: parsedTag.attributes["language"],
-          nodeId: uuidv4(),
+          nodeId: nanoid(10),
         });
       case NudeTags.quote:
         return this.createQuoteNode();
       case NudeTags.checkbox:
         return extendedProseMirrorSchema.nodes.checkbox_item.create({
-          nodeId: uuidv4(),
+          nodeId: nanoid(10),
         });
       default:
         return extendedProseMirrorSchema.nodes.paragraph.create({
-          nodeId: uuidv4(),
+          nodeId: nanoid(10),
         });
     }
   }
