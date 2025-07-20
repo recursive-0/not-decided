@@ -1,0 +1,30 @@
+.pulse-loader {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  position: relative;
+  
+  /* Use variables with sensible defaults */
+  background: var(--pulse-color, #000);
+  box-shadow: 0 0 0 0 var(--pulse-shadow-color, rgba(0,0,0,0.25));
+  animation: pulse-kf 1.5s infinite linear;
+}
+
+.pulse-loader:before,
+.pulse-loader:after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 0 0 var(--pulse-shadow-color, rgba(0,0,0,0.25));
+  animation: inherit;
+  animation-delay: -0.5s;
+}
+
+.pulse-loader:after {
+  animation-delay: -1s;
+}
+
+@keyframes pulse-kf {
+  /* Use a variable for the spread distance */
+  100% { box-shadow: 0 0 0 var(--pulse-spread, 40px) rgba(0,0,0,0); }
+}
