@@ -3,45 +3,36 @@ export async function simpleStaticStream(prompt?: string) {
       async start(controller) {
   
 const dummyStreamData = [
-  // 1. Thought process starts
-  '{"type":"tss"}',
-  '{"type":"tc","data":"Okay, I need to write a short introduction to the Rust programming language. I will start with a main heading, then a paragraph explaining its key features like safety and performance."}',
-  
-  // 2. Thought process ends
-  '{"type":"tse"}',
-  
-  // 3. Action to insert the content after the element with id 'root'
-  '{"type":"act","actionId":"write-rust-article","op":"insert_after","targetId":"root"}',
-  
-  // 4. Content stream starts, targeting the actionId from the previous step
-  '{"type":"css","for_actionId":"write-rust-article"}',
-  
-  // 5. First content chunk: An H1 heading
-  '{"type":"cc","data":"<h1>Exploring Rust: A Modern Language for Systems Programming</h1>"}',
-  
-  // 6. Second content chunk: An opening paragraph tag
-  '{"type":"cc","data":"<p>"}',
-  
-  // 7. Third content chunk: The text content of the paragraph, broken up
-  '{"type":"cc","data":"In the world of programming, Rust has rapidly gained prominence for its focus on safety, speed, and concurrency. "}',
-  
-  // 8. Fourth content chunk: More text
-  '{"type":"cc","data":"Unlike languages that rely on garbage collection, Rust employs a unique ownership system to manage memory, "}',
-  
-  // 9. Fifth content chunk: Final part of the text
-  '{"type":"cc","data":"preventing common bugs like null pointer dereferences and data races."}',
-  
-  // 10. Sixth content chunk: The closing paragraph tag
-  '{"type":"cc","data":"</p>"}',
-  
-  // 11. Seventh content chunk: A new paragraph
-  '{"type":"cc","data":"<p>This makes it a powerful tool for building reliable and efficient software, from operating systems to web services.</p>"}',
-  
-  // 12. Content stream ends
-  '{"type":"cse","for_actionId":"write-rust-article"}',
-
-  // 13. A final message indicating the entire operation is done.
-  '[DONE]'
+  '<TKH>I\'ll write about React hooks and demonstrate proper inline code formatting for JavaScript concepts.</TKH>',
+  '<ACT>{"type":"insert","targetId":"document-root","pos":"after"}</ACT>',
+  '<CNT><h2>Understanding React Hooks</h2>',
+  '<p>React hooks like ',
+  '<icode>useState</icode>',
+  ' and ',
+  '<icode>useEffect</icode>',
+  ' revolutionized how we write functional components. The ',
+  '<icode>useState</icode>',
+  ' hook allows you to add state to functional components, while ',
+  '<icode>useEffect</icode>',
+  ' handles side effects and lifecycle events.</p>',
+  '<p>When importing hooks, you typically use ',
+  '<icode>import { useState, useEffect } from \'react\'</icode>',
+  ' at the top of your component file. You can then call ',
+  '<icode>useState(initialValue)</icode>',
+  ' to create state variables and ',
+  '<icode>useEffect(() => {}, [])</icode>',
+  ' to run effects.</p>',
+  '<p>The dependency array in ',
+  '<icode>useEffect</icode>',
+  ' is crucial - an empty array ',
+  '<icode>[]</icode>',
+  ' means the effect runs once, while ',
+  '<icode>[count, name]</icode>',
+  ' means it runs when ',
+  '<icode>count</icode>',
+  ' or ',
+  '<icode>name</icode>',
+  ' changes.</p></CNT>'
 ];
   
         // First send a "START_STREAM" event to initialize

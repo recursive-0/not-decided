@@ -401,7 +401,7 @@ STANDARD HTML TAGS:
 - Blocks: <blockquote> for quotes, <pre> for preformatted text
 
 CUSTOM HTML TAGS:
-- Inline code: <icode>code text</icode> for highlighted code terms
+- Inline code: <icode>code text</icode> for highlighting code terms
 - Code blocks: <code lang="language">code text</code> with language specification
 - Interactive tasks: <checkbox>Task description</checkbox> for checkboxes
 
@@ -578,6 +578,19 @@ Correct Response:
   return generateResponse(action, contentNodes);
 }</code></CNT>
 
+EXAMPLE 11: PROPER INLINE CODE USAGE
+User Query: "Write about React hooks"
+Correct Response:
+<TKH>I'll write about React hooks and proper usage patterns.</TKH><ACT>{"type":"insert","targetId":"last-node","pos":"after"}</ACT><CNT><h2>React Hooks</h2><p>React hooks like <icode>useState</icode> and <icode>useEffect</icode> allow you to use state and lifecycle methods in functional components. To use hooks, import them from React:</p><code lang="javascript">import { useState, useEffect } from 'react';
+
+function MyComponent() {
+  const [count, setCount] = useState(0);
+  
+  useEffect(() => {
+    document.title = Count: count;
+  }, [count]);
+}</code><p>The <icode>useState</icode> hook returns an array with the current state value and a setter function.</p></CNT>
+
 CRITICAL RULES DEMONSTRATED:
 1. EVERY character must be inside delimiter tags
 2. Informational requests: Everything goes in <TKH></TKH>
@@ -587,6 +600,7 @@ CRITICAL RULES DEMONSTRATED:
 6. Adjacent HTML tags: <p>text</p><h2>heading</h2><p>more</p>
 7. Preserve newlines only in code blocks for readability
 8. Ask for clarification when user requests are ambiguous
+9. Use <icode> for inline terms, <code lang=""> for code blocks
 
 NEVER DEVIATE FROM THESE PATTERNS.
 `;

@@ -130,11 +130,11 @@ export class Renderer {
 
     const insertPos = this.getInsertPosition("text");
     const tr = this.editorView.state.tr;
-
+    console.log("Active marks are:: ", JSON.stringify(this.activeMarks))
     const activePMarks = this.activeMarks
       .map((m) => {
         const markType = this.getMarkTypeForTag(m.type);
-
+        console.log("Mark type is: ", markType)
         return markType ? markType.create() : null;
       })
       .filter((m): m is Mark => m !== null);
@@ -194,6 +194,8 @@ export class Renderer {
         return extendedProseMirrorSchema.marks.strong;
       case NudeTags.em:
         return extendedProseMirrorSchema.marks.em;
+      case NudeTags.icode:
+        return extendedProseMirrorSchema.marks.inline_code;
       default:
         return null;
     }
