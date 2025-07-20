@@ -11,7 +11,7 @@ interface AcceptAllRejectAllDialogProps {
   position: { left: number; bottom: number };
 }
 
-const baseClasses = "z-20 h-fit p-1.5 px-2 text-white bg-none rounded-md hover:cursor-pointer hover:bg-layer-8 hover:text-layer-15"
+const baseClasses = "z-20 h-fit p-1.5 px-2 text-xs font-medium text-white bg-none rounded-[8px] hover:cursor-pointer hover:bg-layer-8 hover:text-white"
 
 const isElementInViewport = (element: Element, threshold: number = 0.7): boolean => {
   const rect = element.getBoundingClientRect();
@@ -118,7 +118,7 @@ export const AcceptAllRejectAllDialog = ({
 
   return (
     <div
-      className="relative flex justify-center px-0.5 py-0.5 bg-layer-6 rounded-lg items-center gap-2 z-10 pointer-events-none border border-layer-8"
+      className="relative flex justify-center px-0.5 py-0.5 bg-layer-6 rounded-[10px] items-center gap-2 z-10 pointer-events-none border border-layer-8"
       style={{
         position: "fixed",
         left: `${position.left}px`,
@@ -128,7 +128,6 @@ export const AcceptAllRejectAllDialog = ({
       backdropFilter: 'blur(2px)',
       }}
     >
-
       <div className="w-fit flex justify-center items-center gap-1 pointer-events-auto">
         <Button
           onClick={onAcceptAll}

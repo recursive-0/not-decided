@@ -1,13 +1,11 @@
 import { suggestionHighlightPluginKey } from "@/plugins/suggestion-highlight-plugin";
 import { extendedProseMirrorSchema } from "@/providers/editor-context-provider";
 import { NudeTags, ParsedTag } from "@/types/editor";
-import { ActionMessageType } from "@/types/stream";
 import { Mark, Node } from "prosemirror-model";
 import { Transaction } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
 import { v4 as uuidv4 } from "uuid";
 import { CodeBlockNodeType } from "./composer-mode-parser";
-import { getActionContext } from "./misc-editor-helpers";
 
 interface NodeContextType {
   type: NudeTags;
@@ -34,7 +32,6 @@ export class Renderer {
   private editorView: EditorView | null = null;
   private activeNodeStack: NodeContextType[] = [];
   private activeMarks: ActiveMarksType[] = [];
-  private pendingAction: ActionMessageType | null = null;
   private targetPosition: number | null = null;
 
   constructor(editorView: EditorView) {
@@ -43,10 +40,6 @@ export class Renderer {
 
   public setTargetPosition(position: number) {
     this.targetPosition = position;
-  }
-
-  public setPendingAction(action: ActionMessageType | null) {
-    this.pendingAction = action;
   }
 
   public onOpenTag(parsedTag: ParsedTag ) {
@@ -279,18 +272,6 @@ export class Renderer {
       return posToInsert;
     }
 
-    // if we have a pending action, use it
-    if (this.pendingAction) {
-      const actionContext = getActionContext(
-        this.editorView!,
-        this.pendingAction
-      );
-      this.setPendingAction(null);
-      return actionContext
-        ? actionContext?.insertPos
-        : this.editorView!.state.doc.content.size;
-    }
-
     if (this.activeNodeStack.length === 0) {
       return this.editorView?.state.doc.content.size || 0;
     }
@@ -439,6 +420,5 @@ export class Renderer {
     this.activeNodeStack = [];
     this.activeMarks = [];
     this.targetPosition = null;
-    this.pendingAction = null;
   }
 }

@@ -11,8 +11,6 @@ interface WrisorStoreType {
     setTransformation: (flag: boolean) => void,
     setCurrentMode: (newMode: Mode) => void,
     setTotalCurrentEdits: (newEditsCount: number) => void,
-    addAction: (action: ActionMessageType) => void,
-    setActiveAction: (newAction: ActionMessageType | null) => void
 }
 
 export const useWrisorStore = create<WrisorStoreType>((set) => ({
@@ -27,15 +25,6 @@ export const useWrisorStore = create<WrisorStoreType>((set) => ({
     setTotalCurrentEdits: (editsCount) => set({totalCurrentEdits: editsCount}),
     setCurrentMode(newMode) {
         return set({mode: newMode})
-    },
-    addAction(action) {
-        const newAction = {
-            [action.actionId]: action
-        }
-        return set({actions: {...this.actions, ...newAction}})
-    },
-    setActiveAction(newAction) {
-        return set({activeAction: newAction})
     },
 }))
 

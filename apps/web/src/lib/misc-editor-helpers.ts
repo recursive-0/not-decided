@@ -1,6 +1,4 @@
 import { EditorView } from 'prosemirror-view';
-import { Node } from "prosemirror-model"
-import { ActionMessageType, NodeContext, OperationType } from '@/types/stream';
 
 
 const validWordRag = (/^[A-Za-z]+$/)
@@ -123,47 +121,47 @@ export const getContentNodes = (editorView) => {
   }
 
 
-export function getActionContext(view: EditorView, action: ActionMessageType): NodeContext | null {
-    const { op, targetId } = action;
+// export function getActionContext(view: EditorView, action: ActionMessageType): NodeContext | null {
+//     const { op, targetId } = action;
 
-    let targetNode: Node | null = null;
-    let targetPos: number = -1;
+//     let targetNode: Node | null = null;
+//     let targetPos: number = -1;
 
-    view.state.doc.descendants((node, pos) => {
-        if (node.attrs.nodeId === targetId) {
-            targetNode = node;
-            targetPos = pos;
-            return false;
-        }
-        return true; 
-    });
+//     view.state.doc.descendants((node, pos) => {
+//         if (node.attrs.nodeId === targetId) {
+//             targetNode = node;
+//             targetPos = pos;
+//             return false;
+//         }
+//         return true; 
+//     });
 
-    if (!targetNode || targetPos === -1) {
-        console.warn(`[getActionContext] Failed to find target node with ID: ${targetId}`);
-        return null;
-    }
+//     if (!targetNode || targetPos === -1) {
+//         console.warn(`[getActionContext] Failed to find target node with ID: ${targetId}`);
+//         return null;
+//     }
 
-    const node: Node = targetNode; 
+//     const node: Node = targetNode; 
 
-    let insertPos: number;
+//     let insertPos: number;
 
-    switch (op) {
-        case OperationType.insert_before:
-            insertPos = targetPos;
-            break;
-        case OperationType.replace:
-        case OperationType.delete:
-        case OperationType.insert_after:
-            insertPos = targetPos + node.nodeSize;
-            break;
+//     switch (op) {
+//         case OperationType.insert_before:
+//             insertPos = targetPos;
+//             break;
+//         case OperationType.replace:
+//         case OperationType.delete:
+//         case OperationType.insert_after:
+//             insertPos = targetPos + node.nodeSize;
+//             break;
 
-        default:
-            console.error(`[getActionContext] Unknown operation type: ${op}`);
-            return null;
-    }
+//         default:
+//             console.error(`[getActionContext] Unknown operation type: ${op}`);
+//             return null;
+//     }
 
-    return {
-        node: node,
-        insertPos: insertPos,
-    };
-}
+//     return {
+//         node: node,
+//         insertPos: insertPos,
+//     };
+// }
