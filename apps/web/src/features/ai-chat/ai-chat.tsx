@@ -1,14 +1,15 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  AlertTriangle,
-  CornerDownLeft,
-  X
-} from "lucide-react";
+import { AlertTriangle, CornerDownLeft, X } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useChatHandler } from "@/hooks/use-chat-handler";
 import { cn } from "@/lib/utils";
 import { useEditor } from "@/providers/editor-context-provider";
@@ -22,6 +23,7 @@ import { ChatModeEmptyContent } from "./chat-mode-empty-content";
 import { ComposerModeEmptyContent } from "./composer-mode-empty-content";
 import PendingChangesWarning from "./pending-changes-warning-popup";
 import { SectionMentionDropdown } from "./section-mention-dropdown";
+import PulseLoader from "@/components/loaders/pulse-loader/pulse-loader";
 
 // Thinking loader component
 const ThinkingLoader = () => {
@@ -86,7 +88,6 @@ const ThinkingLoader = () => {
 };
 
 const AIChat = () => {
-  
   const {
     isThinking,
     isStreaming,
@@ -101,44 +102,42 @@ const AIChat = () => {
     setPendingChangesPopup,
   } = useChatHandler();
 
-
-  const { editorView } = useEditor()
+  const { editorView } = useEditor();
 
   const localScrollAreaRef = useRef<HTMLDivElement | null>(null);
 
-  const { totalCurrentEdits } = useWrisorStore()
+  const { totalCurrentEdits } = useWrisorStore();
 
   const [showSectionMention, setShowSectionMention] = useState(false);
   const [mentionStartIndex, setMentionStartIndex] = useState(-1);
 
-
-  const [input, setInput] = useState<string>("")
-  const [showStreamingWarning, setShowStreamWarning] = useState<boolean>(false)
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null)
+  const [input, setInput] = useState<string>("");
+  const [showStreamingWarning, setShowStreamWarning] = useState<boolean>(false);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   // Handle input changes to detect @ mentions
   const handleInputChange = (e) => {
     const target = e.target;
     const value = target.value;
-    
+
     setInput(value);
 
     // Get cursor position safely
     const cursorPos = target.selectionStart || 0;
-    
+
     // Check for @ at current cursor position
     const textBeforeCursor = value.slice(0, cursorPos);
-    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
-    
+    const lastAtIndex = textBeforeCursor.lastIndexOf("@");
+
     if (lastAtIndex !== -1 && lastAtIndex === cursorPos - 1) {
       // @ was just typed, show section mention
       setMentionStartIndex(lastAtIndex);
-      
+
       setShowSectionMention(true);
     } else if (lastAtIndex !== -1 && cursorPos > lastAtIndex) {
       // Check if we're still in an @ mention
       const textAfterAt = textBeforeCursor.slice(lastAtIndex + 1);
-      if (textAfterAt.includes(' ') || textAfterAt.includes('\n')) {
+      if (textAfterAt.includes(" ") || textAfterAt.includes("\n")) {
         // Space or newline found, close mention
         setShowSectionMention(false);
         setMentionStartIndex(-1);
@@ -157,11 +156,11 @@ const AIChat = () => {
     const beforeMention = input.slice(0, mentionStartIndex);
     const afterMention = input.slice(mentionStartIndex + 1);
     const mentionText = `@${section.text}`;
-    
+
     setInput(beforeMention + mentionText + afterMention);
     setShowSectionMention(false);
     setMentionStartIndex(-1);
-    
+
     // Focus back to textarea
     if (textareaRef.current) {
       textareaRef.current.focus();
@@ -182,28 +181,30 @@ const AIChat = () => {
   };
 
   const onStopStreaming = () => {
-    console.log("Stop the stream")
-    stopStreaming()
-  }
+    console.log("Stop the stream");
+    stopStreaming();
+  };
 
   const onSendMessage = () => {
-    if(isStreaming){
-      setShowStreamWarning(true)
-      return
+    if (isStreaming) {
+      setShowStreamWarning(true);
+      return;
     }
 
-    if(totalCurrentEdits > 0){
-      setPendingChangesPopup(true)
-      return
+    if (totalCurrentEdits > 0) {
+      setPendingChangesPopup(true);
+      return;
     }
 
-    handleSendMessage(input)
-    setInput("")
-  }
+    handleSendMessage(input);
+    setInput("");
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-
-    if (showSectionMention && ['ArrowDown', 'ArrowUp', 'Enter', 'Escape'].includes(e.key)) {
+    if (
+      showSectionMention &&
+      ["ArrowDown", "ArrowUp", "Enter", "Escape"].includes(e.key)
+    ) {
       return; // Let SectionMentionDropdown handle these
     }
 
@@ -213,25 +214,25 @@ const AIChat = () => {
       setShowStreamWarning(true);
       return;
     }
-    
+
     // If key is enter, allow normal behavior (newline)
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       return; // Default behavior will insert a newline
     }
-    
+
     // If key combination is Enter + Return, send the message and prevent newline
-    if (e.key === 'Enter' && e.shiftKey) {
+    if (e.key === "Enter" && e.shiftKey) {
       e.preventDefault();
       if (input.trim() && !isThinking) {
-        if(totalCurrentEdits > 0){
-          setPendingChangesPopup(true)
-          return
+        if (totalCurrentEdits > 0) {
+          setPendingChangesPopup(true);
+          return;
         }
-        handleSendMessage(input)
-        setInput("")
+        handleSendMessage(input);
+        setInput("");
       }
     }
-  }
+  };
 
   const renderHeader = () => (
     <div className="border-b border-border bg-[var(--color-palette-beige-2)] flex-shrink-0">
@@ -249,7 +250,7 @@ const AIChat = () => {
             </TabsTrigger>
             <TabsTrigger
               value="COMPOSER"
-                className="text-xs font-medium data-[state=active]:bg-white text-muted-foreground data-[state=active]:text-layer-7 rounded-sm data-[state=active]:shadow-sm"
+              className="text-xs font-medium data-[state=active]:bg-white text-muted-foreground data-[state=active]:text-layer-7 rounded-sm data-[state=active]:shadow-sm"
             >
               Composer
             </TabsTrigger>
@@ -262,22 +263,30 @@ const AIChat = () => {
   const renderInputArea = () => (
     <div className="p-2 flex-shrink-0 relative z-10">
       <div className="relative flex items-start">
-      <div className="absolute -top-7 left-1/2 transform -translate-x-1/2 w-[95%] h-7 border-t border-x bg-white rounded-t-md">
-      <div className="w-full h-full flex items-center justify-between">
-        <div className="w-full h-full flex items-center justify-start gap-2 relative px-2">
-          <div className="w-6 h-6 relative">
-          <WrisorLogo />
+        <div className={`absolute -top-7 left-1/2 -z-10 transform -translate-x-1/2 w-[95%] h-7 
+          border-t border-x bg-white rounded-t-md transition-all duration-500 ease-in-out 
+          ${isStreaming ? "opacity-100 -translate-x-1/2 translate-y-0" : "opacity-0 -translate-x-1/2 translate-y-7 invisible"}`}>
+          <div className="w-full h-full flex items-center justify-between">
+            <div className="w-full h-full flex items-center justify-start gap-2 relative px-2">
+              <div className="w-6 h-6 relative">
+                <WrisorLogo />
+              </div>
+              <span className="text-xs font-medium text-muted-foreground">
+                Wrisor is running
+              </span>
+            </div>
+            <div className="w-full h-full flex items-center justify-end mr-2">
+              <button className="w-4 h-4 relative rounded-full">
+                <PulseLoader
+                  color="oklch(39.6% 0.141 25.723)"
+                  size={6}
+                  spread={10}
+                  shadowColor="oklch(44.4% 0.177 26.899)"
+                />
+              </button>
+            </div>
           </div>
-          <span className="text-xs font-medium text-muted-foreground">Wrisor is running</span>
-          
         </div>
-        <div className="w-full h-full flex items-center justify-end mr-2">
-          <button className="w-3 h-3 relative">
-            <span className="w-full h-full rounded-xs bg-red-800 flex items-center justify-center"></span>
-          </button>
-        </div>
-        </div>
-      </div>
         <Textarea
           ref={textareaRef}
           placeholder="Ask anything (⌘k), @ to mention sections"
@@ -293,7 +302,10 @@ const AIChat = () => {
         />
 
         {isStreaming ? (
-          <StreamingIndicator isStreaming={isStreaming} onStopStreaming={onStopStreaming} />
+          <StreamingIndicator
+            isStreaming={isStreaming}
+            onStopStreaming={onStopStreaming}
+          />
         ) : (
           <div
             className={cn(
@@ -313,28 +325,26 @@ const AIChat = () => {
           </div>
         )}
 
-          <SectionMentionDropdown
+        <SectionMentionDropdown
           editorView={editorView}
           isVisible={showSectionMention}
           onSelect={handleSectionSelect}
           onClose={closeSectionMention}
         />
-        
+
         {/* The warning message element */}
-        <StreamingWarning 
-          visible={showStreamingWarning} 
-          onClose={() => setShowStreamWarning(false)} 
+        <StreamingWarning
+          visible={showStreamingWarning}
+          onClose={() => setShowStreamWarning(false)}
         />
 
         <PendingChangesWarning
-        visible={isPendingChangesPopupOpen}
-        onClose={() => setPendingChangesPopup(false)}
+          visible={isPendingChangesPopupOpen}
+          onClose={() => setPendingChangesPopup(false)}
         />
-
       </div>
     </div>
   );
-  
 
   useEffect(() => {
     if (localScrollAreaRef.current) {
@@ -343,46 +353,46 @@ const AIChat = () => {
   }, [registerScrollAreaRef]);
 
   useEffect(() => {
-    if(!isStreaming){
-      setShowStreamWarning(false)
-    } 
-  },[isStreaming])
+    if (!isStreaming) {
+      setShowStreamWarning(false);
+    }
+  }, [isStreaming]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() === 'k') {
-        const isModifierPressed = e.metaKey || e.ctrlKey; 
-  
+      if (e.key.toLowerCase() === "k") {
+        const isModifierPressed = e.metaKey || e.ctrlKey;
+
         if (isModifierPressed) {
-          e.preventDefault(); 
-  
+          e.preventDefault();
+
           // Focus the text area
           if (textareaRef.current) {
             textareaRef.current.focus();
-            console.log('Cmd/Ctrl+K pressed, focusing textarea.');
+            console.log("Cmd/Ctrl+K pressed, focusing textarea.");
           }
         }
-      } else if(e.key.toLowerCase() === 'm'){
-        const isModifierPressed = e.metaKey || e.ctrlKey; 
-  
+      } else if (e.key.toLowerCase() === "m") {
+        const isModifierPressed = e.metaKey || e.ctrlKey;
+
         if (isModifierPressed) {
-          e.preventDefault(); 
-          editorView.current!.focus()
+          e.preventDefault();
+          editorView.current!.focus();
         }
       }
     };
-    document.addEventListener("keydown", onKeyDown)
+    document.addEventListener("keydown", onKeyDown);
 
-    if(localStorage.getItem("user_prompt")){
+    if (localStorage.getItem("user_prompt")) {
       // send the message to the ai
-      handleSendMessage(localStorage.getItem("user_prompt") || "")
-      localStorage.removeItem("user_prompt")
+      handleSendMessage(localStorage.getItem("user_prompt") || "");
+      localStorage.removeItem("user_prompt");
     }
 
     return () => {
-      document.removeEventListener("keydown", onKeyDown)
-    }
-  },[textareaRef, editorView, handleSendMessage])
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [textareaRef, editorView, handleSendMessage]);
 
   return (
     <div className="w-full flex flex-col h-full bg-border/15 text-[#073642]">
@@ -400,10 +410,14 @@ const AIChat = () => {
             className="flex-1 flex flex-col p-0 m-0 overflow-hidden h-full"
           >
             <ScrollArea className="w-full flex-1 h-0" ref={localScrollAreaRef}>
-              {chatMessages.length ? (<div className="px-2 min-w-0">
-                <ChatMessages messages={chatMessages} />
-                {isThinking && <ThinkingLoader />}
-              </div>) : <ChatModeEmptyContent />}
+              {chatMessages.length ? (
+                <div className="px-2 min-w-0">
+                  <ChatMessages messages={chatMessages} />
+                  {isThinking && <ThinkingLoader />}
+                </div>
+              ) : (
+                <ChatModeEmptyContent />
+              )}
             </ScrollArea>
             {renderInputArea()}
           </TabsContent>
@@ -417,9 +431,10 @@ const AIChat = () => {
                 <div className="px-2 min-w-0">
                   <ChatMessages messages={chatMessages} />
                   {isStreaming && <ActionIndicator action={Mode.content} />}
-
                 </div>
-              ) : <ComposerModeEmptyContent />}
+              ) : (
+                <ComposerModeEmptyContent />
+              )}
             </ScrollArea>
             {renderInputArea()}
           </TabsContent>
@@ -431,12 +446,12 @@ const AIChat = () => {
 
 export default AIChat;
 
-
-
-const StreamingIndicator = ({ isStreaming = true, onStopStreaming = () => {} }) => {
-  
+const StreamingIndicator = ({
+  isStreaming = true,
+  onStopStreaming = () => {},
+}) => {
   if (!isStreaming) return null;
-  
+
   return (
     <TooltipProvider>
       <Tooltip>
@@ -444,14 +459,14 @@ const StreamingIndicator = ({ isStreaming = true, onStopStreaming = () => {} }) 
           <button
             onClick={onStopStreaming}
             className={cn(
-              "absolute right-4 top-1/2 -translate-y-1/2 flex items-center justify-center cursor-pointer",
+              "absolute right-4 top-1/2 -translate-y-1/2 flex items-center justify-center cursor-pointer"
             )}
             aria-label="Stop streaming"
           >
             <span className="relative flex size-3">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-[3px] bg-red-500 opacity-75"></span>
-            <span className="relative inline-flex size-3 rounded-[3px] bg-red-900"></span>
-</span>
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-[3px] bg-red-500 opacity-75"></span>
+              <span className="relative inline-flex size-3 rounded-[3px] bg-red-900"></span>
+            </span>
           </button>
         </TooltipTrigger>
         <TooltipContent>
@@ -462,26 +477,29 @@ const StreamingIndicator = ({ isStreaming = true, onStopStreaming = () => {} }) 
   );
 };
 
-const StreamingWarning = ({ 
-  visible, 
-  onClose 
-}: { 
-  visible: boolean; 
+const StreamingWarning = ({
+  visible,
+  onClose,
+}: {
+  visible: boolean;
   onClose: () => void;
 }) => {
   if (!visible) return null;
-  
+
   return (
     <div className="absolute bottom-full left-0 right-0 mb-2 px-2">
       <div className="bg-amber-50 border border-amber-200 rounded-md p-3 shadow-md text-sm flex items-start">
         <AlertTriangle className="text-amber-500 h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
         <div className="flex-1">
-          <p className="text-amber-800 font-medium">Please wait for the current response to finish</p>
+          <p className="text-amber-800 font-medium">
+            Please wait for the current response to finish
+          </p>
           <p className="text-amber-700 text-xs mt-1">
-            Wrisor is currently responding. You can wait for it to finish or click the red square to stop the current response.
+            Wrisor is currently responding. You can wait for it to finish or
+            click the red square to stop the current response.
           </p>
         </div>
-        <button 
+        <button
           onClick={onClose}
           className="text-amber-500 hover:text-amber-700 ml-2"
         >
@@ -490,4 +508,4 @@ const StreamingWarning = ({
       </div>
     </div>
   );
-}
+};
