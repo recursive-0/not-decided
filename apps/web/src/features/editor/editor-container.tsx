@@ -1,8 +1,8 @@
+import { TransformationLoader } from "@/components/loaders/transformation-loader";
 import { Separator } from "@/components/ui/separator";
+import { useUIStore } from "@/store/ui";
 import Toolbar from "../toolbar";
 import { ProseMirrorEditor } from "./prose-mirror-editor";
-import { TransformationLoader } from "@/components/loaders/transformation-loader";
-import { useUIStore } from "@/store/ui";
 
 export const EditorContainer = () => {
 

@@ -4,10 +4,13 @@ import { placeholderPlugin } from "@/custom-nodes/placeholder-plugin";
 import { ensureNodeIdPlugin } from "@/plugins/ensure-nodeid-plugin";
 import { suggestionHighlightPlugin } from "@/plugins/suggestion-highlight-plugin";
 import { suggestionNavigatorPlugin } from "@/plugins/suggestion-navigator-plugin";
+import { textHighlightPlugin } from "@/plugins/text-highlight-plugin/text-highlight-plugin";
+import { createTransformationGuardPlugin } from "@/plugins/transformation-guard-plugin";
 import {
   extendedProseMirrorSchema,
   useEditor,
 } from "@/providers/editor-context-provider";
+import { useUIStore } from "@/store/ui";
 import { useWrisorStore } from "@/store/wrisor";
 import "@/styles/suggestion-navigation.css";
 import {
@@ -26,15 +29,12 @@ import {
   slashCommandTriggerKey,
   slashOpenCommandDialog,
 } from "../../editor-input-rules/slash-command-dialog";
+import "../../plugins/text-highlight-plugin/text-highlight-plugin.css";
 import "../../styles/suggestion-highlight-plugin.css";
 import { AcceptAllRejectAllDialog } from "./accpet-all-reject-all-dialog";
 import { CommandPalette } from "./command-palette";
 import "./external-dialogs.css";
 import "./prosemirror-styles.css";
-import "../../plugins/text-highlight-plugin/text-highlight-plugin.css";
-import { textHighlightPlugin } from "@/plugins/text-highlight-plugin/text-highlight-plugin";
-import { createTransformationGuardPlugin } from "@/plugins/transformation-guard-plugin";
-import { useUIStore } from "@/store/ui";
 // import { ensureTrailingParagraphPlugin } from "@/plugins/trailing-paragraph-plugin";
 
 const debounce = (func, delay) => {
@@ -129,7 +129,7 @@ export const ProseMirrorEditor = () => {
     useEditor();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const { totalCurrentEdits } = useWrisorStore();
-  const { isTransforming, triggerShake } = useUIStore()
+  const { isTransforming, triggerShake, setWords } = useUIStore()
   const isDialogClosingRef = useRef(false);
   const [dialogPosition, setDialogPosition] = useState<{
     left: number;
@@ -201,7 +201,9 @@ export const ProseMirrorEditor = () => {
           const originalState = editorView.current.state;
           const newState = originalState.apply(tr);
           editorView.current.updateState(newState);
-
+          const doc = newState.doc;
+          const words = doc.textContent.split(/\s+/).length;
+          setWords(words);
           const slashCommandMeta = tr.getMeta(slashCommandTriggerKey);
 
           if (slashCommandMeta && slashCommandMeta.isSlashCommandDialogOpen) {
@@ -332,6 +334,7 @@ export const ProseMirrorEditor = () => {
       ref={containerRef}
       className="flex flex-col w-full relative max-h-[calc(100vh - 60px)] overflow-scroll"
     >
+
       <div
         className="prosemirror-editor w-full h-full py-4 px-4 outline-none relative"
         ref={editorRef}
