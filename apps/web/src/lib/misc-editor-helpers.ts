@@ -3,6 +3,11 @@ import { EditorView } from 'prosemirror-view';
 
 const validWordRag = (/^[A-Za-z]+$/)
 
+export function getWordCount(textContent: string){
+    const words = textContent.split(" ")
+    return words.length
+}
+
 export function getAllWords(textContent: string){
 
     const allWords = textContent.split(" ")

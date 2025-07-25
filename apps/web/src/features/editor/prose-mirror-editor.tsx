@@ -1,6 +1,7 @@
 import { CodeBlock } from "@/custom-nodes/code-block";
 import { persistentHighlightPlugin } from "@/custom-nodes/persistent-highlight-plugin";
 import { placeholderPlugin } from "@/custom-nodes/placeholder-plugin";
+import { getWordCount } from "@/lib/misc-editor-helpers";
 import { ensureNodeIdPlugin } from "@/plugins/ensure-nodeid-plugin";
 import { suggestionHighlightPlugin } from "@/plugins/suggestion-highlight-plugin";
 import { suggestionNavigatorPlugin } from "@/plugins/suggestion-navigator-plugin";
@@ -202,7 +203,7 @@ export const ProseMirrorEditor = () => {
           const newState = originalState.apply(tr);
           editorView.current.updateState(newState);
           const doc = newState.doc;
-          const words = doc.textContent.split(/\s+/).length;
+          const words = getWordCount(doc.textContent);
           setWords(words);
           const slashCommandMeta = tr.getMeta(slashCommandTriggerKey);
 
