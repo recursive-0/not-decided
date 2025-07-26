@@ -3,6 +3,11 @@ import { Env } from '../../worker-configuration';
 import { wrisorChatModePrompt } from '../prompts/wrisor-chatmode-prompt-v1';
 import { wrisorSystemPrompt } from '../prompts/wrisor-composer-prompt-v1';
 
+
+const ANTHROPIC_MODEL = {
+	'sonnet-4': 'claude-sonnet-4-20250514'
+}
+
 let claudeClient: Anthropic | null = null;
 
 export function getClient(env: Env): Anthropic {
@@ -45,7 +50,7 @@ export async function handleClaudeStream(props: HandleClaudeStreamProps) {
 				const tokens = await claudeClient!.messages.countTokens({
 					messages: [{ role: 'user', content: prompt }],
 					system: systemPrompt,
-					model: 'claude-3-5-sonnet-20241022',
+					model: ANTHROPIC_MODEL['sonnet-4'],
 				});
 
 				console.log('INPUT TOKENS ARE: ', tokens);
@@ -53,7 +58,7 @@ export async function handleClaudeStream(props: HandleClaudeStreamProps) {
 				const messageStream = await claudeClient!.messages.stream({
 					messages: [{ role: 'user', content: prompt }],
 					system: systemPrompt,
-					model: 'claude-3-5-sonnet-20241022',
+					model: ANTHROPIC_MODEL['sonnet-4'],
 					max_tokens: 8000,
 				});
 
@@ -107,7 +112,7 @@ export async function callClaude(prompt: string, systemPrompt: string, env: Env)
 	console.log("Clade client is: ", claudeClient)
 
 	const response = await claudeClient.messages.create({
-		model: 'claude-sonnet-4-20250514',
+		model: ANTHROPIC_MODEL['sonnet-4'],
 		messages: [
 			{
 				role: 'user',
@@ -121,7 +126,7 @@ export async function callClaude(prompt: string, systemPrompt: string, env: Env)
 		max_tokens: 4000,
 	});
 
-	console.log('MSG IS: ', response);
+	console.log('Claude response is for transformation request: ', response);
 
 	// strip out newlines and other special characters
 	const text = response.content[0].type === 'text' ? response.content[0].text : null;

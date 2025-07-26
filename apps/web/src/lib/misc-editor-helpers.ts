@@ -1,6 +1,7 @@
-import { Node as ProsemirrorNode } from "prosemirror-model";
+import { Node as ProsemirrorNode, Slice } from "prosemirror-model";
 import { EditorState } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
+import { DocContentNodes, getDocumentContentNodesForContext } from "./doc-helpers";
 
 const validWordRag = /^[A-Za-z]+$/;
 
@@ -148,7 +149,7 @@ export function unlockEditor(editorView: EditorView) {
 }
 
 
-interface NodeContextType {
+export interface NodeContextType {
   type: string;
   text: string;
   size: number;
@@ -161,10 +162,10 @@ export interface CursorContext {
   followingNode: NodeContextType;
   cursorPos: number;
   selectedText: string;
-  documentContext: string;
+  documentContext: DocContentNodes[];
 }
 
-export function getContextAroundCursor(state: EditorState): CursorContext {
+export function getContextAroundCursor(state: EditorState, editorView: EditorView): CursorContext {
   const { $head } = state.selection;
 
   const currentNode = $head.parent;
@@ -194,7 +195,7 @@ export function getContextAroundCursor(state: EditorState): CursorContext {
     parentHeading: getNodeProperties(parentHeading),
     cursorPos: $head.pos,
     selectedText: getSelectedText(state),
-    documentContext: state.doc.textBetween(0, state.doc.content.size),
+    documentContext: getDocumentContentNodesForContext(editorView)
   };
 
   return intentContext as CursorContext;
@@ -217,4 +218,62 @@ export function getSelectedText(state: EditorState): string | null {
   const selectedText = state.doc.textBetween(from, to, "\n\n"); // The last arg is a separator for block nodes
 
   return selectedText;
+}
+
+export function prepareContentNodesContext(selectedSlice: Slice): NodeContextType[]{
+  const contentNodes = selectedSlice.content.content
+  const contentNodesContext: NodeContextType[] = []
+  contentNodes.map((node) => {
+      const nodeContext = {
+        id: node.attrs.nodeId,
+        text: node.textContent,
+        type: node.type.name,
+        size: node.nodeSize,
+      }
+      contentNodesContext.push(nodeContext)
+  })
+  return contentNodesContext
+}
+
+
+export interface SemanticSelectionContext {
+  semanticSelection: {
+    from: number;
+    to: number;
+  }
+  semanticContentNodes: NodeContextType[];
+  selectionType: "inline" | "block"
+  originalSelection: {
+    from: number;
+    to: number;
+  }
+}
+
+export function getSemanticSelectionContext(state: EditorState, editorView: EditorView): SemanticSelectionContext {
+
+  const { selection } = state;
+
+  const { $from, $to } = selection
+  const semanticFrom = $from.before($from.depth)
+  const semanticTo = $to.after($to.depth)
+
+  const selectedSlice: Slice = editorView.state.doc.slice(semanticFrom, semanticTo);
+  const semanticContentNodes = prepareContentNodesContext(selectedSlice)
+
+  const selectionType = selectedSlice.content.content.length > 1 ? "block" : "inline"
+  const originalFrom = $from.pos
+  const originalTo = $to.pos
+
+  return {
+    semanticSelection: {
+      from: semanticFrom,
+      to: semanticTo
+    },
+    semanticContentNodes,
+    selectionType,
+    originalSelection: {
+      from: originalFrom,
+      to: originalTo
+    }
+  }
 }

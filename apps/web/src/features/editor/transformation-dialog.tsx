@@ -5,13 +5,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { persistentHighlightPluginKey } from "@/custom-nodes/persistent-highlight-plugin";
 import { useChatHandler } from "@/hooks/use-chat-handler";
 import { handleTransformSelection } from "@/lib/handle-transform-selection";
-import { getContextAroundCursor, lockEditor, unlockEditor } from "@/lib/misc-editor-helpers";
+import { getContextAroundCursor, getSemanticSelectionContext, lockEditor, prepareContentNodesContext, unlockEditor } from "@/lib/misc-editor-helpers";
 import { useEditor } from "@/providers/editor-context-provider";
 import { useUIStore } from "@/store/ui";
 import { useWrisorStore } from "@/store/wrisor";
 import "@/styles/suggestion-navigation.css";
 import { useMutation } from "@tanstack/react-query";
 import { CornerDownLeft, SquarePen, X } from "lucide-react";
+import type { Slice } from "prosemirror-model";
 import { TextSelection as ProsemirrorTextSelection } from "prosemirror-state";
 import { useEffect, useRef, useState } from "react";
 import "../../styles/suggestion-highlight-plugin.css";
@@ -32,20 +33,53 @@ export const AiTransformDialog = ({ clientX, clientY, onClose }) => {
     mutationFn: () => {
       startTransformation();
       lockEditor(editorView.current!);
-      const prompt = input.trim();
+      
+      const { selection } = editorView.current!.state;
+      const { $from, $to } = selection;
+      const semanticFrom = $from.before($from.depth)
+      const semanticTo = $to.after($to.depth)
+      const selectedSlice: Slice = editorView.current!.state.doc.slice(semanticFrom, semanticTo);
+      const semanticContentNodes = prepareContentNodesContext(selectedSlice)
+      const cursorContext = getContextAroundCursor(editorView.current!.state, editorView.current!)
+      const selectedText = editorView.current!.state.doc.textBetween(semanticFrom, semanticTo);
+
+      const focusPoints = {
+        from: selection.from - semanticFrom,
+        to: selection.to - semanticFrom,
+      };
+      
       return transformText({
-        prompt,
-        cursorContext: getContextAroundCursor(editorView.current!.state)
+        userPrompt: input.trim(),
+        selectedText: selectedText,
+        selectedNodes: semanticContentNodes,
+        focusPoints: focusPoints,
+        cursorContext: cursorContext
       });
     },
     onSuccess: (data) => {
-      const { transformedText } = data;
-      console.log("transformed text is: ", transformedText);
+      console.log("Transformation Data is: ", data);
       const view = editorView.current!;
-      handleTransformSelection({
-        editorView: view,
-        transformedText,
-      })
+      const semanticSelectionContext = getSemanticSelectionContext(editorView.current!.state, editorView.current!)
+      
+      // Try to parse as JSON first, fallback to plain text
+      try {
+        const transformedContent = JSON.parse(data.transformedText)
+          
+        handleTransformSelection({
+          editorView: view,
+          transformedContent,
+          semanticSelectionContext
+        });
+      } catch (error) {
+        console.log("error while parsing transformed text", error);
+        // Fallback to existing plain text handling
+        handleTransformSelection({
+          editorView: view,
+          transformedContent: data.transformedText,
+          semanticSelectionContext
+        });
+      }
+      
       // Clear the persistent highlight since transformation is done
       const tr = view.state.tr;
       tr.setMeta(persistentHighlightPluginKey, { selection: null });

@@ -3,8 +3,11 @@ import { Env } from "../../worker-configuration";
 import { wrisorChatModePrompt } from "../prompts/wrisor-chatmode-prompt-v1";
 import { wrisorSystemPrompt } from "../prompts/wrisor-composer-prompt-v1";
 
+const GEMINI_MODEL = {
+  'gemini-2.5-flash': 'gemini-2.5-flash'
+}
 
-  let genAIClient: GoogleGenAI | null = null;
+let genAIClient: GoogleGenAI | null = null;
 
 export function getClient(env: Env): GoogleGenAI {
   if (genAIClient === null) {
@@ -111,3 +114,29 @@ export function getClient(env: Env): GoogleGenAI {
     });
   }
   
+
+  export async function callGemini(prompt: string, systemPrompt: string, env: Env): Promise<string> {
+    if(!genAIClient){
+        getClient(env)
+    }
+
+    const response = await genAIClient!.models.generateContent({
+        model: GEMINI_MODEL['gemini-2.5-flash'],
+        contents: {
+            role: "user",
+            parts: [{text: prompt}]
+        },
+        config: {
+            systemInstruction: {
+                role: "system",
+                parts: [{text: systemPrompt}]
+            }
+        }
+    })
+
+    console.log("GEMINI RESPONSE IS: ", response.candidates?.[0].content?.parts?.[0].text)
+
+    const responseText = response.candidates?.[0].content?.parts?.[0].text || ""
+
+    return responseText
+  }

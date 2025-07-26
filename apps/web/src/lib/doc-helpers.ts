@@ -116,3 +116,25 @@ export function parseClosingTag(rawInput: string): ParsedTag | null {
   const attributes: Record<string, string> = {}
   return { tag, attributes }
 }
+
+export interface DocContentNodes {
+  id: string;
+  type: string;
+  content: string;
+  
+}
+
+export function getDocumentContentNodesForContext(editor: EditorView) {
+  const doc = editor.state.doc
+  const contentNodes: DocContentNodes[] = []
+
+  doc.content.content.forEach((node) => {
+    contentNodes.push({
+      id: node.attrs.nodeId,
+      type: node.type.name,
+      content: node.textContent,
+    })
+  })
+
+  return contentNodes
+}
