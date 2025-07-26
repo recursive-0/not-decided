@@ -10,6 +10,8 @@ interface UIStore {
   startTransformation: () => void;
   endTransformation: () => void;
   triggerShake: () => void;
+  persistentSelection: { from: number; to: number } | null;
+  setPersistentSelection: (range: { from: number; to: number } | null) => void;
 }
 
 export const useUIStore = create<UIStore>((set) => ({
@@ -25,5 +27,7 @@ export const useUIStore = create<UIStore>((set) => ({
   triggerShake: () => {
     set({ shouldShake: true });
     setTimeout(() => set({ shouldShake: false }), 500);
-  }
+  },
+  persistentSelection: null,
+  setPersistentSelection: (range: { from: number; to: number } | null) => set({ persistentSelection: range }),
 }));

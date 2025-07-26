@@ -36,6 +36,7 @@
   --chart-2: #B794F6;
   --chart-3: #7C3AED;
   --chart-4: #D4BBF8;
+  --chart-4-medium-light: #D4BBF8/0.3;
   --chart-5: #6D28D9;
   
   --radius: 0.625rem;
@@ -48,6 +49,20 @@
   --sidebar-accent-foreground: #0F0F11;
   --sidebar-border: #88888A;
   --sidebar-ring: #8B5CF6;
+
+
+--wrisor-purple-1: #8B5CF6;
+--wrisor-purple-2: #9168F8;
+--wrisor-purple-3: #9775FA;
+--wrisor-purple-5: #9E82FC;
+--wrisor-purple-6: #A68FFD;
+--wrisor-purple-7: #AE9DFE;
+--wrisor-purple-8: #B8ABFF;
+--wrisor-purple-9: #C2B9FF;
+--wrisor-purple-10: #CDC7FF;
+--wrisor-purple-11: #D9D5FF;
+--wrisor-purple-12: #E6E4FF;
+--wrisor-purple-13: #E6E4FF;
 
   /* ===== OUR 15 LAYER PROGRESSION ===== */
   --layer-0: #060607;   /* Deepest void */
@@ -133,6 +148,19 @@
   --layer-13: #ACACAD;  /* Text primary */
   --layer-14: #BEBEBF;  /* Text emphasis */
   --layer-15: #CFD0D0;  /* Text contrast */
+
+  --wrisor-purple-1: #8B5CF6;
+--wrisor-purple-2: #9168F8;
+--wrisor-purple-3: #9775FA;
+--wrisor-purple-5: #9E82FC;
+--wrisor-purple-6: #A68FFD;
+--wrisor-purple-7: #AE9DFE;
+--wrisor-purple-8: #B8ABFF;
+--wrisor-purple-9: #C2B9FF;
+--wrisor-purple-10: #CDC7FF;
+--wrisor-purple-11: #D9D5FF;
+--wrisor-purple-12: #E6E4FF;
+--wrisor-purple-13: #E6E4FF;
 }
 
 @theme inline {
@@ -190,7 +218,18 @@
   --color-layer-14: var(--layer-14);
   --color-layer-15: var(--layer-15);
 
-
+  --color-wrisor-purple-1: var(--wrisor-purple-1);
+  --color-wrisor-purple-2: var(--wrisor-purple-2);
+  --color-wrisor-purple-3: var(--wrisor-purple-3);
+  --color-wrisor-purple-5: var(--wrisor-purple-5);
+  --color-wrisor-purple-6: var(--wrisor-purple-6);
+  --color-wrisor-purple-7: var(--wrisor-purple-7);
+  --color-wrisor-purple-8: var(--wrisor-purple-8);
+  --color-wrisor-purple-9: var(--wrisor-purple-9);
+  --color-wrisor-purple-10: var(--wrisor-purple-10);
+  --color-wrisor-purple-11: var(--wrisor-purple-11);
+  --color-wrisor-purple-12: var(--wrisor-purple-12);
+  --color-wrisor-purple-13: var(--wrisor-purple-13);
 
 }
 
@@ -214,7 +253,7 @@
   
   /* Ensure good contrast for selection */
   ::selection {
-    background-color: oklch(0.6 0.06 55 / 0.3);
+    background-color: var(--color-wrisor-purple-13);
     color: inherit;
   }
 }
