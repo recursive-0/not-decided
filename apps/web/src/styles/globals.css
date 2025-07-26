@@ -66,6 +66,9 @@
   --layer-13: #ACACAD;  /* Text primary */
   --layer-14: #BEBEBF;  /* Text emphasis */
   --layer-15: #CFD0D0;  /* Text contrast */
+
+  --accept-green: #313221;
+  --reject-red: #23080E;
 }
 
 .dark {

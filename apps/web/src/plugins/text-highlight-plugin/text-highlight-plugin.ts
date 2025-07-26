@@ -1,6 +1,8 @@
-import { Plugin, PluginKey} from "prosemirror-state";
-import { Decoration, DecorationSet} from "prosemirror-view";
-import { SuggestionControlCallout } from "../suggestion-callout-view/suggestion-callout-view";
+import { Plugin, PluginKey } from "prosemirror-state";
+import { Decoration, DecorationSet } from "prosemirror-view";
+import { TransformationControlCallout } from "../transformation-callout-view/transformation-callout-view";
+import "./text-highlight-plugin.css";
+
 
 interface RangeType {
   from: number;
@@ -8,63 +10,67 @@ interface RangeType {
 }
 
 export interface TextHighlightPluginType {
-  action: "show-suggestion" | "resolveSuggestion" | "rejectSuggestion";
+  action: "show-transformation" | "resolve-transformation" | "reject-transformation";
   strikeThroughRange: RangeType;
   highlightRange: RangeType;
   originalText: string;
-  rewrittenText: string;
-  suggestionId: string;
+  transformedText: string;
+  transformationId: string;
 }
 
 interface TextHighlightPluginStateType {
-  suggestions: TextHighlightPluginType[];
+  transformations: TextHighlightPluginType[];
 }
 
 export const textHighlightPluginKey =
   new PluginKey<TextHighlightPluginStateType>("text-highlight-plugin-key");
-export const applyHighlightKey = "APPLY_SUGGESTION_HIGHLIGHT";
+export const applyHighlightKey = "APPLY_TRANSFORMATION_HIGHLIGHT";
 
 export const textHighlightPlugin = new Plugin<TextHighlightPluginStateType>({
   key: textHighlightPluginKey,
   state: {
     init() {
       const initialState = {
-        suggestions: [],
+        transformations: [],
       };
 
       return initialState;
     },
     apply(tr, pluginState): TextHighlightPluginStateType {
-      const mappedSuggestions = pluginState.suggestions.map((suggestion) => ({
-        ...suggestion,
+      console.log("Applying transformation!") 
+
+      const mappedTransformations = pluginState.transformations.map((transformation) => ({
+        ...transformation,
         strikeThroughRange: {
-          from: tr.mapping.map(suggestion.strikeThroughRange.from),
-          to: tr.mapping.map(suggestion.strikeThroughRange.to),
+          from: tr.mapping.map(transformation.strikeThroughRange.from),
+          to: tr.mapping.map(transformation.strikeThroughRange.to),
         },
         highlightRange: {
-          from: tr.mapping.map(suggestion.highlightRange.from),
-          to: tr.mapping.map(suggestion.highlightRange.to),
+          from: tr.mapping.map(transformation.highlightRange.from),
+          to: tr.mapping.map(transformation.highlightRange.to),
         },
       }));
 
       const metaData = tr.getMeta(textHighlightPluginKey);
 
-      if (metaData?.action === "show-suggestion") {
+      if (metaData?.action === "show-transformation") {
         return {
-          suggestions: [...mappedSuggestions, metaData],
+          transformations: [...mappedTransformations, metaData],
         };
       }
 
-      if(metaData?.action === "resolve-suggestion"){
-        const suggestionIdToResolve = metaData.suggestionId
-        const updatedSuggestions = pluginState.suggestions.filter(suggestion => suggestion.suggestionId !== suggestionIdToResolve)
+      if (metaData?.action === "resolve-transformation") {
+        const transformationIdToResolve = metaData.transformationId;
+        const updatedTransformations = pluginState.transformations.filter(
+          (transformation) => transformation.transformationId !== transformationIdToResolve
+        );
         return {
-            ...pluginState,
-            suggestions: updatedSuggestions,
-        }
+          ...pluginState,
+          transformations: updatedTransformations,
+        };
       }
 
-      return { suggestions: mappedSuggestions };
+      return { transformations: mappedTransformations };
     },
   },
   props: {
@@ -72,26 +78,26 @@ export const textHighlightPlugin = new Plugin<TextHighlightPluginStateType>({
       const currentState: TextHighlightPluginStateType | undefined =
         this.getState(state);
       if (!currentState) return DecorationSet.empty;
-      const { suggestions } = currentState;
+      const { transformations } = currentState;
 
-      if (suggestions.length === 0) return DecorationSet.empty;
+      if (transformations.length === 0) return DecorationSet.empty;
 
       const decorations: Decoration[] = [];
 
       const createStrikeThroughDecoration = (props: RangeType): Decoration => {
         const { from, to } = props;
-        return Decoration.inline(from, to, { class: "strike-through-text",  });
+        return Decoration.inline(from, to, { class: "strike-through-text" });
       };
 
       const createHighlightDecoration = (props: RangeType): Decoration => {
         const { from, to } = props;
         return Decoration.inline(from, to, {
-          class: "highlight-text-in-green",
+          class: "highlight-text",
         });
       };
 
-      for (let i = 0; i < suggestions.length; i++) {
-        const currentSuggestion = suggestions[i];
+      for (let i = 0; i < transformations.length; i++) {
+        const currentSuggestion = transformations[i];
 
         const strikeThroughDecoration = createStrikeThroughDecoration(
           currentSuggestion.strikeThroughRange
@@ -108,8 +114,7 @@ export const textHighlightPlugin = new Plugin<TextHighlightPluginStateType>({
     },
   },
 
-  view(editorView){
-    return new SuggestionControlCallout(editorView)
-  }
-
+  view(editorView) {
+    return new TransformationControlCallout(editorView);
+  },
 });
