@@ -1,5 +1,5 @@
-import { Plugin, PluginKey, Transaction } from "prosemirror-state";
-import { nanoid } from 'nanoid'
+import { nanoid } from 'nanoid';
+import { Plugin, PluginKey, TextSelection, Transaction } from "prosemirror-state";
 
 export const ensureNodeIdPluginKey = new PluginKey("ensureNodeIdPlugin");
 
@@ -17,6 +17,7 @@ export const ensureNodeIdPlugin = new Plugin({
     newState.doc.descendants((node, pos) => {
       if (node.type.spec.attrs && node.type.spec.attrs.nodeId !== undefined) {
         if (node.attrs.nodeId === null || node.attrs.nodeId === undefined) {
+
           if (!newTr) {
             newTr = newState.tr;
           }
@@ -27,6 +28,9 @@ export const ensureNodeIdPlugin = new Plugin({
             node.marks
           );
           newTr.replaceWith(pos, pos + node.nodeSize, newNode);
+          newTr.setSelection(TextSelection.create(newTr.doc, pos, pos + newNode.nodeSize));
+          newTr.setSelection(newState.selection.map(newTr.doc, newTr.mapping));
+
           changesMade = true;
         }
       }

@@ -2,7 +2,6 @@ import { CodeBlock } from "@/custom-nodes/code-block";
 import { persistentHighlightPlugin } from "@/custom-nodes/persistent-highlight-plugin";
 import { placeholderPlugin } from "@/custom-nodes/placeholder-plugin";
 import { getWordCount } from "@/lib/misc-editor-helpers";
-import { ensureNodeIdPlugin } from "@/plugins/ensure-nodeid-plugin";
 import { suggestionHighlightPlugin } from "@/plugins/suggestion-highlight-plugin";
 import { suggestionNavigatorPlugin } from "@/plugins/suggestion-navigator-plugin";
 import { textHighlightPlugin } from "@/plugins/text-highlight-plugin/text-highlight-plugin";
@@ -76,7 +75,7 @@ const plugins = [
   suggestionNavigatorPlugin,
   // ensureTrailingParagraphPlugin,
   textHighlightPlugin,
-  ensureNodeIdPlugin,
+  // ensureNodeIdPlugin,
   placeholderPlugin,
   createTransformationGuardPlugin(),
   history(),
