@@ -14,7 +14,7 @@
   height: 10px; 
   z-index: 4;
   
-  background-color: var(--color-forest-teal);
+  background-color: var(--accept-green);
 
   bottom: 16px; 
   left: 20%;
@@ -39,13 +39,13 @@
 }
 
 .accept-callout-button {
-  background-color: var(--color-forest-teal);
+  background-color: var(--accept-green);
   border-top-left-radius: 6px;
   border-bottom-left-radius: 6px;
 }
 
 .reject-callout-button {
-  background-color: var(--color-olive-green);
+  background-color: var(--reject-red);
   border-top-right-radius: 6px;
   border-bottom-right-radius: 6px;
 }

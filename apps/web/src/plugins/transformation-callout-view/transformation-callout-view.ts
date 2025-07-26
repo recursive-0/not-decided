@@ -1,9 +1,9 @@
+import { useWrisorStore } from "@/store/wrisor";
 import { PluginView } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
 import { textHighlightPluginKey } from "../text-highlight-plugin/text-highlight-plugin";
-import { useWrisorStore } from "@/store/wrisor";
 
-export class SuggestionControlCallout implements PluginView {
+export class TransformationControlCallout implements PluginView {
   private suggestionCalloutElement: HTMLDivElement;
   private activeSuggestionId: string | null = null;
   private view: EditorView;
@@ -42,8 +42,8 @@ export class SuggestionControlCallout implements PluginView {
   handleAcceptSuggestion() {
     if (!this.activeSuggestionId) return;
     const pluginState = textHighlightPluginKey.getState(this.view.state);
-    const suggestion = pluginState?.suggestions.find(
-      (s) => s.suggestionId === this.activeSuggestionId
+    const suggestion = pluginState?.transformations.find(
+      (s) => s.transformationId === this.activeSuggestionId
     );
     if (!suggestion) return;
 
@@ -55,8 +55,8 @@ export class SuggestionControlCallout implements PluginView {
     );
 
     tr.setMeta(textHighlightPluginKey, {
-      action: "resolve-suggestion",
-      suggestionId: this.activeSuggestionId,
+      action: "resolve-transformation",
+      transformationId: this.activeSuggestionId,
     });
 
     this.view.dispatch(tr);
@@ -68,8 +68,8 @@ export class SuggestionControlCallout implements PluginView {
   handleRejectSuggestion() {
     if (!this.activeSuggestionId) return;
     const pluginState = textHighlightPluginKey.getState(this.view.state);
-    const suggestion = pluginState?.suggestions.find(
-      (s) => s.suggestionId === this.activeSuggestionId
+    const suggestion = pluginState?.transformations.find(
+      (s) => s.transformationId === this.activeSuggestionId
     );
     if (!suggestion) return;
 
@@ -78,8 +78,8 @@ export class SuggestionControlCallout implements PluginView {
     tr.delete(suggestion.highlightRange.from, suggestion.highlightRange.to);
 
     tr.setMeta(textHighlightPluginKey, {
-      action: "resolve-suggestion",
-      suggestionId: this.activeSuggestionId,
+      action: "resolve-transformation",
+      transformationId: this.activeSuggestionId,
     });
 
     this.view.dispatch(tr);
@@ -94,16 +94,16 @@ export class SuggestionControlCallout implements PluginView {
 
     if (
       !textHighlightPluginData ||
-      textHighlightPluginData.suggestions.length === 0
+      textHighlightPluginData.transformations.length === 0
     ) {
       this.suggestionCalloutElement.style.display = "none";
       this.activeSuggestionId = null;
       return;
     }
 
-    const activeSuggestion = textHighlightPluginData.suggestions[0];
+    const activeSuggestion = textHighlightPluginData.transformations[0];
 
-    this.activeSuggestionId = activeSuggestion.suggestionId;
+    this.activeSuggestionId = activeSuggestion.transformationId;
 
     const { to } = activeSuggestion.highlightRange;
 

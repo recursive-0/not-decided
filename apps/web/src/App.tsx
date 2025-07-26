@@ -16,7 +16,8 @@ export function App() {
             <EditorContainer />
             <WordCounter />
           </ResizablePanel>
-          <ResizableHandle withHandle className="before:w-[1px] bg-border" />
+          {/* disable resizing when transformation is happening or when there are edits */}
+          <ResizableHandle withHandle className="before:w-[1px] bg-border" /> 
           <ResizablePanel defaultSize={30} className="min-w-1/4 relative">
             <AIChat />
           </ResizablePanel>

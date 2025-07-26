@@ -1,4 +1,4 @@
-import "@/components/loaders/transformation-loader.css"
+import "@/components/loaders/transformation-loader.css";
 import { useUIStore } from "@/store/ui";
 
 export const TransformationLoader = ({ message = "Transforming" }) => {
@@ -6,9 +6,9 @@ export const TransformationLoader = ({ message = "Transforming" }) => {
   console.log("should shake is: ", shouldShake)
   
   return (
-    <div className={`transformation-loader-container ${shouldShake ? 'shake' : ''} absolute z-10 right-2 top-14 bg-palette-cream flex items-center justify-start gap-2 px-2 py-1.5 rounded-md shadow-lg border border-palette-salmon/30`}>
+    <div className={`transformation-loader-container ${shouldShake ? 'shake' : ''} absolute z-10 -right-2 top-14 bg-white flex items-center justify-start gap-1 px-2 pr-4 py-1.5 rounded-md border border-y-1 border-x-0 border-l-1 border-border`}>
       <div className="wrisor-loader"></div>
-      <span className="text-olive-green text-sm font-normal tracking-wide">
+      <span className="text-muted-foreground text-sm font-normal">
         {message}
       </span>
     </div>

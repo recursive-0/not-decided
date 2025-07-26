@@ -2,19 +2,16 @@ import z from "zod";
 import { Env } from "../../worker-configuration";
 import { callClaude } from "../ai-models/claude";
 import { transformTextSystemPrompt } from "../prompts/wrisor-transform-text-prompt";
+import type { CursorContextType } from './../types';
 
 interface TransformTextRequest {
     prompt: string;
-    selectedText: string;
-    surroundingContext: string
-    context: string;
+    cursorContext: CursorContextType;
 }
 
 const transformRequestSchema = z.object({
     prompt: z.string(),
-    selectedText: z.string(),
-    surroundingContext: z.string(),
-    context: z.string(),
+    cursorContext: z.custom<CursorContextType>()
 })
 
 
@@ -28,17 +25,25 @@ export async function transformText(req: Request, env: Env, ctx: ExecutionContex
         return new Response(JSON.stringify({ error: "Invalid request body" }), { status: 400 })
     }
 
+    console.log("Raw body is: ", rawBody)
+
     const parsedBody = transformRequestSchema.safeParse(rawBody)
     if(!parsedBody.success){
         return new Response(JSON.stringify({ error: "Invalid request body" }), { status: 400 })
     }
 
-    const { prompt, selectedText, surroundingContext, context } = parsedBody.data
+    const { prompt, cursorContext } = parsedBody.data
+
+    console.log("Cursor context is: ", cursorContext)
+
     const systemPromptProps = {
         userQuery: prompt,
-        selectedText,
-        surroundingContext,
-        documentContext: context,
+        currentNode: cursorContext.currentNode.text,
+        precedingNode: cursorContext.precedingNode.text,
+        followingNode: cursorContext.followingNode.text,
+        selectedText: cursorContext.selectedText,
+        documentContext: cursorContext.documentContext,
+        cursorPos: cursorContext.cursorPos,
     }
     const systemPrompt = transformTextSystemPrompt(systemPromptProps)
 
@@ -51,6 +56,5 @@ export async function transformText(req: Request, env: Env, ctx: ExecutionContex
         console.log("Error calling claude: ", error)
         return new Response(JSON.stringify({ error: "Failed to transform text" }), { status: 500 })
     }
-
 }
 

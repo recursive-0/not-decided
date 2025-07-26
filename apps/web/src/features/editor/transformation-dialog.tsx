@@ -3,25 +3,20 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/custom-toasts";
 import { Textarea } from "@/components/ui/textarea";
 import { useChatHandler } from "@/hooks/use-chat-handler";
-import {
-  getDocumentContext,
-} from "@/lib/doc-helpers";
+import { handleTransformSelection } from "@/lib/handle-transform-selection";
+import { getContextAroundCursor, lockEditor, unlockEditor } from "@/lib/misc-editor-helpers";
 import { useEditor } from "@/providers/editor-context-provider";
+import { useUIStore } from "@/store/ui";
 import { useWrisorStore } from "@/store/wrisor";
 import "@/styles/suggestion-navigation.css";
 import { useMutation } from "@tanstack/react-query";
-import { CornerDownLeft, X } from "lucide-react";
+import { CornerDownLeft, SquarePen, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import "../../styles/suggestion-highlight-plugin.css";
 import "./external-dialogs.css";
 import "./prosemirror-styles.css";
-import {
-  textHighlightPluginKey,
-  TextHighlightPluginType,
-} from "@/plugins/text-highlight-plugin/text-highlight-plugin";
-import { useUIStore } from "@/store/ui";
 
-export const CommandPalette = ({ clientX, clientY, onClose }) => {
+export const AiTransformDialog = ({ clientX, clientY, onClose }) => {
   const [input, setInput] = useState("");
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef(null);
@@ -34,62 +29,23 @@ export const CommandPalette = ({ clientX, clientY, onClose }) => {
   const transformTextMutation = useMutation({
     mutationFn: () => {
       startTransformation();
-      const context = getDocumentContext(editorView.current!);
-      const { selectedText, surroundingContext, documentContent } = context;
+      lockEditor(editorView.current!);
       const prompt = input.trim();
-      editorView.current?.setProps({
-        editable: () => false,
-      });
       return transformText({
         prompt,
-        selectedText,
-        surroundingContext,
-        context: documentContent,
+        cursorContext: getContextAroundCursor(editorView.current!.state)
       });
     },
     onSuccess: (data) => {
       const { transformedText } = data;
       console.log("transformed text is: ", transformedText);
       const view = editorView.current!;
-
-      const { from: semanticFrom, to: semanticTo } = editorView.current!.state.selection
-      console.log(
-        "Semantic selection is: ",
-        view.state.doc.textBetween(semanticFrom, semanticTo)
-      );
-      const originalText = view.state.doc.textBetween(semanticFrom, semanticTo);
-
-      let tr = view.state.tr;
-      const textToInsert = transformedText;
-
-      tr = tr.insertText(textToInsert, semanticTo);
-
-      const strikeThroughRange = { from: semanticFrom, to: semanticTo };
-      const highlightRange = {
-        from: semanticTo,
-        to: semanticTo + textToInsert.length,
-      };
-
-      const suggestionId =
-        Date.now().toString() + Math.random().toString(36).substring(2);
-
-      const metaData: TextHighlightPluginType = {
-        action: "show-suggestion",
-        strikeThroughRange,
-        highlightRange,
-        originalText,
-        rewrittenText: transformedText,
-        suggestionId,
-      };
-
-      tr = tr.setMeta(textHighlightPluginKey, metaData);
-
-      // Step 5: Dispatch the coherent, non-contradictory plan.
-      view.dispatch(tr);
+      handleTransformSelection({
+        editorView: view,
+        transformedText,
+      })
       endTransformation();
-      editorView.current!.setProps({
-        editable: () => true,
-      });
+      unlockEditor(editorView.current!);
       setTotalCurrentEdits(totalCurrentEdits + 1);
     },
     onError: (error) => {
@@ -160,22 +116,25 @@ export const CommandPalette = ({ clientX, clientY, onClose }) => {
   return (
     <div
       ref={dialogRef}
-      className="absolute z-50 bg-palette-beige-1 rounded-md shadow-lg border border-neutral-200"
+      className="absolute z-50 bg-white rounded-md shadow-lg border border-border"
       style={{
         left: `${clientX}px`,
         top: `${clientY}px`,
         width: "300px",
       }}
     >
-      <div className="p-2 flex flex-col gap-2">
+      <div className="p-2 px-3 flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <span className="text-black text-sm">Prompt</span>
+          <div className="flex flex-row gap-2 items-center">
+            <SquarePen className="w-3 h-3 text-muted" />
+            <span className="text-muted-foreground text-sm">Transform Document</span>
+          </div>
           <Button
             onClick={onClose}
             variant="default"
-            className="p-0 py-1 px-0 h-fit w-fit "
+            className="!py-1 !px-0 h-fit !w-fit-content bg-transparent shadow-none hover:bg-transparent cursor-pointer"
           >
-            <X />
+            <X className="w-2 h-2 text-layer-0 hover:text-layer-10" />
           </Button>
         </div>
         <div className="relative flex flex-col items-start">
@@ -183,9 +142,11 @@ export const CommandPalette = ({ clientX, clientY, onClose }) => {
             autoFocus
             ref={textareaRef}
             placeholder="Improve this section, rewrite this, etc."
-            className="flex-1 text-sm rounded-md resize-none overflow-scroll border border-neutral-200
-                text-palette-dark placeholder:text-neutral-400
-                pr-8 py-2 min-h-[38px] max-h-[150px]"
+            className="flex-1 text-sm rounded-md resize-none border border-border
+            text-muted-foreground placeholder:text-muted-foreground/80
+            pr-8 py-2 min-h-[70px] max-h-[100px] overflow-y-scroll bg-transparent shadow-none
+            focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none focus-visible:shadow-md focus-visible:border-border
+            "
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}

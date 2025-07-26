@@ -30,12 +30,12 @@ import {
   slashCommandTriggerKey,
   slashOpenCommandDialog,
 } from "../../editor-input-rules/slash-command-dialog";
-import "../../plugins/text-highlight-plugin/text-highlight-plugin.css";
+import "../../plugins/transformation-callout-view/transformation-callout-view.css";
 import "../../styles/suggestion-highlight-plugin.css";
 import { AcceptAllRejectAllDialog } from "./accpet-all-reject-all-dialog";
-import { CommandPalette } from "./command-palette";
 import "./external-dialogs.css";
 import "./prosemirror-styles.css";
+import { AiTransformDialog } from "./transformation-dialog";
 // import { ensureTrailingParagraphPlugin } from "@/plugins/trailing-paragraph-plugin";
 
 const debounce = (func, delay) => {
@@ -342,7 +342,7 @@ export const ProseMirrorEditor = () => {
         onClick={() => handleEditorClick()}
       />
       {!isTransforming && smartAiPopupPos !== null && (
-        <CommandPalette
+        <AiTransformDialog
           clientX={smartAiPopupPos.x}
           clientY={smartAiPopupPos.y}
           onClose={() => handleDialogClose()}

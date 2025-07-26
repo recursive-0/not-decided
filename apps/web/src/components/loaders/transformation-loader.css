@@ -14,7 +14,7 @@
   top: 50%;
   left: 0;
   transform: translate(-1px, -50%);
-  background: linear-gradient(to right, var(--color-palette-gold) 50%, var(--palette-salmon) 50%) no-repeat;
+  background: linear-gradient(to right, var(--color-primary) 50%, var(--color-secondary) 50%) no-repeat;
   background-size: 200% auto;
   background-position: 100% 0;
   animation: wrisorBallMove 1.8s ease-in-out infinite alternate;

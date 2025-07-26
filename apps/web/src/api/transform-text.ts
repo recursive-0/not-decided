@@ -1,13 +1,9 @@
+import { CursorContext } from "@/lib/misc-editor-helpers";
 import ky from "ky";
-
 
 interface TransformTextProps {
     prompt: string;
-    // documentId: string;
-    // userId: string;
-    selectedText: string;
-    surroundingContext: string
-    context: string;
+    cursorContext: CursorContext
 }
 
 

@@ -1,12 +1,15 @@
 interface TextTransformPromptProps {
   userQuery: string,
   selectedText: string,
-  surroundingContext: string,
+  precedingNode: string,
+  followingNode: string,
   documentContext: string,
+  cursorPos: number,
+  currentNode: string,
 }
 
 export const transformTextSystemPrompt = (props: TextTransformPromptProps) => {
-  const { userQuery, selectedText, surroundingContext, documentContext } = props;
+  const { userQuery, selectedText, precedingNode, followingNode, documentContext, cursorPos, currentNode } = props;
   
   return `You are Wrisor, an expert writing assistant that transforms selected text to seamlessly integrate with existing content.
 
@@ -19,11 +22,20 @@ Transform ONLY the selected text according to the user's request. The transforme
 **Selected Text to Transform:** 
 ${selectedText}
 
-**Surrounding Context:** 
-${surroundingContext}
+**Preceding Node:** 
+${precedingNode}
+
+**Following Node:** 
+${followingNode}
 
 **Document Context:** 
 ${documentContext}
+
+**Cursor Position:** 
+${cursorPos}
+
+**Current Node:** 
+${currentNode}
 
 ## Critical Requirements
 1. **Seamless Integration**: The replacement text must read as if it was originally written as part of the surrounding context
