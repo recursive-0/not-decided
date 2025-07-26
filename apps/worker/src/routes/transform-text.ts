@@ -1,17 +1,29 @@
 import z from "zod";
 import { Env } from "../../worker-configuration";
-import { callClaude } from "../ai-models/claude";
+import { callGemini } from "../ai-models/gemini";
 import { transformTextSystemPrompt } from "../prompts/wrisor-transform-text-prompt";
-import type { CursorContextType } from './../types';
+import type { CursorContextType, NodeContextType } from './../types';
 
 interface TransformTextRequest {
-    prompt: string;
+    userPrompt: string;
+    selectedText: string;
+    selectedNodes: NodeContextType[];
     cursorContext: CursorContextType;
+    focusPoints: {
+        from: number;
+        to: number;
+    };
 }
 
 const transformRequestSchema = z.object({
-    prompt: z.string(),
-    cursorContext: z.custom<CursorContextType>()
+    userPrompt: z.string(),
+    selectedText: z.string(),
+    selectedNodes: z.array(z.custom<NodeContextType>()),
+    cursorContext: z.custom<CursorContextType>(),
+    focusPoints: z.object({
+        from: z.number(),
+        to: z.number(),
+    })
 })
 
 
@@ -32,25 +44,27 @@ export async function transformText(req: Request, env: Env, ctx: ExecutionContex
         return new Response(JSON.stringify({ error: "Invalid request body" }), { status: 400 })
     }
 
-    const { prompt, cursorContext } = parsedBody.data
+    const { userPrompt, cursorContext, selectedText, selectedNodes, focusPoints } = parsedBody.data
 
     console.log("Cursor context is: ", cursorContext)
 
     const systemPromptProps = {
-        userQuery: prompt,
+        userQuery: userPrompt,
         currentNode: cursorContext.currentNode.text,
-        precedingNode: cursorContext.precedingNode.text,
-        followingNode: cursorContext.followingNode.text,
-        selectedText: cursorContext.selectedText,
-        documentContext: cursorContext.documentContext,
+        precedingNode: cursorContext.precedingNode ? cursorContext.precedingNode.text : "",
+        followingNode: cursorContext.followingNode ? cursorContext.followingNode.text : "",
+        selectedText: selectedText,
+        selectedNodes: selectedNodes,
+        documentContentNodes: cursorContext.documentContext,
         cursorPos: cursorContext.cursorPos,
+        focusPoints: focusPoints
     }
     const systemPrompt = transformTextSystemPrompt(systemPromptProps)
 
     console.log("Caling claude in transform text")
     console.log("ENVS are: ", env)
     try{
-        const response = await callClaude(prompt, systemPrompt, env)
+        const response = await callGemini(userPrompt, systemPrompt, env)
         return new Response(JSON.stringify({ transformedText: response }), { status: 200 })
     } catch (error) {
         console.log("Error calling claude: ", error)

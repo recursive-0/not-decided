@@ -9,11 +9,17 @@ export interface NodeContextType {
     id: string;
 }
 
+export interface DocContentNodes {
+    id: string;
+    type: string;
+    content: string;
+}
+
 export interface CursorContextType {
     currentNode: NodeContextType;
-    precedingNode: NodeContextType;
-    followingNode: NodeContextType;
+    precedingNode: NodeContextType | null;
+    followingNode: NodeContextType | null;
     cursorPos: number;
     selectedText: string;
-    documentContext: string;
+    documentContext: DocContentNodes[];
 }
