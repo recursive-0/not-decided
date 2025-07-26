@@ -2,6 +2,7 @@ import { transformText } from "@/api/transform-text";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/custom-toasts";
 import { Textarea } from "@/components/ui/textarea";
+import { persistentHighlightPluginKey } from "@/custom-nodes/persistent-highlight-plugin";
 import { useChatHandler } from "@/hooks/use-chat-handler";
 import { handleTransformSelection } from "@/lib/handle-transform-selection";
 import { getContextAroundCursor, lockEditor, unlockEditor } from "@/lib/misc-editor-helpers";
@@ -11,6 +12,7 @@ import { useWrisorStore } from "@/store/wrisor";
 import "@/styles/suggestion-navigation.css";
 import { useMutation } from "@tanstack/react-query";
 import { CornerDownLeft, SquarePen, X } from "lucide-react";
+import { TextSelection as ProsemirrorTextSelection } from "prosemirror-state";
 import { useEffect, useRef, useState } from "react";
 import "../../styles/suggestion-highlight-plugin.css";
 import "./external-dialogs.css";
@@ -44,12 +46,25 @@ export const AiTransformDialog = ({ clientX, clientY, onClose }) => {
         editorView: view,
         transformedText,
       })
+      // Clear the persistent highlight since transformation is done
+      const tr = view.state.tr;
+      tr.setMeta(persistentHighlightPluginKey, { selection: null });
+      view.dispatch(tr);
+
       endTransformation();
-      unlockEditor(editorView.current!);
+      unlockEditor(view);
       setTotalCurrentEdits(totalCurrentEdits + 1);
     },
     onError: (error) => {
       console.log("error while transforming text", error);
+      // Clear highlight on error too
+      const tr = editorView.current!.state.tr;
+      tr.setMeta(persistentHighlightPluginKey, { selection: null });
+      editorView.current!.dispatch(tr);
+
+      unlockEditor(editorView.current!);
+      endTransformation();
+
       toast({
         title: "Failed to transform text",
         description: "Please try again",
@@ -57,6 +72,8 @@ export const AiTransformDialog = ({ clientX, clientY, onClose }) => {
       });
     },
   });
+
+  const [hasSubmitted, setHasSubmitted] = useState(false);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -66,7 +83,7 @@ export const AiTransformDialog = ({ clientX, clientY, onClose }) => {
         event.target instanceof Node &&
         !dialogRef.current.contains(event.target as Node)
       ) {
-        onClose();
+        handleClose();
       }
     };
 
@@ -75,6 +92,28 @@ export const AiTransformDialog = ({ clientX, clientY, onClose }) => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [onClose]);
+
+  const handleClose = () => {
+    if (!hasSubmitted) {
+      // User canceled - clear persistent highlight and restore selection
+      const tr = editorView.current!.state.tr;
+      
+      // Clear persistent highlight
+      tr.setMeta(persistentHighlightPluginKey, { selection: null });
+      
+      // Restore the original selection so user can continue editing
+      const persistentSelection = editorView.current!.state.selection;
+      if (persistentSelection) {
+        tr.setSelection(ProsemirrorTextSelection.create(tr.doc, persistentSelection.from, persistentSelection.to));
+      }
+      
+      editorView.current!.dispatch(tr);
+      editorView.current!.focus(); // Return focus to editor
+    }
+    // If submitted, keep highlight - it will be cleared when transformation completes
+    
+    onClose();
+  };
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -92,12 +131,14 @@ export const AiTransformDialog = ({ clientX, clientY, onClose }) => {
         handleSubmit();
       }
     } else if (e.key === "Escape") {
-      onClose();
+      handleClose();
     }
   };
 
   const handleSubmit = () => {
     if (input.trim() && !isStreaming) {
+      setHasSubmitted(true); // Mark as submitted
+      
       if (editorView.current!.state.selection.empty) {
         const { from, to } = editorView.current!.state.selection;
         const selectedText = editorView.current!.state.doc.textBetween(
@@ -130,7 +171,7 @@ export const AiTransformDialog = ({ clientX, clientY, onClose }) => {
             <span className="text-muted-foreground text-sm">Transform Document</span>
           </div>
           <Button
-            onClick={onClose}
+            onClick={handleClose}
             variant="default"
             className="!py-1 !px-0 h-fit !w-fit-content bg-transparent shadow-none hover:bg-transparent cursor-pointer"
           >
@@ -139,7 +180,15 @@ export const AiTransformDialog = ({ clientX, clientY, onClose }) => {
         </div>
         <div className="relative flex flex-col items-start">
           <Textarea
-            autoFocus
+            onFocus={() => {
+              console.log("textarea focused");
+              const tr = editorView.current!.state.tr;
+              const from = editorView.current!.state.selection.from;
+              const to = editorView.current!.state.selection.to;
+              tr.setMeta(persistentHighlightPluginKey, { selection: { from, to } });
+              editorView.current!.dispatch(tr);
+            }}
+            // autoFocus
             ref={textareaRef}
             placeholder="Improve this section, rewrite this, etc."
             className="flex-1 text-sm rounded-md resize-none border border-border
