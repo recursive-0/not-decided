@@ -106,6 +106,7 @@ export class StreamParser {
         const action = JSON.parse(this.actionBuffer) as ActionMessageType;
         console.log("Action is: ", action);
         this.callbacks.onAction(action);
+        this.actionBuffer = "";
       } catch (error) {
         console.error("Still need to buffer the action: ", error);
       }
